@@ -1,0 +1,18 @@
+# Compiled output
+target/
+*.class
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (dữ liệu test, không cần push)
+uploads/
