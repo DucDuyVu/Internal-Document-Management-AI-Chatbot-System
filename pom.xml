@@ -4,77 +4,99 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <!-- Phiên bản chuẩn của định dạng Maven POM, luôn cố định là 4.0.0 -->
 
     <groupId>com.javaweb</groupId>
+    <!-- "Chủ sở hữu" project, thường là tên tổ chức/nhóm, dùng làm gốc package Java -->
+
     <artifactId>idms</artifactId>
+    <!-- Tên project: Internal Document Management System -->
+
     <version>1.0</version>
+    <!-- Phiên bản hiện tại của project -->
+
     <packaging>jar</packaging>
+    <!-- Đóng gói thành file .jar chạy độc lập (Spring Boot embed sẵn server bên trong) -->
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.5</version>
     </parent>
+    <!-- Kế thừa cấu hình chuẩn từ Spring Boot 3.2.5.
+         Nhờ có "parent" này, các dependency Spring bên dưới không cần tự ghi version,
+         Maven sẽ tự chọn version tương thích với nhau. -->
 
     <properties>
         <java.version>21</java.version>
+        <!-- Dùng Java 21 để biên dịch và chạy toàn bộ project -->
     </properties>
 
     <dependencies>
 
-        <!-- Web REST API -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- Bắt buộc phải có. Cho phép viết REST API (@RestController, @GetMapping...),
+             tự động nhúng Tomcat server bên trong để chạy http://localhost:8080 -->
 
-        <!-- JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+        <!-- Cho phép dùng Entity + Repository để thao tác database bằng Java,
+             không cần viết SQL tay. Member A dùng thư viện này cho UsersEntity/UserRepository -->
 
-        <!-- Spring Security -->
+        <!--
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        -->
+        <!-- ĐANG TẮT (comment) để test API tự do, không bị chặn 401.
+             Đây là thư viện bảo vệ API bằng đăng nhập/JWT.
+             Cần bật lại ở tuần 5 khi làm phần phân quyền thật. -->
 
-        <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- Validate dữ liệu đầu vào tự động bằng annotation như
+             @NotBlank, @Email, @Size trên các trường trong DTO -->
 
-        <!-- PostgreSQL driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Driver để Java kết nối được với PostgreSQL.
+             scope=runtime nghĩa là chỉ cần lúc chạy, không cần lúc biên dịch code -->
 
-        <!-- pgvector -->
         <dependency>
             <groupId>com.pgvector</groupId>
             <artifactId>pgvector</artifactId>
             <version>0.1.6</version>
         </dependency>
+        <!-- Map kiểu dữ liệu vector(768) trong PostgreSQL sang kiểu Java,
+             dùng khi lưu/truy vấn embedding trong bảng document_chunks -->
 
-        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Tự sinh code getter/setter/constructor bằng annotation (@Data, @Getter...),
+             giúp Entity/DTO gọn hơn, không cần viết tay -->
 
-        <!-- ModelMapper -->
         <dependency>
             <groupId>org.modelmapper</groupId>
             <artifactId>modelmapper</artifactId>
             <version>3.2.6</version>
         </dependency>
+        <!-- Tự động chuyển đổi giữa Entity và DTO (VD: UsersEntity -> UserDTO),
+             không cần viết tay từng dòng .setXxx(entity.getXxx()) -->
 
-        <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -92,28 +114,33 @@
             <version>0.12.5</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- 3 thư viện để tạo và xác thực JWT token.
+             Dùng khi làm đăng nhập thật ở tuần 5, hiện tại chưa dùng vì Security đang tắt -->
 
-        <!-- Apache PDFBox -->
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
             <version>3.0.2</version>
         </dependency>
+        <!-- Đọc và trích xuất text từ file PDF,
+             dùng ở Ingestion Pipeline (tuần 2) khi parse tài liệu để chunking -->
 
-        <!-- DevTools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+        <!-- Tự động restart server mỗi khi sửa code và lưu file,
+             không cần dừng/chạy lại mvn spring-boot:run bằng tay -->
 
-        <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Thư viện viết unit test (JUnit, Mockito...),
+             chỉ dùng lúc test, không đóng gói vào bản chạy thật -->
 
     </dependencies>
 
@@ -133,5 +160,8 @@
             </plugin>
         </plugins>
     </build>
+    <!-- Plugin cho phép chạy "mvn spring-boot:run" và đóng gói app thành .jar chạy độc lập.
+         Phần <excludes> loại Lombok ra khỏi file .jar cuối cùng vì Lombok chỉ cần
+         lúc biên dịch code, không cần lúc chạy thật -->
 
 </project>
