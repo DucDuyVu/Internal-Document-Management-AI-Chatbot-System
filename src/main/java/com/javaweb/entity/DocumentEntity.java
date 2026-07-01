@@ -75,6 +75,12 @@ public class DocumentEntity {
 	
 	@OneToMany(mappedBy = "documentId")
 	private List<MessageFileRefsEntity> messageFileRefsEntities ;
+	
+	@OneToMany(mappedBy = "chunkDocumentId")
+	private List<DocumentChunksEntity> documentChunksEntities;
+	
+	@OneToMany(mappedBy = "permissionsDocumentId")
+	private List<DocumentPermissionsEntity> permissionsEntities;
 
 	public Long getId() {
 		return id;
@@ -195,5 +201,28 @@ public class DocumentEntity {
 	public void setVersions(List<DocumentEntity> versions) {
 		this.versions = versions;
 	}
-	
+
+	public List<MessageFileRefsEntity> getMessageFileRefsEntities() {
+		return messageFileRefsEntities;
+	}
+
+	public void setMessageFileRefsEntities(List<MessageFileRefsEntity> messageFileRefsEntities) {
+		this.messageFileRefsEntities = messageFileRefsEntities;
+	}
+
+	public List<DocumentChunksEntity> getDocumentChunksEntities() {
+		return documentChunksEntities;
+	}
+
+	public void setDocumentChunksEntities(List<DocumentChunksEntity> documentChunksEntities) {
+		this.documentChunksEntities = documentChunksEntities;
+	}
+
+	public List<DocumentPermissionsEntity> getPermissionsEntities() {
+		return permissionsEntities;
+	}
+
+	public void setPermissionsEntities(List<DocumentPermissionsEntity> permissionsEntities) {
+		this.permissionsEntities = permissionsEntities;
+	}
 }

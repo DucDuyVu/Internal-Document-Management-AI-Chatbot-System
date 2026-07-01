@@ -75,7 +75,12 @@ public class UsersEntity {
 	@OneToMany(mappedBy = "userChatId", fetch = FetchType.LAZY)
 	private List<ChatSessionsEntity> chatSessionsEntities = new ArrayList<>();
 	
+	@OneToMany(mappedBy = "grantedId")
+	private List<DocumentPermissionsEntity> documentPermissionsEntities ;
 
+	@OneToMany(mappedBy = "usersEntityId")
+	private List<ActivityLogsEntity> activityLogsEntities;
+	
 	public Long getId() {
 		return id;
 	}
@@ -203,5 +208,20 @@ public class UsersEntity {
 	public void setUserSessionsEntities(List<UserSessionsEntity> userSessionsEntities) {
 		this.userSessionsEntities = userSessionsEntities;
 	}
-	
+
+	public List<DocumentPermissionsEntity> getDocumentPermissionsEntities() {
+		return documentPermissionsEntities;
+	}
+
+	public void setDocumentPermissionsEntities(List<DocumentPermissionsEntity> documentPermissionsEntities) {
+		this.documentPermissionsEntities = documentPermissionsEntities;
+	}
+
+	public List<ActivityLogsEntity> getActivityLogsEntities() {
+		return activityLogsEntities;
+	}
+
+	public void setActivityLogsEntities(List<ActivityLogsEntity> activityLogsEntities) {
+		this.activityLogsEntities = activityLogsEntities;
+	}
 }

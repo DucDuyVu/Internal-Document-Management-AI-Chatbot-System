@@ -37,6 +37,9 @@ public class DepartmentsEntity {
 	
 	@OneToMany(mappedBy = "departmentId")
 	private List<DocumentEntity> documentEntities = new ArrayList<>();
+	
+	@OneToMany(mappedBy = "permissionDepartmentId")
+	private List<DocumentPermissionsEntity> documentPermissionsEntities;
 
 	public Long getId() {
 		return id;
@@ -84,5 +87,21 @@ public class DepartmentsEntity {
 
 	public void setUsersEnties(List<UsersEntity> usersEnties) {
 		this.usersEnties = usersEnties;
+	}
+
+	public List<DocumentEntity> getDocumentEntities() {
+		return documentEntities;
+	}
+
+	public void setDocumentEntities(List<DocumentEntity> documentEntities) {
+		this.documentEntities = documentEntities;
+	}
+
+	public List<DocumentPermissionsEntity> getDocumentPermissionsEntities() {
+		return documentPermissionsEntities;
+	}
+
+	public void setDocumentPermissionsEntities(List<DocumentPermissionsEntity> documentPermissionsEntities) {
+		this.documentPermissionsEntities = documentPermissionsEntities;
 	}
 }

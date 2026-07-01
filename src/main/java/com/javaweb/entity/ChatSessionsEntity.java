@@ -96,4 +96,5 @@ public class ChatSessionsEntity {
 	public void setChatMessageEntities(List<ChatMessageEntity> chatMessageEntities) {
 		this.chatMessageEntities = chatMessageEntities;
 	}
+	
 }

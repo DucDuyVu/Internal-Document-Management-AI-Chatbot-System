@@ -95,4 +95,12 @@ public class ChatMessageEntity {
 	public void setSessionId(ChatSessionsEntity sessionId) {
 		this.sessionId = sessionId;
 	}
+
+	public List<MessageFileRefsEntity> getMessageFileRefsEntities() {
+		return messageFileRefsEntities;
+	}
+
+	public void setMessageFileRefsEntities(List<MessageFileRefsEntity> messageFileRefsEntities) {
+		this.messageFileRefsEntities = messageFileRefsEntities;
+	}
 }
