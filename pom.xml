@@ -68,7 +68,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
+            <!-- <scope>runtime</scope> -->
         </dependency>
         <!-- Driver để Java kết nối được với PostgreSQL.
              scope=runtime nghĩa là chỉ cần lúc chạy, không cần lúc biên dịch code -->

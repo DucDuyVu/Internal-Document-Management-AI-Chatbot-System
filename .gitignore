@@ -16,3 +16,6 @@ Thumbs.db
 
 # Uploads (dữ liệu test, không cần push)
 uploads/
+
+# Local Spring Boot profile with secrets
+src/main/resources/application-local.properties
