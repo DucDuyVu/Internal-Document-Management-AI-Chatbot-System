@@ -1,6 +1,5 @@
 package com.javaweb.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;

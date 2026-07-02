@@ -1,6 +1,6 @@
 package com.javaweb.entity;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,13 +53,13 @@ public class UsersEntity {
 	private boolean isActive = true;
 	
 	@Column(name = "updated_at")
-	private LocalDate updatedAt;
+	private LocalDateTime updatedAt;
 	
 	@Column(name = "created_at")
-	private LocalDate createdAt;
+	private LocalDateTime createdAt;
 	
 	@Column(name = "deleted_at")
-	private LocalDate deletedAt;
+	private LocalDateTime deletedAt;
 	
 	
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -153,27 +153,27 @@ public class UsersEntity {
 		this.isActive = isActive;
 	}
 
-	public LocalDate getUpdatedAt() {
+	public LocalDateTime getUpdatedAt() {
 		return updatedAt;
 	}
 
-	public void setUpdatedAt(LocalDate updatedAt) {
+	public void setUpdatedAt(LocalDateTime updatedAt) {
 		this.updatedAt = updatedAt;
 	}
 
-	public LocalDate getCreatedAt() {
+	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
 
-	public void setCreatedAt(LocalDate createdAt) {
+	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
 
-	public LocalDate getDeletedAt() {
+	public LocalDateTime getDeletedAt() {
 		return deletedAt;
 	}
 
-	public void setDeletedAt(LocalDate deletedAt) {
+	public void setDeletedAt(LocalDateTime deletedAt) {
 		this.deletedAt = deletedAt;
 	}
 
