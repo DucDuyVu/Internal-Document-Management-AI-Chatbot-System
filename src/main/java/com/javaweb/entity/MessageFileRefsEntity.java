@@ -11,8 +11,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "message_file_refs")
 public class MessageFileRefsEntity {
 	@Id
@@ -36,54 +40,4 @@ public class MessageFileRefsEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "chunk_id")
 	private DocumentChunksEntity chunkId;
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getExcerpt() {
-		return excerpt;
-	}
-
-	public void setExcerpt(String excerpt) {
-		this.excerpt = excerpt;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public ChatMessageEntity getMessageId() {
-		return messageId;
-	}
-
-	public void setMessageId(ChatMessageEntity messageId) {
-		this.messageId = messageId;
-	}
-
-	public DocumentEntity getDocumentId() {
-		return documentId;
-	}
-
-	public void setDocumentId(DocumentEntity documentId) {
-		this.documentId = documentId;
-	}
-
-	public DocumentChunksEntity getChunkId() {
-		return chunkId;
-	}
-
-	public void setChunkId(DocumentChunksEntity chunkId) {
-		this.chunkId = chunkId;
-	}
-	
-	
 }
