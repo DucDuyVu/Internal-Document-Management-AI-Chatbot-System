@@ -17,8 +17,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "document")
 public class DocumentEntity {
 
@@ -81,148 +85,4 @@ public class DocumentEntity {
 	
 	@OneToMany(mappedBy = "permissionsDocumentId")
 	private List<DocumentPermissionsEntity> permissionsEntities;
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public DocumentStatus getStatus() {
-		return status;
-	}
-
-	public void setStatus(DocumentStatus status) {
-		this.status = status;
-	}
-
-	public String getErrorMessage() {
-		return errorMessage;
-	}
-
-	public void setErrorMessage(String errorMessage) {
-		this.errorMessage = errorMessage;
-	}
-
-	public Long getRetryCount() {
-		return retryCount;
-	}
-
-	public void setRetryCount(Long retryCount) {
-		this.retryCount = retryCount;
-	}
-
-	public String getFileName() {
-		return fileName;
-	}
-
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
-	}
-
-	public String getFilePath() {
-		return filePath;
-	}
-
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
-	}
-
-	public String getFileSize() {
-		return fileSize;
-	}
-
-	public void setFileSize(String fileSize) {
-		this.fileSize = fileSize;
-	}
-
-	public Long getVersion() {
-		return version;
-	}
-
-	public void setVersion(Long version) {
-		this.version = version;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public LocalDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public void setUpdatedAt(LocalDateTime updatedAt) {
-		this.updatedAt = updatedAt;
-	}
-
-	public LocalDateTime getDeletedAt() {
-		return deletedAt;
-	}
-
-	public void setDeletedAt(LocalDateTime deletedAt) {
-		this.deletedAt = deletedAt;
-	}
-
-	public UsersEntity getUploadedBy() {
-		return uploadedBy;
-	}
-
-	public void setUploadedBy(UsersEntity uploadedBy) {
-		this.uploadedBy = uploadedBy;
-	}
-
-	public DepartmentsEntity getDepartmentId() {
-		return departmentId;
-	}
-
-	public void setDepartmentId(DepartmentsEntity departmentId) {
-		this.departmentId = departmentId;
-	}
-
-	public DocumentEntity getParentDocumentId() {
-		return parentDocumentId;
-	}
-
-	public void setParentDocumentId(DocumentEntity parentDocumentId) {
-		this.parentDocumentId = parentDocumentId;
-	}
-
-	public List<DocumentEntity> getVersions() {
-		return versions;
-	}
-
-	public void setVersions(List<DocumentEntity> versions) {
-		this.versions = versions;
-	}
-
-	public List<MessageFileRefsEntity> getMessageFileRefsEntities() {
-		return messageFileRefsEntities;
-	}
-
-	public void setMessageFileRefsEntities(List<MessageFileRefsEntity> messageFileRefsEntities) {
-		this.messageFileRefsEntities = messageFileRefsEntities;
-	}
-
-	public List<DocumentChunksEntity> getDocumentChunksEntities() {
-		return documentChunksEntities;
-	}
-
-	public void setDocumentChunksEntities(List<DocumentChunksEntity> documentChunksEntities) {
-		this.documentChunksEntities = documentChunksEntities;
-	}
-
-	public List<DocumentPermissionsEntity> getPermissionsEntities() {
-		return permissionsEntities;
-	}
-
-	public void setPermissionsEntities(List<DocumentPermissionsEntity> permissionsEntities) {
-		this.permissionsEntities = permissionsEntities;
-	}
 }

@@ -11,8 +11,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "departments")
 public class DepartmentsEntity {
 
@@ -40,68 +44,4 @@ public class DepartmentsEntity {
 	
 	@OneToMany(mappedBy = "permissionDepartmentId")
 	private List<DocumentPermissionsEntity> documentPermissionsEntities;
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public LocalDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public void setUpdatedAt(LocalDateTime updatedAt) {
-		this.updatedAt = updatedAt;
-	}
-
-	public List<UsersEntity> getUsersEnties() {
-		return usersEnties;
-	}
-
-	public void setUsersEnties(List<UsersEntity> usersEnties) {
-		this.usersEnties = usersEnties;
-	}
-
-	public List<DocumentEntity> getDocumentEntities() {
-		return documentEntities;
-	}
-
-	public void setDocumentEntities(List<DocumentEntity> documentEntities) {
-		this.documentEntities = documentEntities;
-	}
-
-	public List<DocumentPermissionsEntity> getDocumentPermissionsEntities() {
-		return documentPermissionsEntities;
-	}
-
-	public void setDocumentPermissionsEntities(List<DocumentPermissionsEntity> documentPermissionsEntities) {
-		this.documentPermissionsEntities = documentPermissionsEntities;
-	}
 }

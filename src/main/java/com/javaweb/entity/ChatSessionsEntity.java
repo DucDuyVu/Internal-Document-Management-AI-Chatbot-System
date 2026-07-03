@@ -14,8 +14,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "chat_sessions")
 public class ChatSessionsEntity {
 	@Id
@@ -41,60 +45,4 @@ public class ChatSessionsEntity {
 	@OneToMany(mappedBy = "sessionId", fetch = FetchType.LAZY)
 	private List<ChatMessageEntity> chatMessageEntities = new ArrayList<>();
 
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public LocalDateTime getUpdateAt() {
-		return updateAt;
-	}
-
-	public void setUpdateAt(LocalDateTime updateAt) {
-		this.updateAt = updateAt;
-	}
-
-	public LocalDateTime getDeletedAt() {
-		return deletedAt;
-	}
-
-	public void setDeletedAt(LocalDateTime deletedAt) {
-		this.deletedAt = deletedAt;
-	}
-
-	public UsersEntity getUserChatId() {
-		return userChatId;
-	}
-
-	public void setUserChatId(UsersEntity userChatId) {
-		this.userChatId = userChatId;
-	}
-
-	public List<ChatMessageEntity> getChatMessageEntities() {
-		return chatMessageEntities;
-	}
-
-	public void setChatMessageEntities(List<ChatMessageEntity> chatMessageEntities) {
-		this.chatMessageEntities = chatMessageEntities;
-	}
-	
 }
