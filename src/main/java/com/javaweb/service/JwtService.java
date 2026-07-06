@@ -6,7 +6,7 @@ public interface JwtService {
 
 	String generateAccessToken(UsersEntity user);
 	
-	String extractUserName(String token);
+	String extractEmail(String token);
 	
 	String extractRole(String token);
 	

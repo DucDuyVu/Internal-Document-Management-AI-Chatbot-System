@@ -23,7 +23,7 @@ import lombok.Setter;
 @Setter
 public class JwtServiceImpl implements JwtService {
 
-	private static final String SECRET_KEY = "123456789987654321";
+	private static final String SECRET_KEY = "12345678901234567890123456789012";
 	
 	private static final long ACCESS_TOKEN_EXPIRED = 1000 * 60 * 30;
 	
@@ -34,7 +34,7 @@ public class JwtServiceImpl implements JwtService {
 	@Override
 	public String generateAccessToken(UsersEntity user) {
 		return Jwts.builder()
-				.subject(user.getUserName())
+				.subject(user.getEmail())
 				.claim("userId", user.getId())
 				.claim("role", user.getRole())
 				.issuedAt(new Date())
@@ -54,7 +54,7 @@ public class JwtServiceImpl implements JwtService {
 	}
 
 	@Override
-	public String extractUserName(String token) {
+	public String extractEmail(String token) {
 		
 		return extractAllClaims(token)
 				.getSubject();
@@ -81,6 +81,7 @@ public class JwtServiceImpl implements JwtService {
 			extractAllClaims(token);
 			return true;
 		} catch (Exception e) {
+			e.printStackTrace();
 			return false;
 		}
 	}

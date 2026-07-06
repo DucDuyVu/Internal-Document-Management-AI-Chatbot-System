@@ -1,6 +1,5 @@
 package com.javaweb.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -30,13 +29,13 @@ public class DocumentPermissionsEntity {
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "document_id")
-	private DocumentEntity permissionsDocumentId;
+	private DocumentsEntity permissionsDocumentId;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "department_id")
 	private DepartmentsEntity permissionDepartmentId;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "granted_id")
-	private UsersEntity grantedId;
+	@JoinColumn(name = "granted_by")
+	private UsersEntity grantedBy;
 }

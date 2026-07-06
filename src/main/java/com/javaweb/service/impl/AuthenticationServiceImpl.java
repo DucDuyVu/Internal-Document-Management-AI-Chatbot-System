@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.javaweb.config.SecurityConfig;
 import com.javaweb.dto.request.LoginRequest;
 import com.javaweb.dto.response.LoginResponse;
 import com.javaweb.entity.UsersEntity;
@@ -45,6 +44,12 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		
 		LoginResponse loginResponse = new LoginResponse();
 		loginResponse.setMessage("Đăng nhập thành công !");
+		loginResponse.setAccessToken(accessToken);
+		loginResponse.setTokenType("Bearer");
+		loginResponse.setUserId(user.getId());
+		loginResponse.setFullName(user.getFullName());
+		loginResponse.setEmail(user.getEmail());
+		loginResponse.setRole(user.getRole().name());
 		return loginResponse;
 	}
 

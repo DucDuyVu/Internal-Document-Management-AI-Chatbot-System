@@ -23,8 +23,8 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "document")
-public class DocumentEntity {
+@Table(name = "documents")
+public class DocumentsEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -72,10 +72,10 @@ public class DocumentEntity {
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "parent_document_id")
-	private DocumentEntity parentDocumentId;
+	private DocumentsEntity parentDocumentId;
 	
 	@OneToMany(mappedBy = "parentDocumentId")
-	private List<DocumentEntity> versions;
+	private List<DocumentsEntity> versions;
 	
 	@OneToMany(mappedBy = "documentId")
 	private List<MessageFileRefsEntity> messageFileRefsEntities ;

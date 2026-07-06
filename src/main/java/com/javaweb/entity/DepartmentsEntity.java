@@ -40,7 +40,7 @@ public class DepartmentsEntity {
 	private List<UsersEntity> usersEnties = new ArrayList<>();
 	
 	@OneToMany(mappedBy = "departmentId")
-	private List<DocumentEntity> documentEntities = new ArrayList<>();
+	private List<DocumentsEntity> documentEntities = new ArrayList<>();
 	
 	@OneToMany(mappedBy = "permissionDepartmentId")
 	private List<DocumentPermissionsEntity> documentPermissionsEntities;

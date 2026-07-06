@@ -8,4 +8,17 @@ import lombok.Setter;
 public class LoginResponse {
 
 	private String message;
+	
+	private String accessToken;
+	
+	private String tokenType;
+	
+	private Long userId;
+	
+	private String fullName;
+	
+	private String email;
+	
+	private String role;
+	
 }
