@@ -27,7 +27,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	
 	@Override
 	public LoginResponse login(LoginRequest loginRequest) {
-	
+	// Check email có trong DB hay không 
 		Optional<UsersEntity> optionalEmail = userRepo.findByEmail(loginRequest.getEmail());
 		
 		if (optionalEmail.isEmpty()) {
@@ -35,14 +35,18 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		}
 		
 		UsersEntity user = optionalEmail.get();
-		
+	
+		// So sánh password đăng nhập với password đã mã hóa trong DB
 		if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
 			throw new RuntimeException("Sai mật khẩu !");
 		}
 		
+		
+		// Đăng nhập thành công => Sinh JWT
 		String accessToken = jwtService.generateAccessToken(user);
 		
 		LoginResponse loginResponse = new LoginResponse();
+		
 		loginResponse.setMessage("Đăng nhập thành công !");
 		loginResponse.setAccessToken(accessToken);
 		loginResponse.setTokenType("Bearer");
@@ -50,6 +54,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		loginResponse.setFullName(user.getFullName());
 		loginResponse.setEmail(user.getEmail());
 		loginResponse.setRole(user.getRole().name());
+		
 		return loginResponse;
 	}
 
