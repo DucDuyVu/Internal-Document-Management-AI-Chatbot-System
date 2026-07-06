@@ -47,5 +47,5 @@ public class DocumentChunksEntity {
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "document_id")
-	private DocumentEntity chunkDocumentId;
+	private DocumentsEntity chunkDocumentId;
 }
