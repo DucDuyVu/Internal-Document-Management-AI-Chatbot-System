@@ -1,25 +1,24 @@
 package com.javaweb.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.javaweb.dto.response.LoginResponse;
+import com.javaweb.dto.response.ProfileResponse;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.service.UsersService;
 
 @RestController
 @RequestMapping("/api/users")
 public class UsersController {
+	@Autowired
+	private UsersService usersService;
 	
 	@GetMapping("/profile")
-	public LoginResponse profile(Authentication authentication) {
+	public ProfileResponse profile(Authentication authentication) {
 		UsersEntity user = (UsersEntity)authentication.getPrincipal();
-		LoginResponse loginRepo = new LoginResponse();
-		loginRepo.setFullName(user.getFullName());
-		loginRepo.setEmail(user.getEmail());
-		loginRepo.setUserId(user.getId());
-		loginRepo.setRole(user.getRole().name());
-		return loginRepo;
+		return usersService.getProfile(user);
 	}
 }
