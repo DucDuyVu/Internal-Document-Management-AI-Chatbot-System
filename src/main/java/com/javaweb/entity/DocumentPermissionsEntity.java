@@ -1,6 +1,7 @@
 package com.javaweb.entity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,9 +12,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "document_permissions")
+@Getter
+@Setter
 public class DocumentPermissionsEntity {
 
 	@Id
@@ -34,44 +39,4 @@ public class DocumentPermissionsEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "granted_id")
 	private UsersEntity grantedId;
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public DocumentEntity getPermissionsDocumentId() {
-		return permissionsDocumentId;
-	}
-
-	public void setPermissionsDocumentId(DocumentEntity permissionsDocumentId) {
-		this.permissionsDocumentId = permissionsDocumentId;
-	}
-
-	public DepartmentsEntity getPermissionDepartmentId() {
-		return permissionDepartmentId;
-	}
-
-	public void setPermissionDepartmentId(DepartmentsEntity permissionDepartmentId) {
-		this.permissionDepartmentId = permissionDepartmentId;
-	}
-
-	public UsersEntity getGrantedId() {
-		return grantedId;
-	}
-
-	public void setGrantedId(UsersEntity grantedId) {
-		this.grantedId = grantedId;
-	}
 }

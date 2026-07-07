@@ -18,9 +18,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "chat_message")
+@Getter
+@Setter
 public class ChatMessageEntity {
 	
 	@Id
@@ -47,60 +51,4 @@ public class ChatMessageEntity {
 	
 	@OneToMany(mappedBy = "messageId", fetch = FetchType.LAZY)
 	private List<MessageFileRefsEntity> messageFileRefsEntities = new ArrayList<>();
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public ChatMessageRole getRole() {
-		return role;
-	}
-
-	public void setRole(ChatMessageRole role) {
-		this.role = role;
-	}
-
-	public String getContent() {
-		return content;
-	}
-
-	public void setContent(String content) {
-		this.content = content;
-	}
-
-	public Long getTokenCount() {
-		return tokenCount;
-	}
-
-	public void setTokenCount(Long tokenCount) {
-		this.tokenCount = tokenCount;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public ChatSessionsEntity getSessionId() {
-		return sessionId;
-	}
-
-	public void setSessionId(ChatSessionsEntity sessionId) {
-		this.sessionId = sessionId;
-	}
-
-	public List<MessageFileRefsEntity> getMessageFileRefsEntities() {
-		return messageFileRefsEntities;
-	}
-
-	public void setMessageFileRefsEntities(List<MessageFileRefsEntity> messageFileRefsEntities) {
-		this.messageFileRefsEntities = messageFileRefsEntities;
-	}
 }

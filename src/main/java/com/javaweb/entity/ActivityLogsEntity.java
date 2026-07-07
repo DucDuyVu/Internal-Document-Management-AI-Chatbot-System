@@ -11,9 +11,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "activity_logs")
+@Getter
+@Setter
 public class ActivityLogsEntity {
 
 	@Id
@@ -38,60 +42,4 @@ public class ActivityLogsEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id")
 	private UsersEntity usersEntityId;
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getAction() {
-		return action;
-	}
-
-	public void setAction(String action) {
-		this.action = action;
-	}
-
-	public String getTargetType() {
-		return targetType;
-	}
-
-	public void setTargetType(String targetType) {
-		this.targetType = targetType;
-	}
-
-	public Long getTargetId() {
-		return targetId;
-	}
-
-	public void setTargetId(Long targetId) {
-		this.targetId = targetId;
-	}
-
-	public String getMetadata() {
-		return metadata;
-	}
-
-	public void setMetadata(String metadata) {
-		this.metadata = metadata;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public UsersEntity getUsersEntityId() {
-		return usersEntityId;
-	}
-
-	public void setUsersEntityId(UsersEntity usersEntityId) {
-		this.usersEntityId = usersEntityId;
-	}
 }
