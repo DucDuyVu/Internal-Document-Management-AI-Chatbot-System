@@ -44,13 +44,7 @@
 	    <groupId>org.projectlombok</groupId>
 	    <artifactId>lombok</artifactId>
 	    <optional>true</optional>
-<<<<<<< HEAD
-    </dependency>
-=======
-	    <scope>provided</scope>
    </dependency>
->>>>>>> feature/login
-       
       <dependency>
 		    <groupId>org.postgresql</groupId>
 		    <artifactId>postgresql</artifactId>
