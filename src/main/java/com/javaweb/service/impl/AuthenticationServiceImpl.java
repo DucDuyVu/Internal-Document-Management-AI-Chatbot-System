@@ -1,5 +1,6 @@
 package com.javaweb.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,9 @@ import com.javaweb.dto.request.LoginRequest;
 import com.javaweb.dto.request.RefreshTokenRequest;
 import com.javaweb.dto.response.LoginResponse;
 import com.javaweb.dto.response.RefreshTokenResponse;
+import com.javaweb.entity.UserSessionsEntity;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.repository.UserSessionsRepository;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.AuthenticationService;
 import com.javaweb.service.JwtService;
@@ -20,6 +23,9 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
 	@Autowired
 	private UsersRepository userRepo;
+	
+	@Autowired
+	private UserSessionsRepository userSessionsRepo;
 	
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -88,12 +94,19 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		
 		String accessToken = jwtService.generateAccessToken(user); // Sinh access token 
 		
-		RefreshTokenResponse refreshTokenResponse = new RefreshTokenResponse();
 		
+		UserSessionsEntity session = new UserSessionsEntity();
+		session.setRefreshToken(refreshToken);
+		session.setCreatedAt(LocalDateTime.now());
+		
+		userSessionsRepo.save(session); // lưu refresh token vào DB + update tg tạo
+		
+		// Trả ra client
+		RefreshTokenResponse refreshTokenResponse = new RefreshTokenResponse();
 		refreshTokenResponse.setAccessToken(accessToken);
 		refreshTokenResponse.setTokenType("Bearer");
 		
-		return refreshTokenResponse;
+		return refreshTokenResponse; // trả ra client
 	}
 
 }
