@@ -25,6 +25,7 @@ public class UsersServiceImpl implements UsersService{
 	@Autowired
 	PasswordEncoder passwordEncoder;
 	
+	// lấy thông tin người dùng 
 	@Override
 	public ProfileResponse getProfile(UsersEntity user) {
 		ProfileResponse profileResponse = new ProfileResponse();
@@ -36,6 +37,7 @@ public class UsersServiceImpl implements UsersService{
 		return profileResponse;
 	}
 
+	// update thông tin người dùng
 	@Override
 	public ProfileResponse updateProfile(UsersEntity user, UpdateProfileRequest updateProfileRequest) {
 		
@@ -56,6 +58,8 @@ public class UsersServiceImpl implements UsersService{
 		return profileResponse; // trả về client
 	}
 
+	
+	// Đổi mật khẩu 
 	@Override
 	public ChangePasswordResponse changePassword(UsersEntity user, ChangePasswordRequest changePasswordRequest) {
 
