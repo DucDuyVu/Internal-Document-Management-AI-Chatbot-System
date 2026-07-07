@@ -40,4 +40,12 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, Lo
     );
 
     List<DocumentChunk> findByDocumentId(Long documentId);
+
+    /**
+     * Xoá toàn bộ chunk thuộc về 1 document.
+     * Dùng khi DocumentProcessingService retry xử lý lại 1 document
+     * (dọn sạch chunk cũ trước khi insert lại) hoặc khi xử lý lỗi
+     * giữa chừng (dọn dẹp chunk đã lưu dở trước khi đánh dấu FAILED).
+     */
+    void deleteByDocumentId(Long documentId);
 }
