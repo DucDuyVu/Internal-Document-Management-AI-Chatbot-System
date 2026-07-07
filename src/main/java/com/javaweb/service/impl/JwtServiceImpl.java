@@ -25,7 +25,10 @@ public class JwtServiceImpl implements JwtService {
 
 	private static final String SECRET_KEY = "12345678901234567890123456789012";
 	
-	private static final long ACCESS_TOKEN_EXPIRED = 1000 * 60 * 30;
+	private static final long ACCESS_TOKEN_EXPIRED = 1000 * 60 * 1; // Thời gian truy cập hết hạn
+	
+	private static final long REFRESH_TOKEN_EXPIRED = 1000 * 60 * 1; // Thời gian gia hạn token hết hạn
+	
 	
 	private Key getSigningKey() {
 		return Keys.hmacShaKeyFor(
@@ -84,5 +87,20 @@ public class JwtServiceImpl implements JwtService {
 			e.printStackTrace();
 			return false;
 		}
+	}
+	@Override
+	public String generateRefreshToken(UsersEntity user) {
+		
+		return Jwts.builder()
+				.subject(user.getEmail())
+				.claim("userId", user.getId())
+				.claim("role", user.getRole())
+				.claim("type", "refresh")
+				.issuedAt(new Date())
+				.expiration(new Date(
+						System.currentTimeMillis() + REFRESH_TOKEN_EXPIRED
+						))
+				.signWith(getSigningKey())
+				.compact();
 	}
 }

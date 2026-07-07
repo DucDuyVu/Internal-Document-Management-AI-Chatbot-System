@@ -7,7 +7,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.javaweb.dto.request.LoginRequest;
+import com.javaweb.dto.request.RefreshTokenRequest;
 import com.javaweb.dto.response.LoginResponse;
+import com.javaweb.dto.response.RefreshTokenResponse;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.AuthenticationService;
@@ -34,6 +36,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 			throw new RuntimeException("Email không tồn tại !");
 		}
 		
+		// Tìm user theo email trong DB
 		UsersEntity user = optionalEmail.get();
 	
 		// So sánh password đăng nhập với password đã mã hóa trong DB
@@ -45,10 +48,14 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		// Đăng nhập thành công => Sinh JWT
 		String accessToken = jwtService.generateAccessToken(user);
 		
+		// Đăng nhập thành công => Sinh refresh token
+		String refreshToken = jwtService.generateRefreshToken(user);
+		
 		LoginResponse loginResponse = new LoginResponse();
 		
 		loginResponse.setMessage("Đăng nhập thành công !");
 		loginResponse.setAccessToken(accessToken);
+		loginResponse.setRefreshToken(refreshToken);
 		loginResponse.setTokenType("Bearer");
 		loginResponse.setUserId(user.getId());
 		loginResponse.setFullName(user.getFullName());
@@ -56,6 +63,37 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		loginResponse.setRole(user.getRole().name());
 		
 		return loginResponse;
+	}
+
+	@Override
+	public RefreshTokenResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
+		// Lấy refresh token 
+		String refreshToken = refreshTokenRequest.getRefreshToken();
+		
+		if (!jwtService.validateToken(refreshToken)) {
+			throw new RuntimeException("Refresh Token không hợp lệ !");
+		}
+		
+		// Xác thực email
+		String email = jwtService.extractEmail(refreshToken);
+		
+		// Tìm email trong DB
+		Optional<UsersEntity> optionalUser = userRepo.findByEmail(email);
+		
+		if (optionalUser.isEmpty()) {
+			throw new RuntimeException("Không có user !");
+		}
+		
+		UsersEntity user = optionalUser.get();
+		
+		String accessToken = jwtService.generateAccessToken(user); // Sinh access token 
+		
+		RefreshTokenResponse refreshTokenResponse = new RefreshTokenResponse();
+		
+		refreshTokenResponse.setAccessToken(accessToken);
+		refreshTokenResponse.setTokenType("Bearer");
+		
+		return refreshTokenResponse;
 	}
 
 }
