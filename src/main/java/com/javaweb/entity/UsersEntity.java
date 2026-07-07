@@ -1,6 +1,6 @@
 package com.javaweb.entity;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +24,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "Users")
+@Table(name = "users")
 public class UsersEntity {
 
 	@Id
@@ -56,14 +56,16 @@ public class UsersEntity {
 	@Column(name = "is_active")
 	private boolean isActive = true;
 	
+
 	@Column(name = "updated_at")
-	private LocalDate updatedAt;
+	private LocalDateTime updatedAt;
 	
 	@Column(name = "created_at")
-	private LocalDate createdAt;
+	private LocalDateTime createdAt;
 	
+
 	@Column(name = "deleted_at")
-	private LocalDate deletedAt;
+	private LocalDateTime deletedAt;
 	
 	
 	@ManyToOne(fetch = FetchType.LAZY)
@@ -79,9 +81,10 @@ public class UsersEntity {
 	@OneToMany(mappedBy = "userChatId", fetch = FetchType.LAZY)
 	private List<ChatSessionsEntity> chatSessionsEntities = new ArrayList<>();
 	
-	@OneToMany(mappedBy = "grantedId")
+	@OneToMany(mappedBy = "grantedBy")
 	private List<DocumentPermissionsEntity> documentPermissionsEntities ;
 
 	@OneToMany(mappedBy = "usersEntityId")
 	private List<ActivityLogsEntity> activityLogsEntities;
+	
 }

@@ -32,10 +32,10 @@ public class ChatSessionsEntity {
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
 	
-	@Column(name = "update_at")
-	private LocalDateTime updateAt;
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
 	
-	@Column(name = "delete_at")
+	@Column(name = "deleted_at")
 	private LocalDateTime deletedAt;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
