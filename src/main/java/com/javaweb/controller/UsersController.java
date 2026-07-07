@@ -40,7 +40,7 @@ public class UsersController {
 	}
 	
 	
-	@PutMapping("/change-passwrord")
+	@PutMapping("/change-password")
 	public ChangePasswordResponse changePassword(Authentication authentication,
 			@RequestBody ChangePasswordRequest changePasswordRequest) {
 		
