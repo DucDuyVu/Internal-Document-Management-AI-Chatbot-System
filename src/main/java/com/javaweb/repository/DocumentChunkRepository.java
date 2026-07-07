@@ -2,9 +2,11 @@ package com.javaweb.repository;
 
 import com.javaweb.entity.DocumentChunk;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -42,10 +44,22 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, Lo
     List<DocumentChunk> findByDocumentId(Long documentId);
 
     /**
-     * Xoá toàn bộ chunk thuộc về 1 document.
+     * Xoá toàn bộ chunk thuộc về 1 document bằng JPQL DELETE trực tiếp,
+     * KHÔNG load từng entity lên rồi xoá từng cái (khác với derived delete
+     * method mặc định của Spring Data JPA). Lý do: load entity lên sẽ phải
+     * đọc cả cột content, và trước khi sửa DocumentChunk.java (bỏ @Lob),
+     * việc này có thể gây lỗi khi đọc ngoài transaction đang mở.
+     * Dùng JPQL DELETE tránh hoàn toàn việc phải hydrate entity.
+     *
      * Dùng khi DocumentProcessingService retry xử lý lại 1 document
      * (dọn sạch chunk cũ trước khi insert lại) hoặc khi xử lý lỗi
      * giữa chừng (dọn dẹp chunk đã lưu dở trước khi đánh dấu FAILED).
      */
-    void deleteByDocumentId(Long documentId);
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM DocumentChunk dc WHERE dc.documentId = :documentId")
+    void deleteByDocumentId(@Param("documentId") Long documentId);
+
+        // Thêm vào trong interface DocumentChunkRepository, dưới findByDocumentId:
+        int countByDocumentId(Long documentId);
 }

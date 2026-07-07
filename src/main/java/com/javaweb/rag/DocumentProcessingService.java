@@ -102,10 +102,16 @@ public class DocumentProcessingService {
      *   - void. Kết quả phản ánh qua status/error_message/retry_count.
      *
      * LƯU Ý:
-     *   - Bắt buộc có @Async để không block request upload.
-     *   - Không dùng thêm @Transactional: @Async chạy khác thread nên
-     *     Spring không tự gom vào cùng transaction; khi lỗi phải tự
-     *     gọi deleteByDocumentId() để dọn rác.
+    * - process() chạy bằng @Async nên toàn bộ pipeline được thực hiện
+    *   ở background thread, không block request upload.
+    *
+    * - Các thao tác DELETE trong Repository được đánh dấu
+    *   @Transactional riêng vì Spring Data yêu cầu transaction cho
+    *   câu lệnh DELETE/UPDATE.
+    *
+    * - Không bọc toàn bộ process() trong một transaction lớn vì
+    *   pipeline có thể chạy khá lâu (đọc PDF, gọi Gemini API),
+    *   việc giữ transaction quá lâu sẽ làm tăng thời gian khóa dữ liệu.
      */
     @Async
     public void process(Long documentId) {

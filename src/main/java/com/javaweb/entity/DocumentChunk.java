@@ -10,6 +10,16 @@ import java.time.LocalDateTime;
  * Entity ánh xạ bảng "document_chunks" trong schema.sql.
  * embedding: float[3072] <-> cột VECTOR(3072) (gemini-embedding-001),
  * được convert qua lại nhờ VectorType (custom Hibernate UserType).
+ *
+ * LƯU Ý QUAN TRỌNG:
+ *   Field "content" KHÔNG được đánh dấu @Lob. Cột content trong
+ *   schema.sql là kiểu TEXT thường của PostgreSQL, không phải Large
+ *   Object. Nếu dùng @Lob, Hibernate sẽ ánh xạ sang CLOB (dùng con
+ *   trỏ OID nội bộ của Postgres), loại này bắt buộc đọc trong 1
+ *   transaction đang mở thật sự (auto-commit=false), gây lỗi
+ *   "Large Objects may not be used in auto-commit mode" mỗi khi đọc
+ *   lại chunk ở request/transaction khác (ví dụ ở Retrieval API sau
+ *   này). Đây là lỗi đã gặp thực tế ở integration test Day 4.
  */
 @Entity
 @Table(name = "document_chunks")
@@ -28,8 +38,7 @@ public class DocumentChunk {
     @Column(name = "page_number")
     private Integer pageNumber;
 
-    @Lob
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Type(VectorType.class)
