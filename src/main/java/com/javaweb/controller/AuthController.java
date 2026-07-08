@@ -29,7 +29,7 @@ public class AuthController {
 	public RefreshTokenResponse refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
 		return authenticationService.refreshToken(refreshTokenRequest);	
 
-	
+	}
 	@PostMapping("/register")
 	public RegisterResponse register(@RequestBody RegisterRequest registerRequest) {
 		

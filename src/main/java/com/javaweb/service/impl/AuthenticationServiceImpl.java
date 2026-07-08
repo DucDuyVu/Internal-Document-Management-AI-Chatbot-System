@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.javaweb.dto.request.LoginRequest;
 import com.javaweb.dto.request.RefreshTokenRequest;
+import com.javaweb.dto.request.RegisterRequest;
 import com.javaweb.dto.response.LoginResponse;
 import com.javaweb.dto.response.RefreshTokenResponse;
 import com.javaweb.entity.UserSessionsEntity;

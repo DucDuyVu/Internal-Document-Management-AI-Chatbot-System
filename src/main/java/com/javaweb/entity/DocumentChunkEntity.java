@@ -2,6 +2,9 @@ package com.javaweb.entity;
 
 import com.javaweb.utils.VectorType;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
@@ -22,6 +25,8 @@ import java.time.LocalDateTime;
  *   này). Đây là lỗi đã gặp thực tế ở integration test Day 4.
  */
 @Entity
+@Getter
+@Setter
 @Table(name = "document_chunks")
 public class DocumentChunkEntity {
 
