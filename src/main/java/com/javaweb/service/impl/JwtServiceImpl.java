@@ -3,6 +3,8 @@ package com.javaweb.service.impl;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -25,11 +27,24 @@ public class JwtServiceImpl implements JwtService {
 
 	private static final String SECRET_KEY = "12345678901234567890123456789012";
 	
-	private static final long ACCESS_TOKEN_EXPIRED = 1000 * 60 * 30;
+	private static final long ACCESS_TOKEN_EXPIRED = 1000 * 60 * 30; // Thời gian truy cập hết hạn 30p
 	
+	private static final long REFRESH_TOKEN_EXPIRED = 1000 * 60 * 60 * 24; // Thời gian gia hạn token hết hạn 1 day
+	
+	
+	// Ký JWT khi tạo token + xác thực JWT khi đọc token
 	private Key getSigningKey() {
 		return Keys.hmacShaKeyFor(
 				SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+	}
+	
+	// Giải mã JWT và lấy toàn bộ Claims (token)
+	private Claims extractAllClaims(String token) {
+		return Jwts.parser()
+				.verifyWith((SecretKey) getSigningKey())
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
 	}
 	@Override
 	public String generateAccessToken(UsersEntity user) {
@@ -45,14 +60,6 @@ public class JwtServiceImpl implements JwtService {
 				.compact();
 	}
 	
-	private Claims extractAllClaims(String token) {
-		return Jwts.parser()
-				.verifyWith((SecretKey) getSigningKey())
-				.build()
-				.parseSignedClaims(token)
-				.getPayload();
-	}
-
 	@Override
 	public String extractEmail(String token) {
 		
@@ -84,5 +91,31 @@ public class JwtServiceImpl implements JwtService {
 			e.printStackTrace();
 			return false;
 		}
+	}
+	@Override
+	public String generateRefreshToken(UsersEntity user) {
+		
+		return Jwts.builder()
+				.subject(user.getEmail())
+				.claim("userId", user.getId())
+				.claim("role", user.getRole())
+				.claim("type", "refresh")
+				.issuedAt(new Date())
+				.expiration(new Date(
+						System.currentTimeMillis() + REFRESH_TOKEN_EXPIRED
+						))
+				.signWith(getSigningKey())
+				.compact();
+	}
+	
+	
+	// Lấy thời gian hết hạn refresh token
+	@Override
+	public LocalDateTime extractExpirations(String token) {
+		return extractAllClaims(token)
+				.getExpiration()  // trả về Date 
+				.toInstant()
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime(); // convert LocalDateTime
 	}
 }
