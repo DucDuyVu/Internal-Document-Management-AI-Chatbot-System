@@ -14,10 +14,15 @@ import com.javaweb.dto.response.RefreshTokenResponse;
 import com.javaweb.entity.UserSessionsEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.repository.UserSessionsRepository;
+import com.javaweb.dto.response.RegisterResponse;
+import com.javaweb.exception.BadRequestException;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.AuthenticationService;
 import com.javaweb.service.JwtService;
 
+/*
+ * Xử lí Register, Login, Logout, Refresh Token
+ * */
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService{
 
@@ -33,13 +38,16 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	@Autowired
 	private JwtService jwtService;
 	
+	@Autowired
+	private UsersRepository usersRepository;
+	
 	@Override
 	public LoginResponse login(LoginRequest loginRequest) {
 	// Check email có trong DB hay không 
 		Optional<UsersEntity> optionalEmail = userRepo.findByEmail(loginRequest.getEmail());
 		
 		if (optionalEmail.isEmpty()) {
-			throw new RuntimeException("Email không tồn tại !");
+			throw new BadRequestException("Email không tồn tại !");
 		}
 		
 		// Tìm user theo email trong DB
@@ -47,7 +55,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	
 		// So sánh password đăng nhập với password đã mã hóa trong DB
 		if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-			throw new RuntimeException("Sai mật khẩu !");
+			throw new BadRequestException("Sai mật khẩu !");
 		}
 		
 		
@@ -128,4 +136,38 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		return refreshTokenResponse; // trả ra client
 	}
 
+
+
+	@Override
+	public RegisterResponse register(RegisterRequest registerRequest) {
+		UsersEntity user = new UsersEntity();
+	
+	 
+		if (usersRepository.existsByUserName(registerRequest.getUserName())) {
+			throw new RuntimeException("Username đã tồn tại");
+		}
+		
+		if (usersRepository.existsByEmail(registerRequest.getEmail())) {
+			throw new RuntimeException("Email đã tồn tại");
+		}
+		
+		user.setFullName(registerRequest.getFullName());
+		user.setUserName(registerRequest.getUserName());
+		user.setEmail(registerRequest.getEmail());
+		user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+		user.setPhone(registerRequest.getPhone());
+		user.setCreatedAt(LocalDateTime.now());
+		
+		usersRepository.save(user); // Save DB
+		
+		RegisterResponse registerResponse = new RegisterResponse();
+		registerResponse.setFullName(registerRequest.getFullName());
+		registerResponse.setEmail(registerRequest.getEmail());
+		registerResponse.setUserName(registerRequest.getUserName());
+		registerResponse.setMessage("Đăng ký thành công !");
+		
+	
+		
+		return registerResponse;
+	}
 }

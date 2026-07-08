@@ -3,11 +3,15 @@ package com.javaweb.service.impl;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.javaweb.dto.request.ChangePasswordRequest;
 import com.javaweb.dto.request.UpdateProfileRequest;
+import com.javaweb.dto.response.ChangePasswordResponse;
 import com.javaweb.dto.response.ProfileResponse;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.exception.BadRequestException;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.UsersService;
 
@@ -18,6 +22,10 @@ public class UsersServiceImpl implements UsersService{
 	@Autowired
 	UsersRepository usersRepository;
 	
+	@Autowired
+	PasswordEncoder passwordEncoder;
+	
+	// lấy thông tin người dùng 
 	@Override
 	public ProfileResponse getProfile(UsersEntity user) {
 		ProfileResponse profileResponse = new ProfileResponse();
@@ -29,6 +37,7 @@ public class UsersServiceImpl implements UsersService{
 		return profileResponse;
 	}
 
+	// update thông tin người dùng
 	@Override
 	public ProfileResponse updateProfile(UsersEntity user, UpdateProfileRequest updateProfileRequest) {
 		
@@ -45,8 +54,36 @@ public class UsersServiceImpl implements UsersService{
 		profileResponse.setUserId(updateUser.getId());
 		profileResponse.setEmail(updateUser.getEmail());
 		profileResponse.setRole(updateUser.getRole().name());
+		
 		return profileResponse; // trả về client
 	}
 
+	
+	// Đổi mật khẩu 
+	@Override
+	public ChangePasswordResponse changePassword(UsersEntity user, ChangePasswordRequest changePasswordRequest) {
+
+		// Check mật khẩu cũ
+		if (! passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPassword())) {
+			throw new BadRequestException("Mật khẩu không đúng. Vui lòng nhập lại !");
+		}
 		
+		// Check comfirm mật khẩu 
+		if (! changePasswordRequest.getNewPassword().equals(changePasswordRequest.getComfirmPassword())) {
+			throw new BadRequestException("Mật khẩu xác thực không khớp !");
+		}
+		
+		String newPassword = passwordEncoder.encode(changePasswordRequest.getNewPassword());
+		
+		user.setPassword(newPassword); // cập nhật newPassword
+		
+		user.setUpdatedAt(LocalDateTime.now()); // cập nhật tg update pw
+		
+		usersRepository.save(user); // Lưu thay đổi pw ở DB
+		
+		ChangePasswordResponse changePasswordResponse = new ChangePasswordResponse();
+		changePasswordResponse.setMessage("Đổi mật khẩu thành công !");
+		
+		return changePasswordResponse;
+	}	
 }

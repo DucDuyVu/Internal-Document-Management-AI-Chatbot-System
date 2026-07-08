@@ -1,6 +1,7 @@
 package com.javaweb.entity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,9 +36,9 @@ public class MessageFileRefsEntity {
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "document_id")
-	private DocumentsEntity documentId;
+	private DocumentEntity documentId;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "chunk_id")
-	private DocumentChunksEntity chunkId;
+	@JoinColumn(name = "chunk_id")	
+	private DocumentChunkEntity chunkId;
 }

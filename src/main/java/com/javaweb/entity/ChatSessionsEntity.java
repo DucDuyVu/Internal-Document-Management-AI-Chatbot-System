@@ -18,9 +18,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Table(name = "chat_sessions")
 @Getter
 @Setter
-@Table(name = "chat_sessions")
 public class ChatSessionsEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,6 +43,6 @@ public class ChatSessionsEntity {
 	private UsersEntity userChatId;
 	
 	@OneToMany(mappedBy = "sessionId", fetch = FetchType.LAZY)
-	private List<ChatMessageEntity> chatMessageEntities = new ArrayList<>();
-
+	private List<ChatMessageEntity> chatMessageEntities = new ArrayList<>();	
 }
+

@@ -15,9 +15,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Table(name = "activity_logs")
 @Getter
 @Setter
-@Table(name = "activity_logs")
 public class ActivityLogsEntity {
 
 	@Id
@@ -42,5 +42,4 @@ public class ActivityLogsEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id")
 	private UsersEntity usersEntityId;
-
 }

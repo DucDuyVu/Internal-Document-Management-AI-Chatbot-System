@@ -1,0 +1,23 @@
+# Compiled output
+target/
+*.class
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (dữ liệu test, không cần push)
+uploads/
+
+# Local Spring Boot để check đc API của gemini profile with secrets
+src/main/resources/application-local.properties
+## Test Spring Boot để check đc API của gemini profile with secrets
+src/test/resources/application-test.properties

@@ -39,9 +39,5 @@ public class DepartmentsEntity {
 	@OneToMany(mappedBy = "departmentId")
 	private List<UsersEntity> usersEnties = new ArrayList<>();
 	
-	@OneToMany(mappedBy = "departmentId")
-	private List<DocumentsEntity> documentEntities = new ArrayList<>();
-	
-	@OneToMany(mappedBy = "permissionDepartmentId")
-	private List<DocumentPermissionsEntity> documentPermissionsEntities;
+
 }
