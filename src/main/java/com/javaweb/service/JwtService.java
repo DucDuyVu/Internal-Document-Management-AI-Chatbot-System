@@ -1,5 +1,8 @@
 package com.javaweb.service;
 
+import java.time.LocalDateTime;
+import java.util.Date;
+
 import com.javaweb.entity.UsersEntity;
 
 public interface JwtService {
@@ -15,4 +18,6 @@ public interface JwtService {
 	Long extractUserId(String token);
 	
 	boolean validateToken(String token);
+	
+	Date extractExpirations(String token);
 }

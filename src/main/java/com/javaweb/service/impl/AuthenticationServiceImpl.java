@@ -57,6 +57,13 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		// Đăng nhập thành công => Sinh refresh token
 		String refreshToken = jwtService.generateRefreshToken(user);
 		
+		UserSessionsEntity userSessions = new UserSessionsEntity();
+		userSessions.setRefreshToken(refreshToken);
+		userSessions.setCreatedAt(LocalDateTime.now());
+		userSessions.setExpiresAt(jwtService.extractExpirations(refreshToken));
+		
+		
+		// Trả ra client login 
 		LoginResponse loginResponse = new LoginResponse();
 		
 		loginResponse.setMessage("Đăng nhập thành công !");
@@ -92,7 +99,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		
 		UsersEntity user = optionalUser.get();
 		
-		String accessToken = jwtService.generateAccessToken(user); // Sinh access token 
+		String accessToken = jwtService.generateAccessToken(user); // Sinh access token mới
 		
 		
 		UserSessionsEntity session = new UserSessionsEntity();
