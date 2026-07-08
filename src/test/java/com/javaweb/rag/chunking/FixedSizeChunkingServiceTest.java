@@ -1,6 +1,7 @@
 package com.javaweb.rag.chunking;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - Đảm bảo không sinh chunk rỗng.
  * - Đảm bảo mỗi chunk không vượt quá kích thước quy định.
  */
+@ActiveProfiles("test")
 class FixedSizeChunkingServiceTest {
 
     @Test
