@@ -44,6 +44,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	@Autowired
 	private UsersRepository usersRepository;
 	
+	// Xử lý login 
 	@Override
 	public LoginResponse login(LoginRequest loginRequest) {
 	// Check email có trong DB hay không 
@@ -56,6 +57,9 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		// Tìm user theo email trong DB
 		UsersEntity user = optionalEmail.get();
 	
+		if (! user.isActive()) {
+		    throw new BadRequestException("Tài khoản đã bị khóa !");
+		}
 		// So sánh password đăng nhập với password đã mã hóa trong DB
 		if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
 			throw new BadRequestException("Sai mật khẩu !");
