@@ -8,9 +8,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.javaweb.dto.request.LoginRequest;
+import com.javaweb.dto.request.LogoutRequest;
 import com.javaweb.dto.request.RefreshTokenRequest;
 import com.javaweb.dto.request.RegisterRequest;
 import com.javaweb.dto.response.LoginResponse;
+import com.javaweb.dto.response.LogoutResponse;
 import com.javaweb.dto.response.RefreshTokenResponse;
 import com.javaweb.entity.UserSessionsEntity;
 import com.javaweb.entity.UsersEntity;
@@ -139,6 +141,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
 
 
+	// Xử lý đăng ký
 	@Override
 	public RegisterResponse register(RegisterRequest registerRequest) {
 		UsersEntity user = new UsersEntity();
@@ -170,5 +173,37 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	
 		
 		return registerResponse;
+	}
+
+	// Xử lý logout
+	@Override
+	public LogoutResponse logout(LogoutRequest logoutRequest) {
+		Optional<UserSessionsEntity> optionalUser = userSessionsRepo.findByRefreshToken(logoutRequest.getRefreshToken());
+		
+		
+		if (optionalUser.isEmpty()) {
+			throw new BadRequestException("Không tồn tại đăng nhập !");
+		}
+		
+		UserSessionsEntity user = optionalUser.get();
+		
+		if (user.getIsRevoked()) {
+			throw new BadRequestException("Người dùng đã đăng xuất");
+		}
+		
+		// so sánh với tg thực xem hết hạn chưa
+		if (user.getExpiresAt().isBefore(LocalDateTime.now())) {
+			throw new BadRequestException("Refresh Token đã hết hạn");
+		}
+		
+		user.setIsRevoked(true); // đổi trạng thái thu hồi = true
+		user.setRevokedAt(LocalDateTime.now());
+		userSessionsRepo.save(user); // lưu ở DB 
+		
+		// Trả ra client 
+		LogoutResponse logoutResponse = new LogoutResponse();
+		
+		logoutResponse.setMessage("Đã đăng xuất !");
+		return logoutResponse;
 	}
 }

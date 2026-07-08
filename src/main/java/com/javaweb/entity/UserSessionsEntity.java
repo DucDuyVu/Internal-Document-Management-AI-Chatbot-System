@@ -25,6 +25,9 @@ public class UserSessionsEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
+	@Column(name = "revoked_at")
+	private LocalDateTime revokedAt;
+	
 	@Column(name = "refresh_token")
 	private String refreshToken;
 	

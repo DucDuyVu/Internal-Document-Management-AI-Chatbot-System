@@ -43,7 +43,8 @@ public class SecurityConfig {
 	                		"/api/auth/login",
 	                		"/api/auth/register",
 	                		"/api/auth/refresh-token",
-                       "/api/documents/**"
+	                		"api/auth/logout",
+                            "/api/documents/**"
 	                		).permitAll()
 	                .anyRequest().authenticated())
 	            
