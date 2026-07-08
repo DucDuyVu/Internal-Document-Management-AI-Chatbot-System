@@ -4,6 +4,7 @@ package com.javaweb.service.impl;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -110,7 +111,11 @@ public class JwtServiceImpl implements JwtService {
 	
 	// Lấy thời gian hết hạn refresh token
 	@Override
-	public Date extractExpirations(String token) {
-		return extractAllClaims(token).getExpiration();
+	public LocalDateTime extractExpirations(String token) {
+		return extractAllClaims(token)
+				.getExpiration()  // trả về Date 
+				.toInstant()
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime(); // convert LocalDateTime
 	}
 }

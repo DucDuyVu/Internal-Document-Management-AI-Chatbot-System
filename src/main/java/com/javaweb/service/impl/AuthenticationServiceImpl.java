@@ -57,11 +57,16 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		// Đăng nhập thành công => Sinh refresh token
 		String refreshToken = jwtService.generateRefreshToken(user);
 		
+		
+		
 		UserSessionsEntity userSessions = new UserSessionsEntity();
 		userSessions.setRefreshToken(refreshToken);
 		userSessions.setCreatedAt(LocalDateTime.now());
+		userSessions.setUserId(user);
+		userSessions.setIsRevoked(false);
 		userSessions.setExpiresAt(jwtService.extractExpirations(refreshToken));
 		
+		userSessionsRepo.save(userSessions); // lưu refresh token + tg tạo + tg hết hạn
 		
 		// Trả ra client login 
 		LoginResponse loginResponse = new LoginResponse();
@@ -82,9 +87,21 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	public RefreshTokenResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
 		// Lấy refresh token 
 		String refreshToken = refreshTokenRequest.getRefreshToken();
+		Optional<UserSessionsEntity> optinalSession = userSessionsRepo.findByRefreshToken(refreshToken);
+		// check refresh token trong DB có tồn tại không
+		if (optinalSession.isEmpty()) {
+			throw new RuntimeException("Refresh Token không tồn tại !");
+		}
 		
-		if (!jwtService.validateToken(refreshToken)) {
-			throw new RuntimeException("Refresh Token không hợp lệ !");
+		// check refresh token còn hạn hay không
+		UserSessionsEntity session = optinalSession.get();
+		if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
+			throw new RuntimeException("Refresh Token đã hết hạn");
+		}
+		
+		// check trạng thái (thu hồi)
+		if (session.getIsRevoked()) {
+			throw new RuntimeException("Refresh Token đã bị thu hồi");
 		}
 		
 		// Xác thực email
@@ -102,11 +119,6 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		String accessToken = jwtService.generateAccessToken(user); // Sinh access token mới
 		
 		
-		UserSessionsEntity session = new UserSessionsEntity();
-		session.setRefreshToken(refreshToken);
-		session.setCreatedAt(LocalDateTime.now());
-		
-		userSessionsRepo.save(session); // lưu refresh token vào DB + update tg tạo
 		
 		// Trả ra client
 		RefreshTokenResponse refreshTokenResponse = new RefreshTokenResponse();
