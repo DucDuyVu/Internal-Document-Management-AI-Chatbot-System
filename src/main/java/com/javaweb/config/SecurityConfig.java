@@ -42,11 +42,20 @@ public class SecurityConfig {
 	                .requestMatchers(
 	                		"/api/auth/login",
 	                		"/api/auth/register",
-	                		"/api/auth/refresh-token",
-	                		"api/auth/logout",
-                            "/api/documents/**"
+	                		"/api/auth/refresh-token"
 	                		).permitAll()
-	                .anyRequest().authenticated())
+	                
+	                .requestMatchers("/api/admin/**")
+	                .hasAnyRole("ADMIN")
+	                
+	                
+	                .requestMatchers("/api/user/**")
+	                .hasAnyRole("USER", "ADMIN")
+	                
+	                
+	                .anyRequest().authenticated()
+	                
+	                )
 	            
 	            .addFilterBefore(
 	            		jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
