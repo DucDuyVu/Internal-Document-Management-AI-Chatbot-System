@@ -25,6 +25,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "chat_message")
+
 public class ChatMessageEntity {
 	
 	@Id

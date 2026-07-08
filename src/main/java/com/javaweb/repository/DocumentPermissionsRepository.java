@@ -7,3 +7,4 @@ import com.javaweb.entity.DocumentPermissionsEntity;
 public interface DocumentPermissionsRepository extends JpaRepository<DocumentPermissionsEntity, Long> {
 
 }
+

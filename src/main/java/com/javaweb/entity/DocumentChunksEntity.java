@@ -18,9 +18,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
+@Table(name = "document_chunks")
 @Getter
 @Setter
-@Table(name = "document_chunks")
 public class DocumentChunksEntity {
 
 	@Id

@@ -1,7 +1,7 @@
 package com.javaweb.entity;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,3 +47,4 @@ public class UserSessionsEntity {
 	@JoinColumn(name = "user_id")
 	private UsersEntity userId;	
 }
+

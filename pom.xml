@@ -44,7 +44,9 @@
 	    <groupId>org.projectlombok</groupId>
 	    <artifactId>lombok</artifactId>
 	    <optional>true</optional>
-   </dependency>
+	    
+    </dependency>
+    
       <dependency>
 		    <groupId>org.postgresql</groupId>
 		    <artifactId>postgresql</artifactId>

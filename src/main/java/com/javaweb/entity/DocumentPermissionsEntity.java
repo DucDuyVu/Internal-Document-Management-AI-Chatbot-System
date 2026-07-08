@@ -1,6 +1,7 @@
 package com.javaweb.entity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,6 +37,7 @@ public class DocumentPermissionsEntity {
 	private DepartmentsEntity permissionDepartmentId;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
+
 	@JoinColumn(name = "granted_by")
 	private UsersEntity grantedBy;
 }

@@ -25,6 +25,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "users")
+
 public class UsersEntity {
 
 	@Id
@@ -86,5 +87,4 @@ public class UsersEntity {
 
 	@OneToMany(mappedBy = "usersEntityId")
 	private List<ActivityLogsEntity> activityLogsEntities;
-	
 }
