@@ -33,6 +33,9 @@ public class JwtServiceImpl implements JwtService {
 	@Value("${jwt.refresh-token-expired}")
 	private Duration refreshTokenExpired;
 	
+	@Value("${jwt.reset-password-token-expired}")
+	private Duration resetPasswordTokenExpired;
+	
 	// Ký JWT khi tạo token + xác thực JWT khi đọc token
 	private Key getSigningKey() {
 		return Keys.hmacShaKeyFor(
@@ -55,7 +58,7 @@ public class JwtServiceImpl implements JwtService {
 				.claim("role", user.getRole())
 				.issuedAt(new Date())
 				.expiration(new Date(
-						System.currentTimeMillis() + accessTokenExpired.toMillis()
+						System.currentTimeMillis() + resetPasswordTokenExpired.toMillis()
 						))
 				.signWith(getSigningKey())
 				.compact();
@@ -118,5 +121,19 @@ public class JwtServiceImpl implements JwtService {
 				.toInstant()
 				.atZone(ZoneId.systemDefault())
 				.toLocalDateTime(); // convert LocalDateTime
+	}
+
+	@Override
+	public String generateResetPasswordToken(UsersEntity user) {
+		return Jwts.builder()
+				.subject(user.getEmail())
+				.claim("userId", user.getId())
+				.claim("type", "reset")
+				.issuedAt(new Date())
+				.expiration(new Date(
+						System.currentTimeMillis() + accessTokenExpired.toMillis()
+						))
+				.signWith(getSigningKey())
+				.compact();
 	}
 }

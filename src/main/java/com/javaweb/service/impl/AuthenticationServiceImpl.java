@@ -1,16 +1,20 @@
 package com.javaweb.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.Iterator;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.javaweb.dto.request.ForgotPasswordRequest;
 import com.javaweb.dto.request.LoginRequest;
 import com.javaweb.dto.request.LogoutRequest;
 import com.javaweb.dto.request.RefreshTokenRequest;
 import com.javaweb.dto.request.RegisterRequest;
+import com.javaweb.dto.request.ResetPasswordRequest;
+import com.javaweb.dto.response.ForgotPasswordResponse;
 import com.javaweb.dto.response.LoginResponse;
 import com.javaweb.dto.response.LogoutResponse;
 import com.javaweb.dto.response.RefreshTokenResponse;
@@ -18,6 +22,7 @@ import com.javaweb.entity.UserSessionsEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.repository.UserSessionsRepository;
 import com.javaweb.dto.response.RegisterResponse;
+import com.javaweb.dto.response.ResetPasswordResponse;
 import com.javaweb.exception.BadRequestException;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.AuthenticationService;
@@ -29,8 +34,6 @@ import com.javaweb.service.JwtService;
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService{
 
-	@Autowired
-	private UsersRepository userRepo;
 	
 	@Autowired
 	private UserSessionsRepository userSessionsRepo;
@@ -48,7 +51,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	@Override
 	public LoginResponse login(LoginRequest loginRequest) {
 	// Check email có trong DB hay không 
-		Optional<UsersEntity> optionalEmail = userRepo.findByEmail(loginRequest.getEmail());
+		Optional<UsersEntity> optionalEmail = usersRepository.findByEmail(loginRequest.getEmail());
 		
 		if (optionalEmail.isEmpty()) {
 			throw new BadRequestException("Email không tồn tại !");
@@ -123,7 +126,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		String email = jwtService.extractEmail(refreshToken);
 		
 		// Tìm email trong DB
-		Optional<UsersEntity> optionalUser = userRepo.findByEmail(email);
+		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(email);
 		
 		if (optionalUser.isEmpty()) {
 			throw new RuntimeException("Không có user !");
@@ -209,5 +212,70 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		
 		logoutResponse.setMessage("Đã đăng xuất !");
 		return logoutResponse;
+	}
+
+	@Override
+	public ForgotPasswordResponse forgotPassowrd(ForgotPasswordRequest forgotPasswordRequest) {
+		
+		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(forgotPasswordRequest.getEmail());
+		
+		// Check người dùng có trong DB không
+		if (optionalUser.isEmpty()) {
+			throw new BadRequestException("Không tìm thấy người dùng");
+		}
+		
+		UsersEntity user = optionalUser.get();
+		
+		// check trạng thái tài khoản 
+		if (! user.isActive()) {
+			throw new BadRequestException("Tài khoản bị khóa !");
+		}
+		
+		// Sinh resetToken để chuẩn bị cho đổi mật khẩu 
+		String resetToken = jwtService.generateResetPasswordToken(user);
+		
+		ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse();
+		forgotPasswordResponse.setMessage("Đã tạo yêu cầu đặt lại mật khẩu");
+		forgotPasswordResponse.setResetToken(resetToken);
+		return forgotPasswordResponse;
+	}
+
+	
+	// Xử lý đổi mật khẩu
+	@Override
+	public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
+		// check token
+		if (! jwtService.validateToken(request.getResetToken())) {
+			throw new BadRequestException("Token không hợp lệ hoặc hết hạn");
+		}
+		
+		// Lấy email từ token
+		String email = jwtService.extractEmail(request.getResetToken());
+		
+		// Tìm user
+		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(email);
+		
+		if (optionalUser.isEmpty()) {
+			throw new BadRequestException("Không tìm thấy người dùng !");
+		}
+		
+		UsersEntity user = optionalUser.get();
+		
+		if (! user.isActive()) {
+			throw new BadRequestException("Tài khoản đã bị khóa ! ");
+		}
+		
+		if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+			throw new BadRequestException("Mật khẩu mới không được trùng mật khẩu cũ !");
+		}
+		
+		// Mã hóa mật khẩu mới
+		user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+		
+		usersRepository.save(user); // lưu ở DB
+		
+		ResetPasswordResponse response = new ResetPasswordResponse();
+		response.setMessage("Đã đặt lại mật khẩu !");
+		return response;
 	}
 }
