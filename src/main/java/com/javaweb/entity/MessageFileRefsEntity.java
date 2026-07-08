@@ -36,9 +36,9 @@ public class MessageFileRefsEntity {
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "document_id")
-	private DocumentsEntity documentId;
+	private DocumentEntity documentId;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "chunk_id")
-	private DocumentChunksEntity chunkId;
+	@JoinColumn(name = "chunk_id")	
+	private DocumentChunkEntity chunkId;
 }

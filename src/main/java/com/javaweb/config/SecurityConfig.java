@@ -38,12 +38,13 @@ public class SecurityConfig {
 	            
 	            .exceptionHandling(exception -> 
 	            exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-	            .authorizeHttpRequests(auth -> auth
-	                .requestMatchers(
-	                		"/api/auth/login",
-	                		"/api/auth/register"
-	                		).permitAll()
-	                .anyRequest().authenticated())
+					.authorizeHttpRequests(auth -> auth
+						.requestMatchers(
+								"/api/auth/login",
+								"/api/auth/register",
+								"/api/documents/**"
+								).permitAll()
+						.anyRequest().authenticated())
 	            
 	            .addFilterBefore(
 	            		jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

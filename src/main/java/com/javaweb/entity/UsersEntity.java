@@ -76,14 +76,12 @@ public class UsersEntity {
 	@OneToMany(mappedBy = "userId", fetch = FetchType.LAZY)
 	private List<UserSessionsEntity> userSessionsEntities = new ArrayList<>();
 	
-	@OneToMany(mappedBy = "uploadedBy", fetch = FetchType.LAZY)
-	private List<DocumentsEntity> documentEntities = new ArrayList<>();
+
 	
 	@OneToMany(mappedBy = "userChatId", fetch = FetchType.LAZY)
 	private List<ChatSessionsEntity> chatSessionsEntities = new ArrayList<>();
 	
-	@OneToMany(mappedBy = "grantedBy")
-	private List<DocumentPermissionsEntity> documentPermissionsEntities ;
+
 
 	@OneToMany(mappedBy = "usersEntityId")
 	private List<ActivityLogsEntity> activityLogsEntities;
