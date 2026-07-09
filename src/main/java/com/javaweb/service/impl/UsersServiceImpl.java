@@ -49,16 +49,29 @@ public class UsersServiceImpl implements UsersService{
 	// update thông tin người dùng
 	@Override
 	public ProfileResponse updateProfile(UsersEntity user, UpdateProfileRequest updateProfileRequest) {
-		
-		user.setFullName(updateProfileRequest.getFullName());
-		user.setPhone(updateProfileRequest.getPhone());
-		user.setAvatarURL(updateProfileRequest.getAvatarUrl());
+
+		if (updateProfileRequest.getFullName() != null) {
+			user.setFullName(updateProfileRequest.getFullName());
+		}
+
+		if (updateProfileRequest.getUserName() != null) {
+			user.setUserName(updateProfileRequest.getUserName());
+		}
+
+		if (updateProfileRequest.getPhone() != null) {
+			user.setPhone(updateProfileRequest.getPhone());
+		}
+
+		if (updateProfileRequest.getAvatarUrl() != null) {
+			user.setAvatarURL(updateProfileRequest.getAvatarUrl());
+		}
 		user.setUpdatedAt(LocalDateTime.now());
 		
 		UsersEntity updateUser = usersRepository.save(user); // save thông tin update
 		
 		ProfileResponse profileResponse = new ProfileResponse();
 		profileResponse.setFullName(updateUser.getFullName());
+		profileResponse.setUserName(updateUser.getUserName());
 		profileResponse.setPhone(updateUser.getPhone());
 		profileResponse.setUserId(updateUser.getId());
 		profileResponse.setEmail(updateUser.getEmail());

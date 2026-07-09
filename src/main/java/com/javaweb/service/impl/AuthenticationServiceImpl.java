@@ -152,29 +152,29 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	@Override
 	public RegisterResponse register(RegisterRequest registerRequest) {
 		UsersEntity user = new UsersEntity();
-	
-	 
-		if (usersRepository.existsByUserName(registerRequest.getUserName())) {
-			throw new RuntimeException("Username đã tồn tại");
-		}
-		
+
 		if (usersRepository.existsByEmail(registerRequest.getEmail())) {
-			throw new RuntimeException("Email đã tồn tại");
+			throw new BadRequestException("Email đã tồn tại");
 		}
-		
+
+		if (!registerRequest.getPassword()
+				.equals(registerRequest.getConfirmPassword())){
+
+			throw new BadRequestException("Mật khẩu xác nhận không khớp!");
+		}
 		user.setFullName(registerRequest.getFullName());
-		user.setUserName(registerRequest.getUserName());
 		user.setEmail(registerRequest.getEmail());
 		user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-		user.setPhone(registerRequest.getPhone());
 		user.setCreatedAt(LocalDateTime.now());
-		
+		user.setUserName(
+				registerRequest.getEmail().split("@")[0]
+		);
+
 		usersRepository.save(user); // Save DB
 		
 		RegisterResponse registerResponse = new RegisterResponse();
 		registerResponse.setFullName(registerRequest.getFullName());
 		registerResponse.setEmail(registerRequest.getEmail());
-		registerResponse.setUserName(registerRequest.getUserName());
 		registerResponse.setMessage("Đăng ký thành công !");
 		
 	

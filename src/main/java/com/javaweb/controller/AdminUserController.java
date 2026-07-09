@@ -1,6 +1,7 @@
 package com.javaweb.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,7 +11,7 @@ import com.javaweb.dto.response.LockUserResponse;
 import com.javaweb.dto.response.UnlockResponse;
 import com.javaweb.service.UsersService;
 
-@RestController
+@Controller
 @RequestMapping("/api/admin/users")
 public class AdminUserController {
 

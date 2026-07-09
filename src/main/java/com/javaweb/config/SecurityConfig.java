@@ -38,26 +38,44 @@ public class SecurityConfig {
 	            
 	            .exceptionHandling(exception -> 
 	            exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-	            .authorizeHttpRequests(auth -> auth
-	                .requestMatchers(
-	                		"/api/auth/login",
-	                		"/api/auth/register",
-	                		"/api/auth/refresh-token",
-	                		"/api/auth/forgot-password",
-	                	    "/api/auth/reset-password"
-	                		).permitAll()
-	                
-	                .requestMatchers("/api/admin/**")
-	                .hasAnyRole("ADMIN")
-	                
-	                
-	                .requestMatchers("/api/user/**")
-	                .hasAnyRole("USER", "ADMIN")
-	                
-	                
-	                .anyRequest().authenticated()
-	                
-	                )
+					.authorizeHttpRequests(auth -> auth
+							// ----- Trang giao diện (view) - public -----
+							.requestMatchers(
+									"/login",
+									"/register",
+									"/forgot-password",
+									"/reset-password",
+									"/dashboard",
+									"/profile"
+							).permitAll()
+
+							// ----- Tài nguyên tĩnh (CSS/JS/ảnh) - public -----
+							.requestMatchers(
+									"/css/**",
+									"/js/**",
+									"/images/**",
+									"/favicon.ico"
+							).permitAll()
+
+							// ----- API auth - public -----
+							.requestMatchers(
+									"/api/auth/login",
+									"/api/auth/register",
+									"/api/auth/refresh-token",
+									"/api/auth/forgot-password",
+									"/api/auth/reset-password"
+							).permitAll()
+
+							// ----- Phân quyền theo role -----
+							.requestMatchers("/api/admin/**")
+							.hasAnyRole("ADMIN")
+
+							.requestMatchers("/api/user/**")
+							.hasAnyRole("USER", "ADMIN")
+
+							// ----- Còn lại: bắt buộc đăng nhập -----
+							.anyRequest().authenticated()
+					)
 	            
 	            .addFilterBefore(
 	            		jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

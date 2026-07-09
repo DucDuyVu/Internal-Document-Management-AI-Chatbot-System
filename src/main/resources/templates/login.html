@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/login.css}" href="../static/css/login.css">
+</head>
+<body>
+
+<div class="card">
+  <div class="mark"><span>DT</span></div>
+
+  <div class="head">
+    <span class="eyebrow">Đăng nhập</span>
+    <h1>Chào mừng trở lại</h1>
+    <p>Nhập thông tin tài khoản để tiếp tục.</p>
+  </div>
+
+  <div class="error-msg" id="errorMsg">
+    <span>⚠</span>
+    <span id="errorText">Email hoặc mật khẩu không đúng.</span>
+  </div>
+
+  <form id="loginForm">
+    <div class="field">
+      <input type="email" id="email" placeholder=" " required>
+      <label for="email">Email</label>
+    </div>
+
+    <div class="field">
+      <input type="password" id="password" placeholder=" " required>
+      <label for="password">Mật khẩu</label>
+      <button type="button" class="toggle-pass" id="togglePass">Hiện</button>
+    </div>
+
+    <div class="row-between">
+      <label class="remember">
+        <input type="checkbox">
+        Ghi nhớ đăng nhập
+      </label>
+      <a th:href="@{/forgot-password}" href="/forgot-password">Quên mật khẩu?</a>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submitBtn">
+      <span class="spinner"></span>
+      <span class="btn-label">Đăng nhập</span>
+    </button>
+  </form>
+
+  <div class="divider">hoặc</div>
+
+  <p class="signup-line">
+    Chưa có tài khoản?
+    <a th:href="@{/register}" href="/register">Đăng ký ngay</a>
+  </p>
+</div>
+
+<script th:src="@{/js/login.js}" src="../static/js/login.js"></script>
+</body>
+</html>

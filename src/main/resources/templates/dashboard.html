@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <h2>IDMS</h2>
+
+        <ul>
+
+            <li class="active">📊 Dashboard</li>
+
+            <li>👤 Hồ sơ</li>
+
+            <li>📁 Tài liệu</li>
+
+            <li>💬 AI Chat</li>
+
+            <li id="adminMenu">👥 Người dùng</li>
+
+        </ul>
+
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <!-- Header -->
+        <header>
+
+            <div>
+
+                <h2>Internal Document Management</h2>
+
+            </div>
+
+            <div class="user">
+
+                <span id="fullName"></span>
+
+                <button id="logoutBtn">
+                    Logout
+                </button>
+
+            </div>
+
+        </header>
+
+        <!-- Welcome -->
+
+        <section class="welcome">
+
+            <h1>
+                Xin chào
+                <span id="welcomeName"></span>
+                👋
+            </h1>
+
+            <p>
+
+                Email:
+                <span id="email"></span>
+
+            </p>
+
+            <p>
+
+                Role:
+                <span id="role"></span>
+
+            </p>
+
+        </section>
+
+        <!-- Cards -->
+
+        <section class="cards">
+
+            <div class="card">
+
+                <h3>Tài liệu</h3>
+
+                <h1>0</h1>
+
+            </div>
+
+            <div class="card">
+
+                <h3>AI Chat</h3>
+
+                <h1>0</h1>
+
+            </div>
+
+            <div class="card">
+
+                <h3>Người dùng</h3>
+
+                <h1>0</h1>
+
+            </div>
+
+        </section>
+
+        <!-- Activity -->
+
+        <section class="activity">
+
+            <h2>Hoạt động gần đây</h2>
+
+            <ul>
+
+                <li>Đăng nhập hệ thống</li>
+
+                <li>Upload tài liệu</li>
+
+                <li>AI Chat</li>
+
+            </ul>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/dashboard.js"></script>
+
+</body>
+</html>
