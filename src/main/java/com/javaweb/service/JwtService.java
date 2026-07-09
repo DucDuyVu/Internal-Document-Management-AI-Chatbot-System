@@ -10,6 +10,8 @@ public interface JwtService {
 	
 	String generateRefreshToken(UsersEntity user);
 	
+	String generateResetPasswordToken(UsersEntity user);
+	
 	String extractEmail(String token);
 	
 	String extractRole(String token);

@@ -43,10 +43,21 @@ public class SecurityConfig {
 	                		"/api/auth/login",
 	                		"/api/auth/register",
 	                		"/api/auth/refresh-token",
-	                		"api/auth/logout",
-                            "/api/documents/**"
+	                		"/api/auth/forgot-password",
+	                	    "/api/auth/reset-password"
 	                		).permitAll()
-	                .anyRequest().authenticated())
+	                
+	                .requestMatchers("/api/admin/**")
+	                .hasAnyRole("ADMIN")
+	                
+	                
+	                .requestMatchers("/api/user/**")
+	                .hasAnyRole("USER", "ADMIN")
+	                
+	                
+	                .anyRequest().authenticated()
+	                
+	                )
 	            
 	            .addFilterBefore(
 	            		jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

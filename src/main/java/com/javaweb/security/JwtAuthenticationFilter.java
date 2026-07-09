@@ -68,6 +68,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 	
 		UsersEntity user = optionalUser.get();
 		
+		if (!user.isActive()) {
+			filterChain.doFilter(request, response);
+			return;
+		}
+		
 		// Chỉ tạo Authentication khi SecurityContext chưa có người dùng đăng nhập
 		if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
