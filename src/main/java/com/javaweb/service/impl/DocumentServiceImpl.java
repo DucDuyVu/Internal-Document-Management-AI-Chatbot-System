@@ -118,7 +118,17 @@ public class DocumentServiceImpl implements DocumentService {
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new InvalidFileException("File vượt quá 20MB");
         }
-        if (!"application/pdf".equals(file.getContentType())) {
+        // Không chỉ dựa vào Content-Type do client gửi lên - giá trị này
+        // không đáng tin cậy tuyệt đối (Postman/OS đôi khi gửi
+        // "application/octet-stream" thay vì "application/pdf" dù file
+        // đúng là PDF). Chấp nhận nếu khớp 1 trong 2 điều kiện: đúng
+        // Content-Type CHUẨN, hoặc đúng đuôi file ".pdf".
+        String contentType = file.getContentType();
+        String fileName = file.getOriginalFilename();
+        boolean isPdfByContentType = "application/pdf".equals(contentType);
+        boolean isPdfByExtension = fileName != null && fileName.toLowerCase().endsWith(".pdf");
+
+        if (!isPdfByContentType && !isPdfByExtension) {
             throw new InvalidFileException("Chỉ hỗ trợ file PDF");
         }
     }
