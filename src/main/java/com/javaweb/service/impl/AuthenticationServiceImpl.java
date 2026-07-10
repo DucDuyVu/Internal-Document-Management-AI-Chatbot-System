@@ -4,26 +4,17 @@ import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.Optional;
 
+import com.javaweb.dto.request.*;
+import com.javaweb.dto.response.*;
+import com.javaweb.service.EmailService;
 import com.javaweb.service.OtpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.javaweb.dto.request.ForgotPasswordRequest;
-import com.javaweb.dto.request.LoginRequest;
-import com.javaweb.dto.request.LogoutRequest;
-import com.javaweb.dto.request.RefreshTokenRequest;
-import com.javaweb.dto.request.RegisterRequest;
-import com.javaweb.dto.request.ResetPasswordRequest;
-import com.javaweb.dto.response.ForgotPasswordResponse;
-import com.javaweb.dto.response.LoginResponse;
-import com.javaweb.dto.response.LogoutResponse;
-import com.javaweb.dto.response.RefreshTokenResponse;
 import com.javaweb.entity.UserSessionsEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.repository.UserSessionsRepository;
-import com.javaweb.dto.response.RegisterResponse;
-import com.javaweb.dto.response.ResetPasswordResponse;
 import com.javaweb.exception.BadRequestException;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.AuthenticationService;
@@ -51,6 +42,8 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	@Autowired
 	OtpService otpService;
 
+	@Autowired
+	EmailService emailService;
 	// Xử lý login 
 	@Override
 	public LoginResponse login(LoginRequest loginRequest) {
@@ -245,12 +238,20 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		 * Sau khi sinh OTP
 		 * Gửi OTP qua email
 		 * */
+		try {
+
+			emailService.sendOtpEmail(user.getEmail(), otp);
+
+		} catch (Exception e) {
+
+			// nếu cần rollback OTP hoặc ghi log
+			throw new RuntimeException("Gửi email thất bại.", e);
+		}
 
 
 
 		ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse();
 		forgotPasswordResponse.setMessage("Mã OTP đã được gửi tới email của bạn !");
-		forgotPasswordResponse.setOtp(otp);
 
 		return forgotPasswordResponse;
 	}
@@ -292,5 +293,17 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		ResetPasswordResponse response = new ResetPasswordResponse();
 		response.setMessage("Đã đặt lại mật khẩu !");
 		return response;
+	}
+
+	@Override
+	public VerifyOtpResponse verifyOtp(VerifyOtpRequest verifyOtpRequest) {
+
+		UsersEntity user = usersRepository.findByEmail(verifyOtpRequest.getEmail())
+				.orElseThrow() -> new BadRequestException("Không tìm thấy người dùng !");
+
+		otpService.verifyOtp(user, verifyOtpRequest.getOtp());
+
+		String resetToken = jwtService.g
+		return null;
 	}
 }

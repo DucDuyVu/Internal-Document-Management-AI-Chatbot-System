@@ -58,7 +58,7 @@ public class JwtServiceImpl implements JwtService {
 				.claim("role", user.getRole())
 				.issuedAt(new Date())
 				.expiration(new Date(
-						System.currentTimeMillis() + resetPasswordTokenExpired.toMillis()
+						System.currentTimeMillis() + accessTokenExpired.toMillis()
 						))
 				.signWith(getSigningKey())
 				.compact();

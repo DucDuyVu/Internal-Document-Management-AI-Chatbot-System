@@ -21,4 +21,6 @@ public interface JwtService {
 	boolean validateToken(String token);
 
 	LocalDateTime extractExpirations(String token);
+
+	String generateResetToken (UsersEntity users);
 }
