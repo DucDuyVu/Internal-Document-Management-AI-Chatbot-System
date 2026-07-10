@@ -15,7 +15,7 @@ import java.util.List;
  * câu trả lời tự nhiên từ 1 prompt đã ghép sẵn (câu hỏi + ngữ cảnh).
  *
  * Nhiệm vụ:
- * - Gọi Google Gemini Chat API (gemini-2.5-flash-lite).
+ * - Gọi Google Gemini Chat API .
  * - Trích xuất text câu trả lời từ response JSON lồng nhau.
  *
  * Tại sao cần class riêng (không gộp vào GeminiEmbeddingService): 2 API
@@ -64,6 +64,9 @@ public class GeminiChatService {
      * quyết định catch và trả message phù hợp cho người dùng cuối.
      */
     public String generateAnswer(String prompt) {
+            System.out.println("====== CALL GEMINI ======");
+            System.out.println(chatUrl);
+
 
         GeminiChatRequest request = new GeminiChatRequest(prompt);
 
