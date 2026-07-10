@@ -85,4 +85,7 @@ public class UsersEntity {
 
 	@OneToMany(mappedBy = "usersEntityId")
 	private List<ActivityLogsEntity> activityLogsEntities;
+
+	@OneToMany(mappedBy = "user")
+	private List<PasswordResetTokens> passwordResetTokens;
 }

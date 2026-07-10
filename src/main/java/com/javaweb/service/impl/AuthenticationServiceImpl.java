@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.Optional;
 
+import com.javaweb.service.OtpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,10 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	
 	@Autowired
 	private UsersRepository usersRepository;
-	
+
+	@Autowired
+	OtpService otpService;
+
 	// Xử lý login 
 	@Override
 	public LoginResponse login(LoginRequest loginRequest) {
@@ -214,6 +218,8 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		return logoutResponse;
 	}
 
+
+	// Xử lý quên mật khẩu
 	@Override
 	public ForgotPasswordResponse forgotPassowrd(ForgotPasswordRequest forgotPasswordRequest) {
 		
@@ -230,13 +236,22 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		if (! user.isActive()) {
 			throw new BadRequestException("Tài khoản bị khóa !");
 		}
+
 		
-		// Sinh resetToken để chuẩn bị cho đổi mật khẩu 
-		String resetToken = jwtService.generateResetPasswordToken(user);
+		// Sinh OTP và lưu DB
+		String otp = otpService.createOrUpdateOtp(user);
+
+		/*
+		* Sau khi sinh OTP
+		* Gửi OTP qua email
+		* */
+
 		
+
 		ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse();
-		forgotPasswordResponse.setMessage("Đã tạo yêu cầu đặt lại mật khẩu");
-		forgotPasswordResponse.setResetToken(resetToken);
+		forgotPasswordResponse.setMessage("Mã OTP đã được gửi tới email của bạn !");
+		forgotPasswordResponse.setOtp(otp);
+
 		return forgotPasswordResponse;
 	}
 
