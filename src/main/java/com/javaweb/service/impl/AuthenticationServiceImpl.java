@@ -222,31 +222,31 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	// Xử lý quên mật khẩu
 	@Override
 	public ForgotPasswordResponse forgotPassowrd(ForgotPasswordRequest forgotPasswordRequest) {
-		
+
 		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(forgotPasswordRequest.getEmail());
-		
+
 		// Check người dùng có trong DB không
 		if (optionalUser.isEmpty()) {
 			throw new BadRequestException("Không tìm thấy người dùng");
 		}
-		
+
 		UsersEntity user = optionalUser.get();
-		
-		// check trạng thái tài khoản 
+
+		// check trạng thái tài khoản
 		if (! user.isActive()) {
 			throw new BadRequestException("Tài khoản bị khóa !");
 		}
 
-		
+
 		// Sinh OTP và lưu DB
 		String otp = otpService.createOrUpdateOtp(user);
 
 		/*
-		* Sau khi sinh OTP
-		* Gửi OTP qua email
-		* */
+		 * Sau khi sinh OTP
+		 * Gửi OTP qua email
+		 * */
 
-		
+
 
 		ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse();
 		forgotPasswordResponse.setMessage("Mã OTP đã được gửi tới email của bạn !");
