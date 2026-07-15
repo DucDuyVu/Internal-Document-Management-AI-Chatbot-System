@@ -12,10 +12,4 @@ public interface AuthenticationService {
 	RefreshTokenResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
 	
 	LogoutResponse logout(LogoutRequest logoutRequest);
-	
-	ForgotPasswordResponse forgotPassowrd(ForgotPasswordRequest forgotPasswordRequest);
-	
-	ResetPasswordResponse resetPassword(ResetPasswordRequest passwordRequest);
-
-	VerifyOtpResponse verifyOtp(VerifyOtpRequest verifyOtpRequest);
 }

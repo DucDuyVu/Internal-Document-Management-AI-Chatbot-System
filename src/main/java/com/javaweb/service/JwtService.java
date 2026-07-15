@@ -22,5 +22,5 @@ public interface JwtService {
 
 	LocalDateTime extractExpirations(String token);
 
-	String generateResetToken (UsersEntity users);
+	String extractTokenType(String token);
 }

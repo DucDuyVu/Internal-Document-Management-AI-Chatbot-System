@@ -102,21 +102,29 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	public RefreshTokenResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
 		// Lấy refresh token 
 		String refreshToken = refreshTokenRequest.getRefreshToken();
+
+		// Kiểm tra JWT hợp lệ
+		if(!jwtService.validateToken(refreshToken)) {
+			throw new BadRequestException("Refresh Token không hợp lệ hoặc đã hết hạn !");
+		}
+
+		String type = jwtService.extractTokenType(refreshToken);
+
+		if(! "refresh".equals(type)) {
+			throw new BadRequestException("Không phải Refresh Token");
+		}
 		Optional<UserSessionsEntity> optinalSession = userSessionsRepo.findByRefreshToken(refreshToken);
 		// check refresh token trong DB có tồn tại không
 		if (optinalSession.isEmpty()) {
-			throw new RuntimeException("Refresh Token không tồn tại !");
+			throw new BadRequestException("Refresh Token không tồn tại !");
 		}
 		
 		// check refresh token còn hạn hay không
 		UserSessionsEntity session = optinalSession.get();
-		if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
-			throw new RuntimeException("Refresh Token đã hết hạn");
-		}
-		
+
 		// check trạng thái (thu hồi)
 		if (session.getIsRevoked()) {
-			throw new RuntimeException("Refresh Token đã bị thu hồi");
+			throw new BadRequestException("Refresh Token đã bị thu hồi");
 		}
 		
 		// Xác thực email
@@ -126,7 +134,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(email);
 		
 		if (optionalUser.isEmpty()) {
-			throw new RuntimeException("Không có user !");
+			throw new BadRequestException("Không có user !");
 		}
 		
 		UsersEntity user = optionalUser.get();
@@ -209,101 +217,5 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		
 		logoutResponse.setMessage("Đã đăng xuất !");
 		return logoutResponse;
-	}
-
-
-	// Xử lý quên mật khẩu
-	@Override
-	public ForgotPasswordResponse forgotPassowrd(ForgotPasswordRequest forgotPasswordRequest) {
-
-		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(forgotPasswordRequest.getEmail());
-
-		// Check người dùng có trong DB không
-		if (optionalUser.isEmpty()) {
-			throw new BadRequestException("Không tìm thấy người dùng");
-		}
-
-		UsersEntity user = optionalUser.get();
-
-		// check trạng thái tài khoản
-		if (! user.isActive()) {
-			throw new BadRequestException("Tài khoản bị khóa !");
-		}
-
-
-		// Sinh OTP và lưu DB
-		String otp = otpService.createOrUpdateOtp(user);
-
-		/*
-		 * Sau khi sinh OTP
-		 * Gửi OTP qua email
-		 * */
-		try {
-
-			emailService.sendOtpEmail(user.getEmail(), otp);
-
-		} catch (Exception e) {
-
-			// nếu cần rollback OTP hoặc ghi log
-			throw new RuntimeException("Gửi email thất bại.", e);
-		}
-
-
-
-		ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse();
-		forgotPasswordResponse.setMessage("Mã OTP đã được gửi tới email của bạn !");
-
-		return forgotPasswordResponse;
-	}
-
-	
-	// Xử lý đổi mật khẩu
-	@Override
-	public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
-		// check token
-		if (! jwtService.validateToken(request.getResetToken())) {
-			throw new BadRequestException("Token không hợp lệ hoặc hết hạn");
-		}
-		
-		// Lấy email từ token
-		String email = jwtService.extractEmail(request.getResetToken());
-		
-		// Tìm user
-		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(email);
-		
-		if (optionalUser.isEmpty()) {
-			throw new BadRequestException("Không tìm thấy người dùng !");
-		}
-		
-		UsersEntity user = optionalUser.get();
-		
-		if (! user.isActive()) {
-			throw new BadRequestException("Tài khoản đã bị khóa ! ");
-		}
-		
-		if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
-			throw new BadRequestException("Mật khẩu mới không được trùng mật khẩu cũ !");
-		}
-		
-		// Mã hóa mật khẩu mới
-		user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-		
-		usersRepository.save(user); // lưu ở DB
-		
-		ResetPasswordResponse response = new ResetPasswordResponse();
-		response.setMessage("Đã đặt lại mật khẩu !");
-		return response;
-	}
-
-	@Override
-	public VerifyOtpResponse verifyOtp(VerifyOtpRequest verifyOtpRequest) {
-
-		UsersEntity user = usersRepository.findByEmail(verifyOtpRequest.getEmail())
-				.orElseThrow() -> new BadRequestException("Không tìm thấy người dùng !");
-
-		otpService.verifyOtp(user, verifyOtpRequest.getOtp());
-
-		String resetToken = jwtService.g
-		return null;
 	}
 }

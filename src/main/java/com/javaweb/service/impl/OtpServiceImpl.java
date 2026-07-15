@@ -4,6 +4,7 @@ import com.javaweb.entity.PasswordResetTokens;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.repository.PasswordResetTokensRepository;
 import com.javaweb.service.OtpService;
+import jakarta.transaction.Transactional;
 import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class OtpServiceImpl implements OtpService {
 
     @Autowired
@@ -42,9 +44,9 @@ public class OtpServiceImpl implements OtpService {
         if (! optionalToken.isEmpty()) {
             passwordResetTokens = optionalToken.get(); // có token = lấy ra ghi đè
 
-            if (passwordResetTokens.getCreatedAt().plusSeconds(60).isAfter(LocalDateTime.now())) {
+            if (passwordResetTokens.getOtpSentAt().plusSeconds(60).isAfter(LocalDateTime.now())) {
                 long secondsLeft = java.time.Duration.between(
-                        LocalDateTime.now(), passwordResetTokens.getCreatedAt().plusSeconds(60)
+                        LocalDateTime.now(), passwordResetTokens.getOtpSentAt().plusSeconds(60)
                 ).getSeconds();
                 throw new IllegalStateException("Đợi " + secondsLeft + "s trước khi gửi yêu cầu OTP mới !");
             }
@@ -61,7 +63,7 @@ public class OtpServiceImpl implements OtpService {
         passwordResetTokens.setOtp(passwordEncoder.encode(otp));
         passwordResetTokens.setVerified(false);
         passwordResetTokens.setFailedAttempts(0L);
-        passwordResetTokens.setCreatedAt(LocalDateTime.now());
+        passwordResetTokens.setOtpSentAt(LocalDateTime.now());
         passwordResetTokens.setExpiresAt(LocalDateTime.now().plusMinutes(5));
 
         passwordResetTokensRepository.save(passwordResetTokens);

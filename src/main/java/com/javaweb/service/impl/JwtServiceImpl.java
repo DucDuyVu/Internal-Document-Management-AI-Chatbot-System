@@ -56,6 +56,7 @@ public class JwtServiceImpl implements JwtService {
 				.subject(user.getEmail())
 				.claim("userId", user.getId())
 				.claim("role", user.getRole())
+				.claim("type", "access")
 				.issuedAt(new Date())
 				.expiration(new Date(
 						System.currentTimeMillis() + accessTokenExpired.toMillis()
@@ -123,6 +124,14 @@ public class JwtServiceImpl implements JwtService {
 				.toLocalDateTime(); // convert LocalDateTime
 	}
 
+	@Override
+	public String extractTokenType(String token) {
+			return extractAllClaims(token)
+					.get("type", String.class);
+	}
+
+
+	//Chỉ dùng để đổi mật khẩu sau khi xác thực OTP
 	@Override
 	public String generateResetPasswordToken(UsersEntity user) {
 		return Jwts.builder()

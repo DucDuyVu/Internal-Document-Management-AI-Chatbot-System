@@ -22,8 +22,8 @@ public class PasswordResetTokens {
     @Column(name = "verified")
     private Boolean verified;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "otpSent_at")
+    private LocalDateTime otpSentAt;
 
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;

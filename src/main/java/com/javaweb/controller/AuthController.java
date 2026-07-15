@@ -2,6 +2,7 @@ package com.javaweb.controller;
 
 import com.javaweb.dto.request.*;
 import com.javaweb.dto.response.*;
+import com.javaweb.service.PasswordResetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +15,8 @@ public class AuthController {
 	@Autowired
 	private AuthenticationService authenticationService;
 
+	@Autowired
+	PasswordResetService passwordResetService;
 	@PostMapping("/login")
 	public LoginResponse login(@RequestBody LoginRequest loginRequest) {
 		return authenticationService.login(loginRequest);
@@ -37,16 +40,16 @@ public class AuthController {
 	
 	@PostMapping("/forgot-password")
 	public ForgotPasswordResponse forgotPassowrd(@RequestBody ForgotPasswordRequest forgotPasswordRequest) {
-		return authenticationService.forgotPassowrd(forgotPasswordRequest);
+		return passwordResetService.forgotPassowrd(forgotPasswordRequest);
 	}
 	
 	@PostMapping("/reset-password") 
 	public ResetPasswordResponse resetPassword(@RequestBody ResetPasswordRequest passwordRequest) {
-		return authenticationService.resetPassword(passwordRequest);
+		return passwordResetService.resetPassword(passwordRequest);
 	}
 
-	@PostMapping("api/auth/verify-otp")
+	@PostMapping("/verify-otp")
 	public VerifyOtpResponse verifyOtp(@RequestBody VerifyOtpRequest verifyOtpRequest) {
-		return  authenticationService.verifyOtp(verifyOtpRequest);
+		return  passwordResetService.verifyOtp(verifyOtpRequest);
 	}
 }
