@@ -1,85 +1,85 @@
 package com.javaweb.config;
 
-
+import com.javaweb.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.javaweb.security.JwtAuthenticationEntryPoint;
-import com.javaweb.security.JwtAuthenticationFilter;
-
 @Configuration
-
+@EnableWebSecurity
 public class SecurityConfig {
-	
+
 	@Autowired
 	private JwtAuthenticationFilter jwtAuthenticationFilter;
-	
-	@Autowired
-	private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-	@Bean 
+
+	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-	
-	 @Bean
-	    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-	        http
-	            .csrf(csrf -> csrf.disable())
-	            .sessionManagement(session -> 
-	            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-	            
-	            .exceptionHandling(exception -> 
-	            exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-					.authorizeHttpRequests(auth -> auth
-							// ----- Trang giao diện (view) - public -----
-							.requestMatchers(
-									"/login",
-									"/register",
-									"/forgot-password",
-									"/reset-password",
-									"/dashboard",
-									"/profile"
-							).permitAll()
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+		http
+				// Tắt CSRF vì dùng JWT (stateless)
+				.csrf(csrf -> csrf.disable())
 
-							// ----- Tài nguyên tĩnh (CSS/JS/ảnh) - public -----
-							.requestMatchers(
-									"/css/**",
-									"/js/**",
-									"/images/**",
-									"/favicon.ico"
-							).permitAll()
+				// Không dùng session (stateless)
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-							// ----- API auth - public -----
-							.requestMatchers(
-									"/api/auth/login",
-									"/api/auth/register",
-									"/api/auth/refresh-token",
-									"/api/auth/forgot-password",
-									"/api/auth/reset-password"
-							).permitAll()
+				// ===== PHÂN QUYỀN URL =====
+				.authorizeHttpRequests(auth -> auth
 
-							// ----- Phân quyền theo role -----
-							.requestMatchers("/api/admin/**")
-							.hasAnyRole("ADMIN")
+						// 1. PUBLIC - Ai cũng truy cập được (không cần đăng nhập)
+						.requestMatchers(
+								"/",
+								"/login",
+								"/register",
+								"/forgot-password",
+								"/css/**",
+								"/js/**",
+								"/images/**",
+								"/favicon.ico")
+						.permitAll()
 
-							.requestMatchers("/api/user/**")
-							.hasAnyRole("USER", "ADMIN")
+						// 2. API Auth - Không cần đăng nhập
+						.requestMatchers(
+								"/api/auth/login",
+								"/api/auth/register",
+								"/api/auth/forgot-password",
+								"/api/auth/reset-password")
+						.permitAll()
 
-							// ----- Còn lại: bắt buộc đăng nhập -----
-							.anyRequest().authenticated()
-					)
-	            
-	            .addFilterBefore(
-	            		jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-	   
-	        return http.build();
-	    }
+						// 3. Dashboard HTML
+						.requestMatchers(
+								"/admin/dashboard",
+								"/user/dashboard")
+						.permitAll()
+
+						// 4. API ADMIN
+						.requestMatchers("/api/admin/**")
+						.hasRole("ADMIN")
+
+						// 5. API USER
+						.requestMatchers(
+								"/api/user/**",
+								"/api/chat/**",
+								"/api/documents/**",
+								"/api/search/**")
+						.hasAnyRole("USER", "MANAGER", "ADMIN")
+
+						// 5. Còn lại yêu cầu đăng nhập
+						.anyRequest().authenticated())
+
+				// Thêm JWT Filter vào chuỗi Security
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+		return http.build();
+	}
 }

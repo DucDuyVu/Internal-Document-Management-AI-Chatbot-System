@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bảng điều khiển quản trị – IDMS Quản lý Tài liệu Nội bộ.">
+  <title>Quản trị – IDMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+  <link rel="stylesheet" href="/css/dashboard.css">
+
+  <!-- ✅ Thêm favicon -->
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+</head>
+
+<body>
+
+<div class="layout">
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="sidebar" id="sidebar">
+    <a href="/" class="sidebar-logo">
+      <div class="sidebar-logo-icon">📁</div>
+      <span class="sidebar-logo-name">IDMS <em>AI</em></span>
+    </a>
+
+    <p class="nav-section-label">Quản trị hệ thống</p>
+    <ul class="sidebar-nav" id="sidebarNav">
+      <li class="active" data-tab="tabOverview">
+        <span class="nav-icon">📊</span>
+        <span>Tổng quan</span>
+      </li>
+      <li data-tab="tabUsers">
+        <span class="nav-icon">👥</span>
+        <span>Người dùng</span>
+      </li>
+      <li data-tab="tabDepartments">
+        <span class="nav-icon">🏢</span>
+        <span>Phòng ban</span>
+      </li>
+      <li data-tab="tabDocuments">
+        <span class="nav-icon">📁</span>
+        <span>Tài liệu</span>
+      </li>
+      <li data-tab="tabPermissions">
+        <span class="nav-icon">🔐</span>
+        <span>Phân quyền</span>
+      </li>
+      <li data-tab="tabUpload">
+        <span class="nav-icon">📤</span>
+        <span>Upload PDF</span>
+      </li>
+      <li data-tab="tabChat">
+        <span class="nav-icon">💬</span>
+        <span>AI Chat Log</span>
+      </li>
+      <li data-tab="tabLogs">
+        <span class="nav-icon">📋</span>
+        <span>Audit Log</span>
+      </li>
+    </ul>
+
+    <div class="sidebar-divider"></div>
+
+    <p class="nav-section-label">Tài khoản</p>
+    <ul class="sidebar-nav">
+      <li data-tab="tabProfile">
+        <span class="nav-icon">👤</span>
+        <span>Hồ sơ cá nhân</span>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <button id="logoutBtn" class="btn-sidebar-logout">🚪 Đăng xuất</button>
+    </div>
+  </aside>
+
+  <!-- Overlay for mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- ==================== MAIN ==================== -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        <span class="page-title" id="pageTitle">📊 Tổng quan hệ thống</span>
+      </div>
+      <div class="topbar-right">
+        <span class="role-badge admin">Quản trị viên</span>
+        <div class="user-pill">
+          <div class="user-avatar" id="userAvatar">A</div>
+          <span class="user-name" id="fullName">Đang tải...</span>
+        </div>
+        <button class="btn-logout" id="logoutBtnTop">🚪 Đăng xuất</button>
+      </div>
+    </header>
+
+    <!-- ========== PAGE BODY ========== -->
+    <div class="page-body">
+
+      <!-- ===== TAB: TỔNG QUAN ===== -->
+      <div id="tabOverview">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+          <div class="welcome-text">
+            <h1>Xin chào, <span id="welcomeName">Admin</span>! 🛡️</h1>
+            <div class="welcome-meta">
+              <span>📧 <strong id="adminEmail">—</strong></span>
+              <span>🎖️ <strong>Quản trị viên hệ thống</strong></span>
+            </div>
+          </div>
+          <div class="welcome-icon">🛡️</div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div>
+          <div class="section-header">
+            <h2>📊 Thống kê hệ thống</h2>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-icon purple">👥</div>
+              <div>
+                <div class="stat-label">Tổng người dùng</div>
+                <div class="stat-value" id="statTotalUsers">—</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon indigo">🏢</div>
+              <div>
+                <div class="stat-label">Phòng ban</div>
+                <div class="stat-value" id="statTotalDepts">—</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon sky">📄</div>
+              <div>
+                <div class="stat-label">Tổng tài liệu</div>
+                <div class="stat-value" id="statTotalDocs">—</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">✅</div>
+              <div>
+                <div class="stat-label">Hoàn thành</div>
+                <div class="stat-value" id="statCompletedDocs">—</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon amber">🔒</div>
+              <div>
+                <div class="stat-label">TK bị khoá</div>
+                <div class="stat-value" id="statLockedUsers">—</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon red">❌</div>
+              <div>
+                <div class="stat-label">Tài liệu lỗi</div>
+                <div class="stat-value" id="statFailedDocs">—</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon indigo">💬</div>
+              <div>
+                <div class="stat-label">Phiên Chat AI</div>
+                <div class="stat-value" id="statTotalChats">—</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon sky">🪙</div>
+              <div>
+                <div class="stat-label">Token AI</div>
+                <div class="stat-value" id="statTotalTokens">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions + Activity -->
+        <div class="two-col">
+          <div>
+            <div class="section-header">
+              <h2>⚡ Thao tác nhanh</h2>
+            </div>
+            <div class="quick-grid">
+              <div class="quick-card" onclick="switchTab('tabUsers')">
+                <div class="quick-card-icon">👥</div><span>Người dùng</span>
+              </div>
+              <div class="quick-card" onclick="switchTab('tabDepartments')">
+                <div class="quick-card-icon">🏢</div><span>Phòng ban</span>
+              </div>
+              <div class="quick-card" onclick="switchTab('tabDocuments')">
+                <div class="quick-card-icon">📁</div><span>Tài liệu</span>
+              </div>
+              <div class="quick-card" onclick="switchTab('tabPermissions')">
+                <div class="quick-card-icon">🔐</div><span>Phân quyền</span>
+              </div>
+              <div class="quick-card" onclick="switchTab('tabUpload')">
+                <div class="quick-card-icon">📤</div><span>Upload PDF</span>
+              </div>
+              <div class="quick-card" onclick="switchTab('tabLogs')">
+                <div class="quick-card-icon">📋</div><span>Audit Log</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="section-header">
+              <h2>🕐 Hoạt động gần đây</h2>
+            </div>
+            <div class="activity-card">
+              <ul class="activity-list" id="recentActivityList">
+                <li class="activity-item">
+                  <div class="activity-dot indigo"></div>
+                  <div class="activity-info">
+                    <p>Đang tải...</p><span>—</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Department Stats -->
+        <div>
+          <div class="section-header">
+            <h2>📋 Thống kê theo phòng ban</h2>
+          </div>
+          <div class="activity-card" id="deptStatsList">
+            <p style="color:#9ca3af;text-align:center;padding:20px;">Đang tải thống kê...</p>
+          </div>
+        </div>
+
+      </div><!-- end tabOverview -->
+
+      <!-- ===== TAB: NGƯỜI DÙNG ===== -->
+      <div id="tabUsers" style="display:none;">
+        <div class="section-card">
+          <div class="card-header">
+            <h2>👥 Quản lý người dùng</h2>
+            <button class="btn-primary-sm" onclick="openAddUserModal()">+ Thêm người dùng</button>
+          </div>
+          <div class="card-body">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="userSearch" placeholder="Tìm theo tên, email hoặc username...">
+            </div>
+            <div class="filter-bar">
+              <select id="userRoleFilter" class="filter-select">
+                <option value="">Tất cả vai trò</option>
+                <option value="ADMIN">Admin</option>
+                <option value="MANAGER">Manager</option>
+                <option value="USER">User</option>
+              </select>
+              <select id="userDeptFilter" class="filter-select">
+                <option value="">Tất cả phòng ban</option>
+              </select>
+              <select id="userStatusFilter" class="filter-select">
+                <option value="">Tất cả trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="locked">Bị khoá</option>
+              </select>
+            </div>
+            <div class="table-card">
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Vai trò</th>
+                    <th>Phòng ban</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                  </thead>
+                  <tbody id="userTableBody">
+                  <tr>
+                    <td colspan="7" class="empty-state"><span>👥</span>Đang tải dữ liệu...</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="pagination" id="userPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: PHÒNG BAN ===== -->
+      <div id="tabDepartments" style="display:none;">
+        <div class="section-card">
+          <div class="card-header">
+            <h2>🏢 Quản lý phòng ban</h2>
+            <button class="btn-primary-sm" onclick="openAddDepartmentModal()">+ Thêm phòng ban</button>
+          </div>
+          <div class="card-body">
+            <div class="table-card">
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Tên phòng ban</th>
+                    <th>Mô tả</th>
+                    <th>Số người dùng</th>
+                    <th>Thao tác</th>
+                  </tr>
+                  </thead>
+                  <tbody id="deptTableBody">
+                  <tr>
+                    <td colspan="5" class="empty-state"><span>🏢</span>Đang tải dữ liệu...</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: TÀI LIỆU ===== -->
+      <div id="tabDocuments" style="display:none;">
+        <div class="section-card">
+          <div class="card-header">
+            <h2>📁 Quản lý tài liệu</h2>
+            <button class="btn-primary-sm" onclick="switchTab('tabUpload')">📤 Upload PDF mới</button>
+          </div>
+          <div class="card-body">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="docSearchInput" placeholder="Tìm kiếm tài liệu...">
+            </div>
+            <div class="tab-bar" id="docStatusTabs">
+              <button class="tab-btn active" onclick="filterDocs('ALL', this)">Tất cả</button>
+              <button class="tab-btn" onclick="filterDocs('COMPLETED', this)">✅ Hoàn thành</button>
+              <button class="tab-btn" onclick="filterDocs('PENDING', this)">⏳ Chờ xử lý</button>
+              <button class="tab-btn" onclick="filterDocs('PROCESSING', this)">⚙️ Đang xử lý</button>
+              <button class="tab-btn" onclick="filterDocs('FAILED', this)">❌ Lỗi</button>
+            </div>
+            <div class="table-card">
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Tên tài liệu</th>
+                    <th>Phòng ban</th>
+                    <th>Loại</th>
+                    <th>Kích thước</th>
+                    <th>Trạng thái</th>
+                    <th>Chunks</th>
+                    <th>Ngày upload</th>
+                    <th>Thao tác</th>
+                  </tr>
+                  </thead>
+                  <tbody id="docTableBody">
+                  <tr>
+                    <td colspan="9" class="empty-state"><span>📁</span>Đang tải tài liệu...</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="pagination" id="docPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: PHÂN QUYỀN ===== -->
+      <div id="tabPermissions" style="display:none;">
+        <div class="section-card">
+          <div class="card-header">
+            <h2>🔐 Quản lý phân quyền truy cập tài liệu</h2>
+            <button class="btn-primary-sm" onclick="openShareDocumentModal()">+ Chia sẻ tài liệu</button>
+          </div>
+          <div class="card-body">
+            <div class="table-card">
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                  <tr>
+                    <th>Tài liệu</th>
+                    <th>Phòng ban được chia sẻ</th>
+                    <th>Người cấp quyền</th>
+                    <th>Ngày cấp</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                  </tr>
+                  </thead>
+                  <tbody id="permTableBody">
+                  <tr>
+                    <td colspan="6" class="empty-state"><span>🔐</span>Đang tải dữ liệu...</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: UPLOAD PDF ===== -->
+      <div id="tabUpload" style="display:none;">
+        <div class="section-card">
+          <div class="card-header">
+            <h2>📤 Upload tài liệu PDF</h2>
+          </div>
+          <div class="card-body">
+            <p style="font-size:0.875rem;color:#6b7280;margin-bottom:20px;">
+              Tải lên tài liệu PDF để hệ thống AI tự động phân tích, chia nhỏ và lập chỉ mục nội dung.
+              Sau khi upload, tài liệu sẽ chuyển qua các trạng thái:
+              <strong>Chờ xử lý → Đang xử lý → Hoàn thành</strong>.
+            </p>
+
+            <div class="upload-area" id="uploadArea">
+              <div style="font-size:2.5rem;">📄</div>
+              <p><strong>Nhấp để chọn file PDF</strong> hoặc kéo thả vào đây</p>
+              <p style="font-size:0.78rem;color:#9ca3af;margin-top:4px;">Chỉ hỗ trợ định dạng PDF · Tối đa 50MB</p>
+              <input type="file" id="fileInput" accept=".pdf" style="display:none;">
+            </div>
+
+            <div id="selectedFile"
+                 style="display:none;margin-top:14px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;align-items:center;gap:10px;">
+              <span>📄</span>
+              <div style="flex:1;">
+                <div style="font-size:0.875rem;font-weight:600;color:#15803d;" id="selectedFileName">—</div>
+                <div style="font-size:0.78rem;color:#6b7280;" id="selectedFileSize">—</div>
+              </div>
+              <button onclick="clearFile()"
+                      style="background:none;border:none;cursor:pointer;color:#6b7280;font-size:1rem;">✕</button>
+            </div>
+
+            <div class="form-group" style="margin-top:16px;">
+              <label for="departmentId">Phòng ban (tùy chọn)</label>
+              <select id="departmentId" class="form-input">
+                <option value="">-- Chọn phòng ban --</option>
+              </select>
+            </div>
+
+            <button class="btn-primary" id="uploadBtn" style="margin-top:16px;width:100%;" disabled>
+              📤 Tải lên & Xử lý
+            </button>
+
+            <!-- Upload progress -->
+            <div id="uploadStatus" style="display:none;margin-top:16px;">
+              <div style="font-size:0.875rem;font-weight:600;color:#4f46e5;margin-bottom:8px;" id="uploadStatusText">
+                Đang tải lên...</div>
+              <div style="height:6px;background:#e5e7eb;border-radius:50px;overflow:hidden;">
+                <div id="uploadProgress"
+                     style="height:100%;background:#4f46e5;border-radius:50px;width:0%;transition:width 0.3s;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent uploads -->
+        <div class="section-card">
+          <div class="card-header">
+            <h2>Tài liệu vừa upload</h2>
+          </div>
+          <div class="table-card">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                <tr>
+                  <th>Tên file</th>
+                  <th>Trạng thái</th>
+                  <th>Chunks AI</th>
+                  <th>Thời gian</th>
+                </tr>
+                </thead>
+                <tbody id="recentUploadBody">
+                <tr>
+                  <td colspan="4" class="empty-state"><span>📤</span>Chưa có tài liệu nào được upload.</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: AI CHAT LOG ===== -->
+      <div id="tabChat" style="display:none;">
+        <div class="section-card">
+          <div class="card-header">
+            <h2>💬 Lịch sử phiên AI Chat</h2>
+          </div>
+          <div class="card-body">
+            <div class="table-card">
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Người dùng</th>
+                    <th>Số tin nhắn</th>
+                    <th>Thời gian tạo</th>
+                    <th>Cập nhật lần cuối</th>
+                    <th>Thao tác</th>
+                  </tr>
+                  </thead>
+                  <tbody id="chatTableBody">
+                  <tr>
+                    <td colspan="6" class="empty-state"><span>💬</span>Đang tải dữ liệu...</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="pagination" id="chatPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: AUDIT LOG ===== -->
+      <div id="tabLogs" style="display:none;">
+        <div class="section-card">
+          <div class="card-header">
+            <h2>📋 Nhật ký hoạt động hệ thống</h2>
+          </div>
+          <div class="card-body">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="logSearch" placeholder="Tìm theo hành động, người dùng...">
+            </div>
+            <div class="activity-card" style="border:none;box-shadow:none;">
+              <ul class="activity-list" id="logList">
+                <li class="activity-item">
+                  <div class="activity-dot indigo"></div>
+                  <div class="activity-info">
+                    <p>Đang tải nhật ký...</p><span>—</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div class="pagination" id="logPagination"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: HỒ SƠ CÁ NHÂN ===== -->
+      <div id="tabProfile" style="display:none;">
+        <div class="section-header">
+          <h2>👤 Hồ sơ quản trị viên</h2>
+        </div>
+
+        <div class="two-col">
+          <!-- Thẻ hồ sơ -->
+          <div class="section-card">
+            <div class="card-body" style="text-align:center;">
+              <div
+                      style="width:80px;height:80px;border-radius:50%;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 16px;"
+                      id="profileAvatar">A</div>
+              <h3 style="font-size:1.1rem;font-weight:700;" id="profileName">—</h3>
+              <p style="color:#6b7280;font-size:0.85rem;" id="profileDept">—</p>
+              <span class="role-badge admin" id="profileRoleBadge">Quản trị viên</span>
+            </div>
+          </div>
+
+          <!-- Form chỉnh sửa -->
+          <div class="section-card">
+            <div class="card-header">
+              <h2>Thông tin cá nhân</h2>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Họ và tên</label>
+                <input type="text" id="editFullName" class="form-input">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="editEmail" class="form-input" disabled>
+              </div>
+              <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="tel" id="editPhone" class="form-input">
+              </div>
+              <button class="btn-primary" onclick="updateProfile()">✓ Lưu thay đổi</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end page-body -->
+  </main>
+
+</div><!-- end layout -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- MODAL: Thêm người dùng -->
+<div class="modal-overlay" id="addUserModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>➕ Thêm người dùng mới</h3>
+      <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="newFullName">Họ và tên</label>
+      <input type="text" id="newFullName" class="form-input" placeholder="Nhập họ và tên">
+    </div>
+    <div class="form-group">
+      <label for="newEmail">Email</label>
+      <input type="email" id="newEmail" class="form-input" placeholder="vd: nguyen@congty.vn">
+    </div>
+    <div class="form-group">
+      <label for="newPassword">Mật khẩu tạm thời</label>
+      <input type="password" id="newPassword" class="form-input" placeholder="Tối thiểu 8 ký tự">
+    </div>
+    <div class="form-group">
+      <label for="newRole">Vai trò</label>
+      <select id="newRole" class="form-input">
+        <option value="USER">Người dùng (USER)</option>
+        <option value="MANAGER">Quản lý (MANAGER)</option>
+        <option value="ADMIN">Quản trị viên (ADMIN)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('addUserModal')">Hủy</button>
+      <button class="btn-primary-sm" onclick="submitAddUser()">Tạo tài khoản</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Thêm/Sửa phòng ban -->
+<div class="modal-overlay" id="departmentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="deptModalTitle">➕ Thêm phòng ban mới</h3>
+      <button class="modal-close" onclick="closeModal('departmentModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="deptName">Tên phòng ban</label>
+      <input type="text" id="deptName" class="form-input" placeholder="Nhập tên phòng ban">
+    </div>
+    <div class="form-group">
+      <label for="deptDescription">Mô tả</label>
+      <textarea id="deptDescription" class="form-input" rows="3" placeholder="Mô tả phòng ban..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('departmentModal')">Hủy</button>
+      <button class="btn-primary-sm" id="deptSubmitBtn" onclick="submitAddDepartment()">Tạo phòng ban</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Chia sẻ tài liệu -->
+<div class="modal-overlay" id="shareDocModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🔗 Chia sẻ tài liệu cho phòng ban</h3>
+      <button class="modal-close" onclick="closeModal('shareDocModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="shareDocId">Chọn tài liệu</label>
+      <select id="shareDocId" class="form-input"></select>
+    </div>
+    <div class="form-group">
+      <label for="shareDeptId">Chọn phòng ban</label>
+      <select id="shareDeptId" class="form-input"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('shareDocModal')">Hủy</button>
+      <button class="btn-primary-sm" onclick="submitShareDocument()">Chia sẻ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Xem chi tiết tài liệu -->
+<div class="modal-overlay" id="docViewerModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
+      <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
+    </div>
+    <div id="docViewerContent" style="max-height:50vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
+      <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Xác nhận -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <h3 id="confirmTitle">Xác nhận thao tác</h3>
+      <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+    </div>
+    <p id="confirmMsg" style="font-size:0.875rem;color:#6b7280;line-height:1.6;"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('confirmModal')">Hủy</button>
+      <button id="confirmActionBtn" class="btn-danger-sm" onclick="executeConfirm()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toastIcon">✅</span>
+  <span id="toastMsg">Thao tác thành công!</span>
+</div>
+
+<!-- ✅ QUAN TRỌNG: Load scripts theo đúng thứ tự -->
+<script src="/js/common.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/admin/dashboard.js"></script>
+
+<!-- ✅ Kiểm tra nếu chưa login thì redirect -->
+<script>
+  // Kiểm tra nhanh trước khi load dashboard
+  (function() {
+      try {
+          // Kiểm tra token
+          const token = localStorage.getItem('accessToken');
+          if (!token) {
+              window.location.href = '/login';
+              return;
+          }
+
+          // Kiểm tra user
+          const userStr = localStorage.getItem('user');
+          if (!userStr) {
+              window.location.href = '/login';
+              return;
+          }
+
+          const user = JSON.parse(userStr);
+          if (user.role !== 'ADMIN') {
+              window.location.href = '/user/dashboard';
+              return;
+          }
+      } catch (e) {
+          window.location.href = '/login';
+      }
+  })();
+</script>
+</body>
+
+</html>

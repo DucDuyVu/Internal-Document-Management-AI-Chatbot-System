@@ -1,6 +1,5 @@
 package com.javaweb.service.impl;
 
-
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
@@ -20,10 +19,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
-
 @Service
 public class JwtServiceImpl implements JwtService {
-	
+
 	@Value("${jwt.secret}")
 	private String secretKey;
 
@@ -32,16 +30,16 @@ public class JwtServiceImpl implements JwtService {
 
 	@Value("${jwt.refresh-token-expired}")
 	private Duration refreshTokenExpired;
-	
+
 	@Value("${jwt.reset-password-token-expired}")
 	private Duration resetPasswordTokenExpired;
-	
+
 	// Ký JWT khi tạo token + xác thực JWT khi đọc token
 	private Key getSigningKey() {
 		return Keys.hmacShaKeyFor(
 				secretKey.getBytes(StandardCharsets.UTF_8));
 	}
-	
+
 	// Giải mã JWT và lấy toàn bộ Claims (token)
 	private Claims extractAllClaims(String token) {
 		return Jwts.parser()
@@ -50,40 +48,40 @@ public class JwtServiceImpl implements JwtService {
 				.parseSignedClaims(token)
 				.getPayload();
 	}
+
 	@Override
 	public String generateAccessToken(UsersEntity user) {
 		return Jwts.builder()
 				.subject(user.getEmail())
 				.claim("userId", user.getId())
-				.claim("role", user.getRole())
+				.claim("role", user.getRole().name())
 				.issuedAt(new Date())
 				.expiration(new Date(
-						System.currentTimeMillis() + resetPasswordTokenExpired.toMillis()
-						))
+						System.currentTimeMillis() + resetPasswordTokenExpired.toMillis()))
 				.signWith(getSigningKey())
 				.compact();
 	}
-	
+
 	@Override
 	public String extractEmail(String token) {
-		
+
 		return extractAllClaims(token)
 				.getSubject();
 	}
 
 	@Override
 	public String extractRole(String token) {
-		
+
 		return extractAllClaims(token)
 				.get("role", String.class);
 	}
 
 	@Override
 	public Long extractUserId(String token) {
-		
+
 		return extractAllClaims(token)
 
-	            .get("userId", Long.class);
+				.get("userId", Long.class);
 	}
 
 	@Override
@@ -96,28 +94,27 @@ public class JwtServiceImpl implements JwtService {
 			return false;
 		}
 	}
+
 	@Override
 	public String generateRefreshToken(UsersEntity user) {
-		
+
 		return Jwts.builder()
 				.subject(user.getEmail())
 				.claim("userId", user.getId())
-				.claim("role", user.getRole())
+				.claim("role", user.getRole().name())
 				.claim("type", "refresh")
 				.issuedAt(new Date())
 				.expiration(new Date(
-				        System.currentTimeMillis() + refreshTokenExpired.toMillis()
-				))
+						System.currentTimeMillis() + refreshTokenExpired.toMillis()))
 				.signWith(getSigningKey())
 				.compact();
 	}
-	
-	
+
 	// Lấy thời gian hết hạn refresh token
 	@Override
 	public LocalDateTime extractExpirations(String token) {
 		return extractAllClaims(token)
-				.getExpiration()  // trả về Date 
+				.getExpiration() // trả về Date
 				.toInstant()
 				.atZone(ZoneId.systemDefault())
 				.toLocalDateTime(); // convert LocalDateTime
@@ -131,8 +128,7 @@ public class JwtServiceImpl implements JwtService {
 				.claim("type", "reset")
 				.issuedAt(new Date())
 				.expiration(new Date(
-						System.currentTimeMillis() + accessTokenExpired.toMillis()
-						))
+						System.currentTimeMillis() + accessTokenExpired.toMillis()))
 				.signWith(getSigningKey())
 				.compact();
 	}
