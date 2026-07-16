@@ -223,6 +223,8 @@ async function apiRequest(url, options = {}) {
 
     const token = getAccessToken();
 
+    let body = options.body;
+
     const headers = {
         ...(options.headers || {}),
         Authorization: `Bearer ${token}`
@@ -231,10 +233,14 @@ async function apiRequest(url, options = {}) {
     // Không thêm Content-Type nếu upload file
     if (!(options.body instanceof FormData)) {
         headers["Content-Type"] = "application/json";
+         if (body && typeof body === "object") {
+                    body = JSON.stringify(body);
+                }
     }
 
     let response = await fetch(`${API_BASE}${url}`, {
         ...options,
+        body,
         headers
     });
 
@@ -251,6 +257,7 @@ async function apiRequest(url, options = {}) {
 
         response = await fetch(`${API_BASE}${url}`, {
             ...options,
+            body,
             headers
         });
     }

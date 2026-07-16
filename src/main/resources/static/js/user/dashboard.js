@@ -115,6 +115,24 @@ function setupUserEventListeners() {
     if (globalSearch && typeof debounce !== 'undefined') {
         globalSearch.addEventListener('input', debounce(performSearch, 500));
     }
+
+    // Logout
+    const logoutButtons = [
+            document.getElementById('logoutBtnHeader'),
+            document.getElementById('logoutBtnSidebar')
+        ];
+
+        logoutButtons.forEach((btn) => {
+            if (btn) {
+                btn.addEventListener('click', async () => {
+                    if (typeof logout !== 'undefined') {
+                        await logout(); // hàm lấy từ auth.js
+                    } else {
+                        console.error('Hàm logout() không tồn tại, kiểm tra lại auth.js đã load chưa');
+                    }
+                });
+            }
+        });
 }
 
 function loadUserTabData(tabId) {
