@@ -48,4 +48,37 @@ public class UsersController {
 		UsersEntity user = (UsersEntity) authentication.getPrincipal();
 		return usersService.changePassword(user, changePasswordRequest);
 	}
+	
+	@org.springframework.web.bind.annotation.PostMapping("/upload-avatar")
+	public org.springframework.http.ResponseEntity<java.util.Map<String, String>> uploadAvatar(@org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+	    try {
+	        if (file.isEmpty()) {
+	            throw new RuntimeException("File rỗng");
+	        }
+	        
+	        java.nio.file.Path uploadPath = java.nio.file.Paths.get("uploads/avatars");
+	        if (!java.nio.file.Files.exists(uploadPath)) {
+	            java.nio.file.Files.createDirectories(uploadPath);
+	        }
+	        
+	        // Get file extension
+	        String originalFilename = file.getOriginalFilename();
+	        String extension = "";
+	        if (originalFilename != null && originalFilename.contains(".")) {
+	            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+	        }
+	        
+	        String uniqueName = java.util.UUID.randomUUID().toString() + extension;
+	        java.nio.file.Path targetPath = uploadPath.resolve(uniqueName);
+	        java.nio.file.Files.copy(file.getInputStream(), targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+	        
+	        java.util.Map<String, String> response = new java.util.HashMap<>();
+	        // Trả về đường dẫn để frontend có thể truy cập qua URL (đã config WebMvcConfig)
+	        response.put("avatarUrl", "/uploads/avatars/" + uniqueName);
+	        
+	        return org.springframework.http.ResponseEntity.ok(response);
+	    } catch (java.io.IOException e) {
+	        throw new RuntimeException("Lỗi khi lưu file: " + e.getMessage());
+	    }
+	}
 }

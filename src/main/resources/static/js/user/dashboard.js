@@ -70,10 +70,10 @@ function initUserDashboard() {
 }
 
 function setupUserSidebar() {
-    const sidebarNav = document.getElementById('sidebarNav');
-    if (!sidebarNav) return;
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
 
-    sidebarNav.querySelectorAll('li[data-tab]').forEach(item => {
+    sidebar.querySelectorAll('li[data-tab]').forEach(item => {
         item.addEventListener('click', function () {
             const tabId = this.getAttribute('data-tab');
             UserState.currentTab = tabId;
@@ -118,8 +118,8 @@ function setupUserEventListeners() {
 
     // Logout
     const logoutButtons = [
-            document.getElementById('logoutBtnHeader'),
-            document.getElementById('logoutBtnSidebar')
+            document.getElementById('logoutBtn'),
+            document.getElementById('logoutBtnTop')
         ];
 
         logoutButtons.forEach((btn) => {
@@ -955,7 +955,13 @@ async function loadUserProfile() {
 
         if (nameEl) nameEl.textContent = profile.fullName;
         if (deptEl) deptEl.textContent = profile.departmentName || '—';
-        if (avatarEl) avatarEl.textContent = (profile.fullName || 'U').charAt(0).toUpperCase();
+        if (avatarEl) {
+            if (profile.avatarUrl) {
+                avatarEl.innerHTML = `<img src="${profile.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                avatarEl.textContent = (profile.fullName || 'U').charAt(0).toUpperCase();
+            }
+        }
 
         const roleBadge = document.getElementById('profileRoleBadge');
         if (roleBadge) {
@@ -963,20 +969,31 @@ async function loadUserProfile() {
             roleBadge.textContent = roles[profile.role] || 'Nhân viên';
         }
 
+        // Update Read-Only View
+        const viewFullName = document.getElementById('viewFullName');
+        const viewUsername = document.getElementById('viewUsername');
+        const viewEmail = document.getElementById('viewEmail');
+        const viewPhone = document.getElementById('viewPhone');
+        const viewDept = document.getElementById('viewDept');
+        const viewRole = document.getElementById('viewRole');
+
+        if (viewFullName) viewFullName.textContent = profile.fullName || '—';
+        if (viewUsername) viewUsername.textContent = profile.username || profile.userName || '—';
+        if (viewEmail) viewEmail.textContent = profile.email || '—';
+        if (viewPhone) viewPhone.textContent = profile.phone || '—';
+        if (viewDept) viewDept.textContent = profile.departmentName || '—';
+        if (viewRole) {
+            const roles = { ADMIN: 'Quản trị viên', MANAGER: 'Quản lý', USER: 'Nhân viên' };
+            viewRole.textContent = roles[profile.role] || profile.role || '—';
+        }
+
         // Update form
         const fullNameInput = document.getElementById('editFullName');
-        const usernameInput = document.getElementById('editUsername');
-        const emailInput = document.getElementById('editEmail');
         const phoneInput = document.getElementById('editPhone');
-        const deptInput = document.getElementById('editDept');
-        const roleInput = document.getElementById('editRole');
+        const avatarInput = document.getElementById('editAvatarUrl');
 
         if (fullNameInput) fullNameInput.value = profile.fullName || '';
-        if (usernameInput) usernameInput.value = profile.username || '';
-        if (emailInput) emailInput.value = profile.email || '';
         if (phoneInput) phoneInput.value = profile.phone || '';
-        if (deptInput) deptInput.value = profile.departmentName || '—';
-        if (roleInput) roleInput.value = profile.role || 'USER';
 
         // Load profile stats
         const docCount = document.getElementById('psDocCount');
@@ -1030,6 +1047,9 @@ async function loadProfileActivities() {
 async function updateProfile() {
     const fullName = document.getElementById('editFullName')?.value?.trim();
     const phone = document.getElementById('editPhone')?.value?.trim();
+    const userName = document.getElementById('editUsername')?.value?.trim();
+    const avatarInput = document.getElementById('editAvatarUrl');
+    let avatarUrl = null;
 
     if (!fullName) {
         if (typeof showToast !== 'undefined') {
@@ -1043,9 +1063,28 @@ async function updateProfile() {
             throw new Error('apiRequest() không tồn tại');
         }
 
+        // Nếu có chọn ảnh mới, upload trước
+        if (avatarInput && avatarInput.files.length > 0) {
+            const formData = new FormData();
+            formData.append('file', avatarInput.files[0]);
+            
+            const uploadRes = await apiRequest('/api/users/upload-avatar', {
+                method: 'POST',
+                body: formData,
+                headers: { 'Accept': 'application/json' }
+                // NOTE: Do not set Content-Type header for FormData, browser will set it automatically with boundary
+            }, true); // Use raw fetch wrapper if possible, or ensure apiRequest doesn't override Content-Type
+
+            avatarUrl = uploadRes.avatarUrl;
+        }
+
+        // Cập nhật profile
+        const payload = { fullName, phone, userName };
+        if (avatarUrl) payload.avatarUrl = avatarUrl;
+
         await apiRequest('/api/users/profile', {
             method: 'PUT',
-            body: JSON.stringify({ fullName, phone })
+            body: JSON.stringify(payload)
         });
 
         // Update local storage bằng hàm từ auth.js
@@ -1054,6 +1093,7 @@ async function updateProfile() {
             if (user) {
                 user.fullName = fullName;
                 user.phone = phone;
+                if (avatarUrl) user.avatarUrl = avatarUrl;
                 saveUser(user);
             }
         }
@@ -1064,6 +1104,14 @@ async function updateProfile() {
 
         if (typeof showToast !== 'undefined') {
             showToast('Cập nhật hồ sơ thành công!', 'success');
+        }
+        
+        loadUserProfile(); // Reload data to update view
+        
+        // Switch back to Info tab
+        const infoBtn = document.querySelector('.settings-tab[onclick*="ptInfo"]');
+        if (infoBtn) {
+            switchProfileTab('ptInfo', infoBtn);
         }
 
     } catch (error) {
@@ -1105,12 +1153,12 @@ async function changePassword() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        await apiRequest('/api/auth/change-password', {
-            method: 'POST',
+        await apiRequest('/api/users/change-password', {
+            method: 'PUT',
             body: JSON.stringify({
-                currentPassword,
-                newPassword,
-                confirmPassword
+                oldPassword: currentPassword,
+                newPassword: newPassword,
+                comfirmPassword: confirmPassword
             })
         });
 
@@ -1124,8 +1172,17 @@ async function changePassword() {
         if (cfp) cfp.value = '';
 
         if (typeof showToast !== 'undefined') {
-            showToast('Đổi mật khẩu thành công!', 'success');
+            showToast('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
         }
+
+        setTimeout(() => {
+            if (typeof logout !== 'undefined') {
+                logout();
+            } else {
+                localStorage.clear();
+                window.location.href = '/login';
+            }
+        }, 1500);
 
     } catch (error) {
         console.error('Error changing password:', error);
@@ -1152,17 +1209,14 @@ function getActionLabel(action) {
 
 function switchProfileTab(tabId, btn) {
     // Hide all panels
-    ['ptInfo', 'ptPassword', 'ptActivity'].forEach(id => {
-        const panel = document.getElementById(id);
-        if (panel) panel.style.display = 'none';
-    });
+    document.querySelectorAll('.settings-card').forEach(panel => panel.classList.remove('active'));
 
     // Show selected panel
     const target = document.getElementById(tabId);
-    if (target) target.style.display = 'block';
+    if (target) target.classList.add('active');
 
     // Update active button
-    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
     if (btn) btn.classList.add('active');
 }
 
@@ -1181,13 +1235,8 @@ function uploadAvatar(input) {
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
-
-    fetch(`${API_BASE}/api/users/avatar`, {
+    apiRequest('/api/users/avatar', {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        },
         body: formData
     })
         .then(response => {

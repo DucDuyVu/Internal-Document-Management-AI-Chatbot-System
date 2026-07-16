@@ -89,10 +89,10 @@ function initAdminDashboard() {
 }
 
 function setupAdminSidebar() {
-    const sidebarNav = document.getElementById('sidebarNav');
-    if (!sidebarNav) return;
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) return;
 
-    sidebarNav.querySelectorAll('li[data-tab]').forEach(item => {
+    sidebar.querySelectorAll('li[data-tab]').forEach(item => {
         item.addEventListener('click', function () {
             const tabId = this.getAttribute('data-tab');
             AdminState.currentTab = tabId;
@@ -136,6 +136,24 @@ function setupAdminEventListeners() {
     if (uploadBtn) {
         uploadBtn.addEventListener('click', uploadDocument);
     }
+
+    // Logout
+    const logoutButtons = [
+        document.getElementById('logoutBtn'),
+        document.getElementById('logoutBtnTop')
+    ];
+
+    logoutButtons.forEach((btn) => {
+        if (btn) {
+            btn.addEventListener('click', async () => {
+                if (typeof logout !== 'undefined') {
+                    await logout();
+                } else {
+                    console.error('Hàm logout() không tồn tại, kiểm tra lại auth.js đã load chưa');
+                }
+            });
+        }
+    });
 }
 
 function loadTabData(tabId) {
@@ -368,12 +386,21 @@ function renderUserTable() {
                 </span>
             </td>
             <td>
-                <div style="display:flex;gap:6px;">
-                    <button class="btn-icon" onclick="editUser(${user.id})" title="Chỉnh sửa">✏️</button>
-                    <button class="btn-icon" onclick="changeUserDepartment(${user.id})" title="Chuyển phòng ban">🔄</button>
-                    <button class="btn-icon" onclick="toggleUserStatus(${user.id}, ${user.isActive})"
-                            title="${user.isActive ? 'Khoá' : 'Mở khoá'}">
-                        ${user.isActive ? '🔒' : '🔓'}
+                <div style="display:flex;gap:4px;justify-content:flex-start;">
+                    <!-- Sửa -->
+                    <button class="btn-icon" style="background:transparent; color:#6b7280; border:1px solid transparent; border-radius:6px; padding:6px; transition:all 0.2s; display:flex; align-items:center;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#4f46e5'" onmouseout="this.style.background='transparent'; this.style.color='#6b7280'" onclick="editUser(${user.id})" title="Chỉnh sửa">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </button>
+                    <!-- Phòng ban -->
+                    <button class="btn-icon" style="background:transparent; color:#6b7280; border:1px solid transparent; border-radius:6px; padding:6px; transition:all 0.2s; display:flex; align-items:center;" onmouseover="this.style.background='#f3f4f6'; this.style.color='#d97706'" onmouseout="this.style.background='transparent'; this.style.color='#6b7280'" onclick="changeUserDepartment(${user.id})" title="Phòng ban">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                    </button>
+                    <!-- Khóa/Mở khóa -->
+                    <button class="btn-icon" style="background:transparent; color:${user.isActive ? '#10b981' : '#ef4444'}; border:1px solid transparent; border-radius:6px; padding:6px; transition:all 0.2s; display:flex; align-items:center;" onmouseover="this.style.background='${user.isActive ? '#dcfce7' : '#fee2e2'}'; this.style.color='${user.isActive ? '#059669' : '#dc2626'}'" onmouseout="this.style.background='transparent'; this.style.color='${user.isActive ? '#10b981' : '#ef4444'}'" onclick="toggleUserStatus(${user.id}, ${user.isActive})" title="${user.isActive ? 'Đang mở (Bấm để khóa)' : 'Đã khóa (Bấm để mở)'}">
+                        ${user.isActive 
+                            ? `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>`
+                            : `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>`
+                        }
                     </button>
                 </div>
             </td>
@@ -503,7 +530,8 @@ function toggleUserStatus(userId, currentStatus) {
                 throw new Error('apiRequest() không tồn tại');
             }
 
-            await apiRequest(`/api/admin/users/${userId}/toggle-status`, {
+            const endpoint = currentStatus ? `/api/admin/users/${userId}/lock` : `/api/admin/users/${userId}/unlock`;
+            await apiRequest(endpoint, {
                 method: 'PUT'
             });
 
@@ -1134,13 +1162,8 @@ async function uploadDocument() {
     if (progressBar) progressBar.style.width = '0%';
 
     try {
-        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
-
-        const response = await fetch(`${API_BASE}/api/admin/documents/upload`, {
+        const response = await apiRequest('/api/admin/documents/upload', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
             body: formData
         });
 
@@ -1491,13 +1514,25 @@ async function loadAdminProfile() {
 
         const response = await apiRequest('/api/users/profile');
 
+        // Update Read-Only View
+        const viewFullName = document.getElementById('viewFullName');
+        const viewUsername = document.getElementById('viewUsername');
+        const viewEmail = document.getElementById('viewEmail');
+        const viewPhone = document.getElementById('viewPhone');
+        const viewDept = document.getElementById('viewDept');
+        const viewRole = document.getElementById('viewRole');
+
+        if (viewFullName) viewFullName.textContent = response.fullName || '—';
+        if (viewUsername) viewUsername.textContent = response.username || '—';
+        if (viewEmail) viewEmail.textContent = response.email || '—';
+        if (viewPhone) viewPhone.textContent = response.phone || '—';
+        if (viewDept) viewDept.textContent = response.departmentName || '—';
+        if (viewRole) viewRole.textContent = 'Quản trị viên';
+
+        // Update form inputs
         const fields = {
             'editFullName': response.fullName || '',
-            'editUsername': response.username || '',
-            'editEmail': response.email || '',
-            'editPhone': response.phone || '',
-            'editDept': response.departmentName || '—',
-            'editRole': 'Quản trị viên'
+            'editPhone': response.phone || ''
         };
 
         Object.keys(fields).forEach(id => {
@@ -1505,22 +1540,199 @@ async function loadAdminProfile() {
             if (el) el.value = fields[id];
         });
 
+        // Update profile card
         const nameEl = document.getElementById('profileName');
         const deptEl = document.getElementById('profileDept');
         const avatarEl = document.getElementById('profileAvatar');
 
         if (nameEl) nameEl.textContent = response.fullName;
         if (deptEl) deptEl.textContent = response.departmentName || '—';
-        if (avatarEl) avatarEl.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
+        if (avatarEl) {
+            if (response.avatarUrl) {
+                avatarEl.innerHTML = `<img src="${response.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                avatarEl.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
+            }
+        }
+
+        // Update sidebar user card
+        const sidebarName = document.getElementById('sidebarName');
+        const sidebarDept = document.getElementById('sidebarDept');
+        const sidebarAvatar = document.getElementById('sidebarAvatar');
+        if (sidebarName) sidebarName.textContent = response.fullName || 'Admin';
+        if (sidebarDept) sidebarDept.textContent = 'Quản trị viên';
+        
+        if (sidebarAvatar) {
+            if (response.avatarUrl) {
+                sidebarAvatar.innerHTML = `<img src="${response.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                sidebarAvatar.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
+            }
+        }
+
+        // Update profile stats
+        const userCount = document.getElementById('psUserCount');
+        const docCount = document.getElementById('psDocCount');
+        const deptCount = document.getElementById('psDeptCount');
+        if (userCount) userCount.textContent = response.userCount || AdminState.overview?.totalUsers || 0;
+        if (docCount) docCount.textContent = response.documentCount || AdminState.overview?.totalDocuments || 0;
+        if (deptCount) deptCount.textContent = response.departmentCount || AdminState.overview?.totalDepartments || 0;
+
+        // Load profile activities
+        loadProfileActivities();
 
     } catch (error) {
         console.error('Error loading profile:', error);
     }
 }
 
+async function loadProfileActivities() {
+    try {
+        if (typeof apiRequest === 'undefined') return;
+
+        const activities = await apiRequest('/api/admin/audit-logs?page=1&size=20');
+        const logs = activities.content || activities;
+        const list = document.getElementById('profileActivityList');
+
+        if (!list) return;
+
+        if (!logs || logs.length === 0) {
+            list.innerHTML = '<li class="activity-empty">Chưa có hoạt động nào</li>';
+            return;
+        }
+
+        list.innerHTML = logs.map(log => `
+            <li class="activity-item-v2">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-weight:500;">${getActionLabel(log.action)}</span>
+                    <span style="font-size:0.78rem;color:#6b7280;">${typeof formatDate !== 'undefined' ? formatDate(log.createdAt) : log.createdAt}</span>
+                </div>
+                ${log.userName ? `<div style="font-size:0.78rem;color:#9ca3af;">bởi ${log.userName}</div>` : ''}
+            </li>
+        `).join('');
+
+    } catch (error) {
+        console.error('Error loading profile activities:', error);
+    }
+}
+
+// =============================================
+// PROFILE TAB SWITCHING
+// =============================================
+
+function switchProfileTab(tabId, btn) {
+    document.querySelectorAll('.settings-card').forEach(panel => panel.classList.remove('active'));
+
+    const target = document.getElementById(tabId);
+    if (target) target.classList.add('active');
+
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+}
+
+function togglePassVis(inputId) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+}
+
+function checkPassStrength(password) {
+    const fill = document.getElementById('passStrengthFill');
+    const label = document.getElementById('passStrengthLabel');
+
+    if (!fill || !label) return;
+
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+    const colors = ['#dc2626', '#f59e0b', '#84cc16', '#10b981'];
+    const labels = ['Yếu', 'Trung bình', 'Khá', 'Mạnh'];
+
+    fill.style.width = `${(strength / 4) * 100}%`;
+    fill.style.background = colors[strength - 1] || '#e5e7eb';
+    label.textContent = strength > 0 ? labels[strength - 1] : '';
+}
+
+async function changePassword() {
+    const currentPassword = document.getElementById('currentPassword')?.value;
+    const newPassword = document.getElementById('newPassword')?.value;
+    const confirmPassword = document.getElementById('confirmPassword')?.value;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        if (typeof showToast !== 'undefined') {
+            showToast('Vui lòng điền đầy đủ thông tin', 'warning');
+        }
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        if (typeof showToast !== 'undefined') {
+            showToast('Mật khẩu mới phải có ít nhất 8 ký tự', 'warning');
+        }
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        if (typeof showToast !== 'undefined') {
+            showToast('Mật khẩu xác nhận không khớp', 'warning');
+        }
+        return;
+    }
+
+    try {
+        if (typeof apiRequest === 'undefined') {
+            throw new Error('apiRequest() không tồn tại');
+        }
+
+        await apiRequest('/api/users/change-password', {
+            method: 'PUT',
+            body: JSON.stringify({
+                oldPassword: currentPassword,
+                newPassword: newPassword,
+                comfirmPassword: confirmPassword
+            })
+        });
+
+        const cp = document.getElementById('currentPassword');
+        const np = document.getElementById('newPassword');
+        const cfp = document.getElementById('confirmPassword');
+
+        if (cp) cp.value = '';
+        if (np) np.value = '';
+        if (cfp) cfp.value = '';
+
+        if (typeof showToast !== 'undefined') {
+            showToast('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', 'success');
+        }
+
+        setTimeout(() => {
+            if (typeof logout !== 'undefined') {
+                logout();
+            } else {
+                localStorage.clear();
+                window.location.href = '/login';
+            }
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error changing password:', error);
+        if (typeof showToast !== 'undefined') {
+            showToast(error.message || 'Không thể đổi mật khẩu', 'error');
+        }
+    }
+}
+
+// Sidebar user info is now handled globally by updateUserUI() in common.js
+
 async function updateProfile() {
     const fullName = document.getElementById('editFullName')?.value?.trim() || '';
     const phone = document.getElementById('editPhone')?.value?.trim() || '';
+    const avatarInput = document.getElementById('editAvatarUrl');
+    let avatarUrl = null;
 
     if (!fullName) {
         if (typeof showToast !== 'undefined') {
@@ -1534,9 +1746,26 @@ async function updateProfile() {
             throw new Error('apiRequest() không tồn tại');
         }
 
+        // Nếu có chọn ảnh mới, upload trước
+        if (avatarInput && avatarInput.files && avatarInput.files.length > 0) {
+            const formData = new FormData();
+            formData.append('file', avatarInput.files[0]);
+            
+            const uploadRes = await apiRequest('/api/users/upload-avatar', {
+                method: 'POST',
+                body: formData,
+                headers: { 'Accept': 'application/json' }
+            }, true);
+
+            avatarUrl = uploadRes.avatarUrl;
+        }
+
+        const payload = { fullName, phone };
+        if (avatarUrl) payload.avatarUrl = avatarUrl;
+
         await apiRequest('/api/users/profile', {
             method: 'PUT',
-            body: JSON.stringify({ fullName, phone })
+            body: JSON.stringify(payload)
         });
 
         if (typeof showToast !== 'undefined') {
@@ -1549,12 +1778,21 @@ async function updateProfile() {
             if (user) {
                 user.fullName = fullName;
                 user.phone = phone;
+                if (avatarUrl) user.avatarUrl = avatarUrl;
                 saveUser(user);
             }
         }
 
         if (typeof updateUserUI !== 'undefined') {
             updateUserUI(typeof getUser !== 'undefined' ? getUser() : null);
+        }
+        
+        loadAdminProfile(); // Reload profile
+        
+        // Switch back to Info tab
+        const infoBtn = document.querySelector('.settings-tab[onclick*="ptInfo"]');
+        if (infoBtn) {
+            switchProfileTab('ptInfo', infoBtn);
         }
 
     } catch (error) {
@@ -1668,6 +1906,10 @@ window.changeAdminPage = changeAdminPage;
 window.filterUsers = filterUsers;
 window.filterDocuments = filterDocuments;
 window.filterLogs = filterLogs;
+window.switchProfileTab = switchProfileTab;
+window.togglePassVis = togglePassVis;
+window.checkPassStrength = checkPassStrength;
+window.changePassword = changePassword;
 
 // ===== STUB FUNCTIONS (to be implemented) =====
 function editUser(userId) {
@@ -1701,4 +1943,12 @@ document.addEventListener('DOMContentLoaded', function () {
     loadOverviewStats();
     loadRecentActivities();
     loadDepartmentStats();
+
+    // Password strength listener
+    const newPwdInput = document.getElementById('newPassword');
+    if (newPwdInput) {
+        newPwdInput.addEventListener('input', function() {
+            checkPassStrength(this.value);
+        });
+    }
 });

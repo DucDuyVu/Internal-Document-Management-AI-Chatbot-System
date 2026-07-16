@@ -1,942 +1,14 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
-
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layouts/user-layout}">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Bảng điều khiển người dùng – IDMS Quản lý Tài liệu Nội bộ và AI Chatbot.">
   <title>Bảng điều khiển – IDMS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-  <link rel="stylesheet" href="/css/dashboard.css">
-  <style>
-    /* ===== USER DASHBOARD SPECIFIC STYLES ===== */
-
-    /* Chat Layout */
-    .chat-full-layout {
-      display: flex;
-      gap: 0;
-      height: calc(100vh - var(--topbar-height) - 48px);
-      min-height: 500px;
-      background: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl);
-      overflow: hidden;
-    }
-
-    /* Chat Sidebar */
-    .chat-sidebar-panel {
-      width: 280px;
-      flex-shrink: 0;
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-gray-50);
-    }
-
-    .chat-sidebar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px;
-      border-bottom: 1px solid var(--border-color);
-      font-weight: 700;
-      font-size: 0.9rem;
-    }
-
-    .btn-new-chat {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: #fff;
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all var(--transition);
-    }
-
-    .btn-new-chat:hover {
-      background: var(--primary-dark);
-      transform: scale(1.1);
-    }
-
-    .chat-search-wrap {
-      padding: 12px;
-    }
-
-    .chat-search-wrap input {
-      width: 100%;
-      height: 36px;
-      padding: 0 12px;
-      border: 1.5px solid var(--border-color);
-      border-radius: var(--radius);
-      font-family: inherit;
-      font-size: 0.8rem;
-      outline: none;
-      transition: border-color var(--transition);
-    }
-
-    .chat-search-wrap input:focus {
-      border-color: var(--primary);
-    }
-
-    .chat-session-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-    }
-
-    .chat-session-item {
-      padding: 12px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all var(--transition);
-      margin-bottom: 4px;
-    }
-
-    .chat-session-item:hover {
-      background: var(--bg-gray-200);
-    }
-
-    .chat-session-item.active {
-      background: var(--primary-bg);
-      border-left: 3px solid var(--primary);
-    }
-
-    .chat-session-item .chat-session-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .chat-session-item .chat-session-meta {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    .chat-session-empty {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-    }
-
-    /* Chat Main */
-    .chat-main-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-
-    .chat-empty-state {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px;
-      text-align: center;
-    }
-
-    .chat-empty-state h3 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: var(--text-primary);
-    }
-
-    .chat-empty-state p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
-
-    .chat-active-view {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .chat-topbar-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border-color);
-      flex-shrink: 0;
-    }
-
-    .chat-session-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .chat-session-meta {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .chat-topbar-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .chat-action-btn {
-      padding: 6px 12px;
-      border: 1.5px solid var(--border-color);
-      border-radius: var(--radius);
-      background: var(--bg-white);
-      font-family: inherit;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      color: var(--text-secondary);
-    }
-
-    .chat-action-btn:hover {
-      background: var(--bg-gray-50);
-    }
-
-    .chat-action-btn.danger:hover {
-      border-color: #fca5a5;
-      color: var(--danger);
-      background: var(--danger-bg);
-    }
-
-    /* Chat Messages */
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      background: var(--bg-gray-50);
-    }
-
-    .chat-message {
-      display: flex;
-      gap: 12px;
-      max-width: 85%;
-    }
-
-    .chat-message.user {
-      align-self: flex-end;
-      flex-direction: row-reverse;
-    }
-
-    .chat-message.assistant {
-      align-self: flex-start;
-    }
-
-    .chat-message-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-
-    .chat-message.user .chat-message-avatar {
-      background: var(--primary-bg);
-    }
-
-    .chat-message.assistant .chat-message-avatar {
-      background: #f0fdf4;
-    }
-
-    .chat-message-content {
-      padding: 12px 16px;
-      border-radius: var(--radius-lg);
-      font-size: 0.875rem;
-      line-height: 1.6;
-    }
-
-    .chat-message.user .chat-message-content {
-      background: var(--primary);
-      color: #fff;
-      border-bottom-right-radius: 4px;
-    }
-
-    .chat-message.assistant .chat-message-content {
-      background: var(--bg-white);
-      border: 1px solid var(--border-color);
-      border-bottom-left-radius: 4px;
-    }
-
-    .chat-message-text {
-      word-break: break-word;
-    }
-
-    .chat-message-text pre {
-      background: rgba(0, 0, 0, 0.05);
-      padding: 12px;
-      border-radius: var(--radius-sm);
-      overflow-x: auto;
-      margin: 8px 0;
-      font-size: 0.8rem;
-    }
-
-    .chat-message-text code {
-      background: rgba(0, 0, 0, 0.05);
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-size: 0.82rem;
-    }
-
-    .chat-message-time {
-      font-size: 0.68rem;
-      margin-top: 6px;
-      opacity: 0.7;
-    }
-
-    .chat-message.user .chat-message-time {
-      text-align: right;
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .chat-message.assistant .chat-message-time {
-      color: var(--text-muted);
-    }
-
-    /* Chat File Refs */
-    .chat-file-refs {
-      margin-top: 10px;
-      padding: 10px;
-      background: rgba(79, 70, 229, 0.05);
-      border-radius: var(--radius-sm);
-      border-left: 3px solid var(--primary);
-    }
-
-    .chat-file-ref {
-      padding: 6px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background var(--transition);
-      font-size: 0.8rem;
-      margin-top: 4px;
-    }
-
-    .chat-file-ref:hover {
-      background: rgba(79, 70, 229, 0.1);
-    }
-
-    /* Typing Indicator */
-    .typing-indicator {
-      display: inline-flex;
-      gap: 4px;
-      padding: 8px 0;
-    }
-
-    .typing-indicator span {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--text-muted);
-      animation: typing 1.4s infinite;
-    }
-
-    .typing-indicator span:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    .typing-indicator span:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-
-    @keyframes typing {
-
-      0%,
-      60%,
-      100% {
-        transform: translateY(0);
-        opacity: 0.4;
-      }
-
-      30% {
-        transform: translateY(-8px);
-        opacity: 1;
-      }
-    }
-
-    /* Chat Input */
-    .chat-input-area {
-      padding: 16px 20px;
-      border-top: 1px solid var(--border-color);
-      background: var(--bg-white);
-      flex-shrink: 0;
-    }
-
-    .chat-input-wrap {
-      display: flex;
-      gap: 10px;
-      align-items: flex-end;
-    }
-
-    .chat-textarea {
-      flex: 1;
-      padding: 10px 16px;
-      border: 1.5px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      font-family: inherit;
-      font-size: 0.875rem;
-      resize: none;
-      outline: none;
-      max-height: 120px;
-      transition: border-color var(--transition);
-      line-height: 1.5;
-    }
-
-    .chat-textarea:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-ring);
-    }
-
-    .chat-send-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: #fff;
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: all var(--transition);
-    }
-
-    .chat-send-btn:hover {
-      background: var(--primary-dark);
-      transform: scale(1.05);
-    }
-
-    .chat-send-btn:disabled {
-      background: var(--bg-gray-300);
-      cursor: not-allowed;
-    }
-
-    .chat-input-meta {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 6px;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    /* Search Hero */
-    .search-hero {
-      background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-      border-radius: var(--radius-xl);
-      padding: 32px;
-      margin-bottom: 24px;
-      text-align: center;
-    }
-
-    .search-hero-input-wrap {
-      display: flex;
-      gap: 10px;
-      max-width: 600px;
-      margin: 0 auto;
-      position: relative;
-    }
-
-    .search-hero-icon {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 1.2rem;
-      z-index: 1;
-    }
-
-    .search-hero-input {
-      flex: 1;
-      height: 50px;
-      padding: 0 50px 0 48px;
-      border: 2px solid transparent;
-      border-radius: var(--radius-lg);
-      font-family: inherit;
-      font-size: 0.95rem;
-      outline: none;
-      box-shadow: var(--shadow-md);
-      transition: all var(--transition);
-    }
-
-    .search-hero-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px var(--primary-ring);
-    }
-
-    .search-hero-btn {
-      padding: 0 24px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-lg);
-      font-family: inherit;
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background var(--transition);
-    }
-
-    .search-hero-btn:hover {
-      background: var(--primary-dark);
-    }
-
-    .search-filters-row {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-
-    .search-hint {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-muted);
-    }
-
-    /* Search Results */
-    .search-result-item {
-      background: var(--bg-white);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 16px;
-      margin-bottom: 12px;
-      cursor: pointer;
-      transition: all var(--transition);
-    }
-
-    .search-result-item:hover {
-      box-shadow: var(--shadow-md);
-      border-color: var(--primary);
-      transform: translateY(-1px);
-    }
-
-    /* Profile */
-    .profile-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 20px;
-    }
-
-    .profile-card {
-      background: var(--bg-white);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl);
-      padding: 32px 24px;
-      text-align: center;
-      box-shadow: var(--shadow-sm);
-      height: fit-content;
-    }
-
-    .profile-avatar-wrap {
-      position: relative;
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 16px;
-    }
-
-    .profile-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: var(--primary-bg);
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      font-weight: 800;
-      overflow: hidden;
-    }
-
-    .profile-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .profile-avatar-edit {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: #fff;
-      border: 2px solid #fff;
-      cursor: pointer;
-      font-size: 0.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .profile-name {
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .profile-role-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: var(--radius-full);
-      font-size: 0.72rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .profile-role-badge.user {
-      background: var(--success-bg);
-      color: #065f46;
-    }
-
-    .profile-dept {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      margin-bottom: 16px;
-    }
-
-    .profile-stats-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      padding: 16px 0;
-      border-top: 1px solid var(--border-color);
-    }
-
-    .profile-stat {
-      flex: 1;
-      text-align: center;
-    }
-
-    .profile-stat-val {
-      font-size: 1.2rem;
-      font-weight: 800;
-      color: var(--text-primary);
-    }
-
-    .profile-stat-lbl {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
-
-    .profile-stat-divider {
-      width: 1px;
-      height: 30px;
-      background: var(--border-color);
-    }
-
-    .profile-forms {
-      background: var(--bg-white);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl);
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .profile-tab-bar {
-      display: flex;
-      border-bottom: 1px solid var(--border-color);
-      background: var(--bg-gray-50);
-    }
-
-    .profile-tab {
-      padding: 12px 20px;
-      background: none;
-      border: none;
-      font-family: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all var(--transition);
-    }
-
-    .profile-tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-      background: var(--bg-white);
-    }
-
-    .profile-tab:hover:not(.active) {
-      color: var(--text-primary);
-    }
-
-    .profile-form-panel {
-      padding: 24px;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .form-actions {
-      margin-top: 20px;
-      display: flex;
-      gap: 12px;
-    }
-
-    /* Password */
-    .pass-wrap {
-      position: relative;
-    }
-
-    .pass-eye {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 1rem;
-      color: var(--text-muted);
-      padding: 4px;
-    }
-
-    .pass-strength-bar {
-      height: 4px;
-      background: var(--bg-gray-200);
-      border-radius: 2px;
-      margin-top: 8px;
-      overflow: hidden;
-    }
-
-    .pass-strength-fill {
-      height: 100%;
-      border-radius: 2px;
-      transition: all var(--transition);
-    }
-
-    .pass-strength-label {
-      font-size: 0.72rem;
-      margin-top: 4px;
-      font-weight: 600;
-    }
-
-    /* Activity List V2 */
-    .activity-list-v2 {
-      list-style: none;
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    .activity-item-v2 {
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .activity-item-v2:last-child {
-      border-bottom: none;
-    }
-
-    .activity-empty {
-      text-align: center;
-      padding: 40px;
-      color: var(--text-muted);
-    }
-
-    /* Large search wrap */
-    .search-wrap-lg {
-      position: relative;
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .search-wrap-lg input {
-      width: 100%;
-      height: 38px;
-      padding: 0 12px 0 36px;
-      border: 1.5px solid var(--border-color);
-      border-radius: var(--radius);
-      font-family: inherit;
-      font-size: 0.85rem;
-      outline: none;
-      transition: border-color var(--transition);
-    }
-
-    .search-wrap-lg input:focus {
-      border-color: var(--primary);
-    }
-
-    .search-icon-sm {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    /* Responsive */
-    @media (max-width: 1024px) {
-      .profile-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .chat-sidebar-panel {
-        width: 240px;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .chat-full-layout {
-        flex-direction: column;
-        height: auto;
-        min-height: calc(100vh - 120px);
-      }
-
-      .chat-sidebar-panel {
-        width: 100%;
-        max-height: 200px;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      .chat-main-panel {
-        flex: 1;
-        min-height: 400px;
-      }
-
-      .chat-message {
-        max-width: 95%;
-      }
-
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-
-      .search-hero {
-        padding: 20px;
-      }
-
-      .search-hero-input-wrap {
-        flex-direction: column;
-      }
-
-      .search-hero-btn {
-        width: 100%;
-        height: 44px;
-      }
-
-      .profile-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  <th:block layout:fragment="custom-css">
+  <!-- Styles moved to /css/dashboard.css -->
+  </th:block>
 </head>
 
 <body>
-<div class="layout" id="appLayout">
-
-  <!-- ==================== SIDEBAR ==================== -->
-  <aside class="sidebar" id="sidebar">
-    <a href="/" class="sidebar-logo">
-      <div class="sidebar-logo-icon">📁</div>
-      <span class="sidebar-logo-name">IDMS <em>AI</em></span>
-    </a>
-
-    <!-- Thông tin người dùng trong Sidebar -->
-    <div class="sidebar-user-card">
-      <div class="sidebar-user-avatar" id="sidebarAvatar">U</div>
-      <div class="sidebar-user-info">
-        <div class="sidebar-user-name" id="sidebarName">Đang tải...</div>
-        <div class="sidebar-user-dept" id="sidebarDept">—</div>
-      </div>
-    </div>
-
-    <p class="nav-section-label">Menu chính</p>
-    <ul class="sidebar-nav" id="sidebarNav">
-      <li class="active" data-tab="tabHome">
-        <span class="nav-icon">🏠</span>
-        <span>Trang chủ</span>
-      </li>
-      <li data-tab="tabDocuments">
-        <span class="nav-icon">📁</span>
-        <span>Tài liệu phòng ban</span>
-      </li>
-      <li data-tab="tabChat">
-        <span class="nav-icon">💬</span>
-        <span>AI Chatbot</span>
-      </li>
-      <li data-tab="tabSearch">
-        <span class="nav-icon">🔍</span>
-        <span>Tìm kiếm tài liệu</span>
-      </li>
-    </ul>
-
-    <div class="sidebar-divider"></div>
-
-    <p class="nav-section-label">Tài khoản</p>
-    <ul class="sidebar-nav">
-      <li data-tab="tabProfile">
-        <span class="nav-icon">👤</span>
-        <span>Hồ sơ cá nhân</span>
-      </li>
-    </ul>
-
-    <div class="sidebar-footer">
-      <button id="logoutBtn" class="btn-sidebar-logout">
-        🚪 Đăng xuất
-      </button>
-    </div>
-  </aside>
-
-  <!-- Overlay for mobile -->
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-  <!-- ==================== MAIN ==================== -->
-  <main class="main">
-
-    <!-- Thanh trên cùng -->
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
-        <span class="page-title" id="pageTitle">🏠 Trang chủ</span>
-      </div>
-      <div class="topbar-right">
-        <span class="role-badge user">Nhân viên</span>
-        <div class="user-pill" onclick="switchTab('tabProfile', null)" style="cursor:pointer;">
-          <div class="user-avatar" id="userAvatar">U</div>
-          <span class="user-name" id="fullName">Đang tải...</span>
-        </div>
-        <button class="btn-logout" id="logoutBtnTop">🚪 Đăng xuất</button>
-      </div>
-    </header>
-
-    <!-- Nội dung chính -->
-    <div class="page-body">
+<div layout:fragment="content">
 
       <!-- ===== TAB: TRANG CHỦ ===== -->
       <div id="tabHome">
@@ -1153,10 +225,10 @@
 
             <!-- Trạng thái trống -->
             <div class="chat-empty-state" id="chatEmptyState">
-              <div style="font-size:4rem;margin-bottom:16px;">🤖</div>
+              <div class="chat-empty-icon text-center mb-4" style="font-size:4rem;">🤖</div>
               <h3>Bắt đầu trò chuyện với AI</h3>
               <p>Hỏi AI về các tài liệu, quy trình, chính sách nội bộ của phòng ban bạn.</p>
-              <button class="btn-primary" onclick="createNewChat()" style="margin-top:16px;">＋ Tạo hội thoại
+              <button class="btn-primary mt-4" onclick="createNewChat()">＋ Tạo hội thoại
                 mới</button>
             </div>
 
@@ -1223,9 +295,9 @@
 
         <div id="searchResults">
           <div class="search-hint">
-            <div style="font-size:3.5rem;margin-bottom:12px;">🔍</div>
+            <div class="search-hint-icon">🔍</div>
             <p>Nhập từ khóa để tìm kiếm tài liệu trong phòng ban của bạn.</p>
-            <p style="font-size:0.82rem;color:#9ca3af;margin-top:4px;">Hệ thống sử dụng Vector Search để tìm kiếm ngữ
+            <p class="search-hint-subtext">Hệ thống sử dụng Vector Search để tìm kiếm ngữ
               nghĩa.</p>
           </div>
         </div>
@@ -1238,92 +310,123 @@
           <h2>👤 Hồ sơ cá nhân</h2>
         </div>
 
-        <div class="profile-layout">
-
-          <!-- Thẻ hồ sơ -->
-          <div class="profile-card">
-            <div class="profile-avatar-wrap">
-              <div class="profile-avatar" id="profileAvatar">U</div>
-              <button class="profile-avatar-edit" title="Đổi ảnh đại diện"
-                      onclick="document.getElementById('avatarInput').click()">✏️</button>
-              <input type="file" id="avatarInput" accept="image/*" style="display:none;">
-            </div>
-            <h2 class="profile-name" id="profileName">—</h2>
-            <div class="profile-role-badge user" id="profileRoleBadge">Nhân viên</div>
-            <div class="profile-dept" id="profileDept">—</div>
-            <div class="profile-stats-row">
-              <div class="profile-stat">
-                <div class="profile-stat-val" id="psDocCount">—</div>
-                <div class="profile-stat-lbl">Tài liệu</div>
-              </div>
-              <div class="profile-stat-divider"></div>
-              <div class="profile-stat">
-                <div class="profile-stat-val" id="psChatCount">—</div>
-                <div class="profile-stat-lbl">Chat AI</div>
-              </div>
-              <div class="profile-stat-divider"></div>
-              <div class="profile-stat">
-                <div class="profile-stat-val" id="psActivityCount">—</div>
-                <div class="profile-stat-lbl">Hoạt động</div>
-              </div>
-            </div>
+        <div class="settings-layout">
+          <!-- Left Nav -->
+          <div class="settings-nav">
+            <button class="settings-tab active" onclick="switchProfileTab('ptInfo', this)">Thông tin cá nhân</button>
+            <button class="settings-tab" onclick="switchProfileTab('ptUpdate', this)">Cập nhật hồ sơ</button>
+            <button class="settings-tab" onclick="switchProfileTab('ptPassword', this)">Bảo mật</button>
+            <button class="settings-tab" onclick="switchProfileTab('ptActivity', this)">Lịch sử hoạt động</button>
           </div>
 
-          <!-- Form chỉnh sửa -->
-          <div class="profile-forms">
-            <div class="profile-tab-bar">
-              <button class="profile-tab active" onclick="switchProfileTab('ptInfo', this)">Thông tin cá nhân</button>
-              <button class="profile-tab" onclick="switchProfileTab('ptPassword', this)">Đổi mật khẩu</button>
-              <button class="profile-tab" onclick="switchProfileTab('ptActivity', this)">Lịch sử hoạt động</button>
+          <!-- Right Content -->
+          <div class="settings-content">
+            
+            <!-- Thông tin cá nhân -->
+            <div id="ptInfo" class="settings-card active">
+              <div class="settings-header">
+                <h3>Thông tin cá nhân</h3>
+                <p>Chi tiết thông tin định danh và tài khoản của bạn trên hệ thống.</p>
+              </div>
+              <div class="settings-profile-grid">
+                
+                <div class="profile-info-list">
+                  <div class="profile-info-row">
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Họ và tên</span>
+                      <span class="profile-info-value" id="viewFullName">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Email</span>
+                      <span class="profile-info-value" id="viewEmail">—</span>
+                    </div>
+                  </div>
+                  <div class="profile-info-row">
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Số điện thoại</span>
+                      <span class="profile-info-value" id="viewPhone">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Phòng ban</span>
+                      <span class="profile-info-value" id="viewDept">—</span>
+                    </div>
+                  </div>
+                  <div class="profile-info-row">
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Vai trò</span>
+                      <span class="profile-info-value" id="viewRole">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                      <!-- Empty for alignment -->
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Avatar Preview -->
+                <div class="settings-avatar-section">
+                  <div class="settings-avatar" id="profileAvatar">U</div>
+                  <div class="settings-role-badge user" id="profileRoleBadge">Nhân viên</div>
+                  <div class="settings-stats">
+                    <div class="settings-stat-item">
+                      <span>Tài liệu</span>
+                      <span id="psDocCount">—</span>
+                    </div>
+                    <div class="settings-stat-item">
+                      <span>Chat AI</span>
+                      <span id="psChatCount">—</span>
+                    </div>
+                    <div class="settings-stat-item">
+                      <span>Hoạt động</span>
+                      <span id="psActivityCount">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <!-- Thông tin cá nhân -->
-            <div id="ptInfo" class="profile-form-panel">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Họ và tên</label>
-                  <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
-                </div>
-                <div class="form-group">
-                  <label>Tên đăng nhập</label>
-                  <input type="text" id="editUsername" class="form-input" disabled>
-                </div>
+            <!-- Cập nhật hồ sơ -->
+            <div id="ptUpdate" class="settings-card">
+              <div class="settings-header">
+                <h3>Cập nhật hồ sơ</h3>
+                <p>Chỉnh sửa thông tin liên lạc và ảnh đại diện của bạn.</p>
               </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Email</label>
-                  <input type="email" id="editEmail" class="form-input" disabled>
+              <div class="settings-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Họ và tên</label>
+                    <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
+                  </div>
+                  <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="tel" id="editPhone" class="form-input" placeholder="Nhập số điện thoại">
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label>Số điện thoại</label>
-                  <input type="tel" id="editPhone" class="form-input" placeholder="Nhập số điện thoại">
+                <div class="form-row">
+                  <div class="form-group" style="width: 100%;">
+                    <label>Đường dẫn Ảnh đại diện (Avatar URL)</label>
+                    <input type="file" id="editAvatarUrl" class="form-input" accept="image/*">
+                  </div>
                 </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Phòng ban</label>
-                  <input type="text" id="editDept" class="form-input" disabled>
+                <div class="form-actions" style="margin-top: 32px;">
+                  <button class="btn btn-primary" onclick="updateProfile()">Lưu thay đổi</button>
                 </div>
-                <div class="form-group">
-                  <label>Vai trò</label>
-                  <input type="text" id="editRole" class="form-input" disabled>
-                </div>
-              </div>
-              <div class="form-actions">
-                <button class="btn-primary" onclick="updateProfile()">✓ Lưu thay đổi</button>
               </div>
             </div>
 
             <!-- Đổi mật khẩu -->
-            <div id="ptPassword" class="profile-form-panel" style="display:none;">
-              <div class="form-group" style="max-width:420px;">
+            <div id="ptPassword" class="settings-card">
+              <div class="settings-header">
+                <h3>Bảo mật</h3>
+                <p>Cập nhật mật khẩu để bảo vệ tài khoản của bạn.</p>
+              </div>
+              <div class="form-group max-w-md">
                 <label>Mật khẩu hiện tại</label>
                 <div class="pass-wrap">
                   <input type="password" id="currentPassword" class="form-input" placeholder="Nhập mật khẩu hiện tại">
                   <button class="pass-eye" onclick="togglePassVis('currentPassword')">👁</button>
                 </div>
               </div>
-              <div class="form-group" style="max-width:420px;">
+              <div class="form-group max-w-md">
                 <label>Mật khẩu mới</label>
                 <div class="pass-wrap">
                   <input type="password" id="newPassword" class="form-input" placeholder="Tối thiểu 8 ký tự">
@@ -1334,20 +437,24 @@
                 </div>
                 <div class="pass-strength-label" id="passStrengthLabel"></div>
               </div>
-              <div class="form-group" style="max-width:420px;">
+              <div class="form-group max-w-md">
                 <label>Xác nhận mật khẩu mới</label>
                 <div class="pass-wrap">
                   <input type="password" id="confirmPassword" class="form-input" placeholder="Nhập lại mật khẩu mới">
                   <button class="pass-eye" onclick="togglePassVis('confirmPassword')">👁</button>
                 </div>
               </div>
-              <div class="form-actions" style="max-width:420px;">
-                <button class="btn-primary" onclick="changePassword()">Đổi mật khẩu</button>
+              <div class="form-actions max-w-md" style="margin-top: 32px;">
+                <button class="btn btn-primary" onclick="changePassword()">Đổi mật khẩu</button>
               </div>
             </div>
 
             <!-- Lịch sử hoạt động -->
-            <div id="ptActivity" class="profile-form-panel" style="display:none;">
+            <div id="ptActivity" class="settings-card">
+              <div class="settings-header">
+                <h3>Lịch sử hoạt động</h3>
+                <p>Nhật ký các thao tác gần đây của bạn trên hệ thống.</p>
+              </div>
               <ul class="activity-list-v2" id="profileActivityList">
                 <li class="activity-empty">Đang tải lịch sử hoạt động...</li>
               </ul>
@@ -1371,11 +478,11 @@
       <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
       <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
     </div>
-    <div id="docViewerContent" style="max-height:50vh;overflow-y:auto;"></div>
+    <div id="docViewerContent" class="modal-body-scroll"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
       <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
-      <button class="btn-primary-sm" onclick="askAIAboutDoc()" id="btnAskAI" style="background:#0ea5e9;">💬 Hỏi AI về
+      <button class="btn-primary-sm bg-sky" onclick="askAIAboutDoc()" id="btnAskAI">💬 Hỏi AI về
         tài liệu này</button>
     </div>
   </div>
@@ -1383,7 +490,7 @@
 
 <!-- MODAL: Đổi tên hội thoại -->
 <div class="modal-overlay" id="renameChatModal">
-  <div class="modal" style="max-width:400px;">
+  <div class="modal max-w-sm">
     <div class="modal-header">
       <h3>✏️ Đổi tên hội thoại</h3>
       <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
@@ -1399,66 +506,6 @@
   </div>
 </div>
 
-<!-- MODAL: Xác nhận -->
-<div class="modal-overlay" id="confirmModal">
-  <div class="modal" style="max-width:360px;">
-    <div class="modal-header">
-      <h3 id="confirmTitle">Xác nhận</h3>
-      <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
-    </div>
-    <p id="confirmMsg" style="font-size:0.875rem;color:#6b7280;line-height:1.6;"></p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('confirmModal')">Hủy</button>
-      <button id="confirmActionBtn" class="btn-danger-sm">Xác nhận</button>
-    </div>
-  </div>
 </div>
-
-<!-- TOAST thông báo -->
-<div class="toast" id="toast">
-  <span id="toastIcon">✅</span>
-  <span id="toastMsg">Thao tác thành công!</span>
-</div>
-
-<!-- ============================================ -->
-<!-- ✅ QUAN TRỌNG: Load scripts theo đúng thứ tự -->
-<!-- ============================================ -->
-<script src="/js/common.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/user/dashboard.js"></script>
-
-<!-- ✅ Kiểm tra đăng nhập và redirect nếu cần -->
-<script>
-  (function() {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const user = JSON.parse(userStr);
-
-      // Nếu là admin, chuyển sang admin dashboard
-      if (user.role === 'ADMIN') {
-        window.location.href = '/admin/dashboard';
-        return;
-      }
-
-      // Nếu không phải user (ví dụ: MANAGER), vẫn cho phép vào
-      // user-dashboard.js sẽ kiểm tra lại
-    } catch (e) {
-      console.error('Auth check error:', e);
-      window.location.href = '/login';
-    }
-  })();
-</script>
-
 </body>
 </html>

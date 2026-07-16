@@ -37,9 +37,12 @@ public class UsersServiceImpl implements UsersService{
 	// lấy thông tin người dùng 
 	@Override
 	public ProfileResponse getProfile(UsersEntity user) {
+
 		ProfileResponse profileResponse = new ProfileResponse();
 		
 		profileResponse.setFullName(user.getFullName());
+		profileResponse.setUserName(user.getUserName());
+		profileResponse.setPhone(user.getPhone());
 		profileResponse.setEmail(user.getEmail());
 		profileResponse.setUserId(user.getId());
 		profileResponse.setRole(user.getRole().name());
@@ -173,4 +176,22 @@ public class UsersServiceImpl implements UsersService{
 		response.setMessage("Tài khoản đã được mở !");
 		return response;
 	}	
+
+    @Override
+    public org.springframework.data.domain.Page<com.javaweb.dto.response.AdminUserResponse> getAllUsers(int page, int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page - 1, size);
+        return usersRepository.findAll(pageable).map(user -> {
+            com.javaweb.dto.response.AdminUserResponse response = new com.javaweb.dto.response.AdminUserResponse();
+            response.setId(user.getId());
+            response.setFullName(user.getFullName());
+            response.setUsername(user.getUserName());
+            response.setEmail(user.getEmail());
+            response.setRole(user.getRole().name());
+            response.setActive(user.isActive());
+            if (user.getDepartmentId() != null) {
+                response.setDepartmentName(user.getDepartmentId().getName());
+            }
+            return response;
+        });
+    }
 }

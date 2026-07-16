@@ -20,4 +20,6 @@ public interface UsersService {
 	LockUserResponse lockUserResponse(Long id);
 
 	UnlockResponse unlockResponse(Long id);
+
+	org.springframework.data.domain.Page<com.javaweb.dto.response.AdminUserResponse> getAllUsers(int page, int size);
 }

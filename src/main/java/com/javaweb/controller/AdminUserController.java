@@ -11,7 +11,7 @@ import com.javaweb.dto.response.LockUserResponse;
 import com.javaweb.dto.response.UnlockResponse;
 import com.javaweb.service.UsersService;
 
-@Controller
+@RestController
 @RequestMapping("/api/admin/users")
 public class AdminUserController {
 
@@ -26,5 +26,12 @@ public class AdminUserController {
 	@PutMapping("/{id}/unlock")
 	public UnlockResponse unlockResponse(@PathVariable Long id) {
 		return usersService.unlockResponse(id);
+	}
+
+	@org.springframework.web.bind.annotation.GetMapping
+	public org.springframework.data.domain.Page<com.javaweb.dto.response.AdminUserResponse> getAllUsers(
+			@org.springframework.web.bind.annotation.RequestParam(defaultValue = "1") int page,
+			@org.springframework.web.bind.annotation.RequestParam(defaultValue = "10") int size) {
+		return usersService.getAllUsers(page, size);
 	}
 }

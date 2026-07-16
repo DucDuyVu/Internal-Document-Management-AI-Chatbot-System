@@ -9,41 +9,160 @@ const ICON = {
   key: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5L20 3M17 6l3 3M14 9l2 2"/></svg>'
 };
 
-const RAIL = {
-  forgot: `<div class="rail-icon">${ICON.mail}</div><h1>Khôi phục truy cập</h1><ul><li>Liên kết chỉ có hiệu lực 15 phút</li><li>Kiểm tra cả thư mục spam</li><li>Liên kết chỉ dùng được một lần</li></ul>`,
-  change: `<div class="rail-icon">${ICON.lock}</div><h1>Bảo mật tài khoản</h1><ul><li>Không dùng lại mật khẩu cũ</li><li>Kết hợp chữ, số và ký tự đặc biệt</li><li>Đăng xuất thiết bị lạ sau khi đổi</li></ul>`
-};
+
 
 function renderStaticIcons(){
   document.body.innerHTML = document.body.innerHTML.replace(/\$\{ICON\.(\w+)\}/g, (m,k)=>ICON[k]||'');
 }
 renderStaticIcons();
 
-function setMode(m){
-  const isForgot = m === 'forgot';
-  document.getElementById('forgot-flow').style.display = isForgot ? '' : 'none';
-  document.getElementById('change-flow').style.display = isForgot ? 'none' : '';
-  document.getElementById('tab-forgot').classList.toggle('active', isForgot);
-  document.getElementById('tab-change').classList.toggle('active', !isForgot);
-  document.getElementById('rail').innerHTML = RAIL[m];
-}
 
-function goStep(n){
-  for(let i=1;i<=4;i++) document.getElementById('step-'+i).style.display = (i===n) ? '' : 'none';
-  const boundary = {1:0,2:1,3:2,4:3}[n];
-  for(let i=1;i<=3;i++){
-    const nd = document.getElementById('node-'+i);
-    nd.classList.remove('done','current');
-    if(i < boundary+1 || n===4){ nd.classList.add('done'); nd.innerHTML = ICON.check.replace('viewBox','style="width:11px;height:11px;stroke:#fff" viewBox'); }
-    else if(i === boundary+1){ nd.classList.add('current'); nd.textContent = i; }
-    else { nd.textContent = i; }
+
+function goStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const stepEl = document.getElementById('step-' + i);
+    if (stepEl) {
+      stepEl.style.display = (i === n) ? '' : 'none';
+    }
   }
-  document.getElementById('line-1').classList.toggle('done', n>1);
-  document.getElementById('line-2').classList.toggle('done', n>2);
+
+  // Update dots (we have 3 dots representing the first 3 steps, step 4 is success)
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById('dot-' + i);
+    if (dot) {
+      if (i === n || (n === 4 && i === 3)) {
+        dot.classList.add('active');
+      } else {
+        dot.classList.remove('active');
+      }
+    }
+  }
   if(n===2) document.getElementById('link-email').textContent = document.getElementById('fp-email').value || 'email của bạn';
 }
-function sendLink(){ goStep(2); }
-function resetForgot(){ goStep(1); document.getElementById('fp-email').value=''; }
+let currentResetToken = '';
+
+async function sendLink() {
+  const email = document.getElementById('fp-email').value.trim();
+  if (!email) {
+    alert('Vui lòng nhập email');
+    return;
+  }
+  
+  const btn = event ? event.target : null;
+  let originalText = 'Gửi liên kết đặt lại';
+  if (btn) {
+    originalText = btn.textContent;
+    btn.textContent = 'Đang xử lý...';
+    btn.disabled = true;
+  }
+
+  try {
+    const response = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    
+    if (response.ok) {
+      goStep(2);
+      document.getElementById('link-email').textContent = email;
+    } else {
+      const error = await response.json();
+      alert(error.message || 'Không thể gửi OTP. Vui lòng kiểm tra lại email.');
+    }
+  } catch (err) {
+    alert('Lỗi kết nối máy chủ');
+  } finally {
+    if (btn) {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  }
+}
+
+async function verifyOtp() {
+  const email = document.getElementById('fp-email').value.trim();
+  const otp = document.getElementById('fp-otp').value.trim();
+  
+  if (!otp) {
+    alert('Vui lòng nhập mã OTP');
+    return;
+  }
+  
+  const btn = document.getElementById('btn-verify-otp');
+  const originalText = btn.textContent;
+  btn.textContent = 'Đang xác minh...';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      currentResetToken = data.resetToken || '';
+      goStep(3);
+    } else {
+      const error = await response.json();
+      alert(error.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.');
+    }
+  } catch (err) {
+    alert('Lỗi kết nối máy chủ');
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+async function resetPassword() {
+  const newPassword = document.getElementById('fp-pass').value;
+  const confirmPassword = document.getElementById('fp-confirm').value;
+  
+  if (!newPassword || newPassword.length < 8) {
+    alert('Mật khẩu mới phải có ít nhất 8 ký tự');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    alert('Mật khẩu xác nhận không khớp');
+    return;
+  }
+  
+  const btn = document.getElementById('btn-reset-pass');
+  const originalText = btn.textContent;
+  btn.textContent = 'Đang xử lý...';
+  btn.disabled = true;
+
+  try {
+    const response = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        resetToken: currentResetToken, 
+        newPassword: newPassword, 
+        confirmPassword: confirmPassword 
+      })
+    });
+    
+    if (response.ok) {
+      goStep(4);
+    } else {
+      const error = await response.json();
+      alert(error.message || 'Không thể đặt lại mật khẩu.');
+    }
+  } catch (err) {
+    alert('Lỗi kết nối máy chủ');
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+function resetForgot(){ 
+    window.location.href = '/login';
+}
 
 function togglePass(id, btn){
   const el = document.getElementById(id);
@@ -74,7 +193,7 @@ function checkMatch(passId, confirmId, msgId){
   else { el.textContent='Mật khẩu không khớp'; el.style.color='var(--danger)'; }
 }
 
-function showSaved(){ document.getElementById('cp-saved').style.display='flex'; }
+
 
 let rt = 30;
 setInterval(()=>{
@@ -100,5 +219,5 @@ setInterval(()=>{
   }
 }, 1000);
 
-setMode('forgot');
+
 goStep(1);

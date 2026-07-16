@@ -240,33 +240,48 @@ function closeModal(id) {
 // ==========================================
 
 function switchTab(tabId, menuItem = null) {
+    // Known tab IDs across both User and Admin dashboards
+    const knownTabs = ['tabHome', 'tabDocuments', 'tabChat', 'tabSearch', 'tabProfile', 
+                       'tabOverview', 'tabUsers', 'tabDepartments', 'tabPermissions', 
+                       'tabUpload', 'tabLogs'];
 
-    document.querySelectorAll(".tab-content").forEach(tab => {
-
-        tab.classList.remove("active");
-
+    // Hide all known tabs
+    knownTabs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = 'none';
+            el.classList.remove('active');
+        }
     });
 
+    // Support legacy .tab-content logic if any
+    document.querySelectorAll(".tab-content").forEach(tab => {
+        tab.style.display = 'none';
+        tab.classList.remove("active");
+    });
+
+    // Show the target tab
     const current = document.getElementById(tabId);
-
     if (current) {
-
+        current.style.display = 'block';
         current.classList.add("active");
-
     }
 
+    // Update active class on sidebar/menu
     if (menuItem) {
-
         document.querySelectorAll("[data-tab]").forEach(item => {
-
             item.classList.remove("active");
-
         });
-
         menuItem.classList.add("active");
-
+    } else {
+        // If menuItem is null (e.g. from topbar click), try to find the corresponding sidebar item
+        document.querySelectorAll("[data-tab]").forEach(item => {
+            item.classList.remove("active");
+            if (item.getAttribute("data-tab") === tabId) {
+                item.classList.add("active");
+            }
+        });
     }
-
 }
 
 // ==========================================
@@ -274,26 +289,47 @@ function switchTab(tabId, menuItem = null) {
 // ==========================================
 
 function updateUserUI(user) {
-
     if (!user) return;
 
-    const name = document.getElementById("userName");
+    const shortName = (user.fullName || "U").charAt(0).toUpperCase();
+    const displayName = user.fullName || "Người dùng";
 
-    if (name) {
+    // Update Topbar
+    const topName = document.getElementById("fullName");
+    if (topName) topName.textContent = displayName;
 
-        name.textContent = user.fullName;
-
+    const topAvatar = document.getElementById("userAvatar");
+    if (topAvatar) {
+        if (user.avatarUrl) {
+            topAvatar.innerHTML = `<img src="${user.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        } else {
+            topAvatar.textContent = shortName;
+        }
     }
 
-    const avatar = document.getElementById("userAvatar");
+    // Update Sidebar
+    const sideName = document.getElementById("sidebarName");
+    if (sideName) sideName.textContent = displayName;
 
-    if (avatar) {
-
-        avatar.textContent =
-            (user.fullName || "U").charAt(0).toUpperCase();
-
+    const sideAvatar = document.getElementById("sidebarAvatar");
+    if (sideAvatar) {
+        if (user.avatarUrl) {
+            sideAvatar.innerHTML = `<img src="${user.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        } else {
+            sideAvatar.textContent = shortName;
+        }
+    }
+    
+    const sideDept = document.getElementById("sidebarDept");
+    if (sideDept) {
+        if (user.role === 'ADMIN') sideDept.textContent = 'Quản trị viên';
+        else if (user.role === 'MANAGER') sideDept.textContent = 'Quản lý';
+        else sideDept.textContent = 'Nhân viên';
     }
 
+    // Update Welcome Banner (User Dashboard)
+    const welcomeName = document.getElementById("welcomeName");
+    if (welcomeName) welcomeName.textContent = displayName;
 }
 
 // ==========================================
