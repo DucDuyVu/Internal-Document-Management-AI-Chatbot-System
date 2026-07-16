@@ -12,12 +12,12 @@ import com.javaweb.entity.UsersEntity;
 public interface UsersService {
 
 	ProfileResponse getProfile(UsersEntity user);
-	
+
 	ProfileResponse updateProfile(UsersEntity user, UpdateProfileRequest updateProfileRequest);
-	
+
 	ChangePasswordResponse changePassword(UsersEntity user, ChangePasswordRequest changePasswordRequest);
-	
+
 	LockUserResponse lockUserResponse(Long id);
-	
+
 	UnlockResponse unlockResponse(Long id);
 }
