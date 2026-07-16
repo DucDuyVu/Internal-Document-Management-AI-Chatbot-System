@@ -3,6 +3,7 @@ package com.javaweb.controller;
 import com.javaweb.dto.request.*;
 import com.javaweb.dto.response.*;
 import com.javaweb.service.PasswordResetService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,7 +50,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/verify-otp")
-	public VerifyOtpResponse verifyOtp(@RequestBody VerifyOtpRequest verifyOtpRequest) {
+	public VerifyOtpResponse verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest) {
 		return  passwordResetService.verifyOtp(verifyOtpRequest);
 	}
 }

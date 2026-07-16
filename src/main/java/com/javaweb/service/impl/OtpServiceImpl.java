@@ -4,18 +4,20 @@ import com.javaweb.entity.PasswordResetTokens;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.repository.PasswordResetTokensRepository;
 import com.javaweb.service.OtpService;
-import jakarta.transaction.Transactional;
-import org.apache.coyote.BadRequestException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
-@Transactional
+
 public class OtpServiceImpl implements OtpService {
 
     @Autowired
@@ -71,6 +73,7 @@ public class OtpServiceImpl implements OtpService {
         return otp;
     }
 
+    @Transactional (propagation = Propagation.REQUIRES_NEW)
     @Override
     public boolean verifyOtp(UsersEntity user, String otp) {
 
@@ -93,6 +96,7 @@ public class OtpServiceImpl implements OtpService {
         }
 
         boolean matched = passwordEncoder.matches(otp, token.getOtp());
+
         if(matched) {
             token.setVerified(true); // đã xác minh
             token.setFailedAttempts(0L);

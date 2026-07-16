@@ -22,6 +22,7 @@ import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -77,15 +78,11 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
             emailService.sendOtpEmail(user.getEmail(), otp);
 
-//        } catch (Exception e) {
-//
-//            // nếu cần rollback OTP hoặc ghi log
-//            throw new RuntimeException("Gửi email thất bại.", e);
-//        }
-        } catch (MailException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Không thể gửi email.", e);
-            }
+        } catch (Exception e) {
+
+            // nếu cần rollback OTP hoặc ghi log
+            throw new RuntimeException("Gửi email thất bại.", e);
+        }
 
 
 
@@ -153,17 +150,19 @@ public class PasswordResetServiceImpl implements PasswordResetService {
             throw new BadRequestException("Mật khẩu mới không được trùng mật khẩu cũ !");
         }
 
+        LocalDateTime time = LocalDateTime.now();
         // Mã hóa mật khẩu mới
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-
+        user.setUpdatedAt(time);
         usersRepository.save(user); // lưu ở DB
 
         otpService.deleteOtp(user); // Xóa OTP khi đổi mật khẩu thành công
 
-        List<UserSessionsEntity> sessions = userSessionsRepo.findByUserId(user);
 
+        List<UserSessionsEntity> sessions = userSessionsRepo.findByUserId(user);
         for (UserSessionsEntity session : sessions) {
             session.setIsRevoked(true); // Thu hồi token
+            session.setRevokedAt(time);  // Thời gian thu hồi
         }
 
         userSessionsRepo.saveAll(sessions); // Lưu DB
