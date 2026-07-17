@@ -20,14 +20,14 @@ import java.time.LocalDateTime;
  * được convert qua lại nhờ VectorType (custom Hibernate UserType).
  *
  * LƯU Ý QUAN TRỌNG:
- *   Field "content" KHÔNG được đánh dấu @Lob. Cột content trong
- *   schema.sql là kiểu TEXT thường của PostgreSQL, không phải Large
- *   Object. Nếu dùng @Lob, Hibernate sẽ ánh xạ sang CLOB (dùng con
- *   trỏ OID nội bộ của Postgres), loại này bắt buộc đọc trong 1
- *   transaction đang mở thật sự (auto-commit=false), gây lỗi
- *   "Large Objects may not be used in auto-commit mode" mỗi khi đọc
- *   lại chunk ở request/transaction khác (ví dụ ở Retrieval API sau
- *   này). Đây là lỗi đã gặp thực tế ở integration test Day 4.
+ * Field "content" KHÔNG được đánh dấu @Lob. Cột content trong
+ * schema.sql là kiểu TEXT thường của PostgreSQL, không phải Large
+ * Object. Nếu dùng @Lob, Hibernate sẽ ánh xạ sang CLOB (dùng con
+ * trỏ OID nội bộ của Postgres), loại này bắt buộc đọc trong 1
+ * transaction đang mở thật sự (auto-commit=false), gây lỗi
+ * "Large Objects may not be used in auto-commit mode" mỗi khi đọc
+ * lại chunk ở request/transaction khác (ví dụ ở Retrieval API sau
+ * này). Đây là lỗi đã gặp thực tế ở integration test Day 4.
  */
 @Entity
 @Getter
@@ -57,7 +57,4 @@ public class DocumentChunkEntity {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-
-    public DocumentChunkEntity() {
-    }
-}
+}
