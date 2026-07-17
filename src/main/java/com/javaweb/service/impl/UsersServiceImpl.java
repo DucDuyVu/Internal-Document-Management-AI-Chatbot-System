@@ -1,6 +1,8 @@
 package com.javaweb.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -9,9 +11,13 @@ import org.springframework.stereotype.Service;
 import com.javaweb.dto.request.ChangePasswordRequest;
 import com.javaweb.dto.request.UpdateProfileRequest;
 import com.javaweb.dto.response.ChangePasswordResponse;
+import com.javaweb.dto.response.LockUserResponse;
 import com.javaweb.dto.response.ProfileResponse;
+import com.javaweb.dto.response.UnlockResponse;
+import com.javaweb.entity.UserSessionsEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.exception.BadRequestException;
+import com.javaweb.repository.UserSessionsRepository;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.UsersService;
 
@@ -21,6 +27,9 @@ public class UsersServiceImpl implements UsersService{
 
 	@Autowired
 	UsersRepository usersRepository;
+	
+	@Autowired
+	UserSessionsRepository userSessionsRepository;
 	
 	@Autowired
 	PasswordEncoder passwordEncoder;
@@ -40,16 +49,29 @@ public class UsersServiceImpl implements UsersService{
 	// update thông tin người dùng
 	@Override
 	public ProfileResponse updateProfile(UsersEntity user, UpdateProfileRequest updateProfileRequest) {
-		
-		user.setFullName(updateProfileRequest.getFullName());
-		user.setPhone(updateProfileRequest.getPhone());
-		user.setAvatarURL(updateProfileRequest.getAvatarUrl());
+
+		if (updateProfileRequest.getFullName() != null) {
+			user.setFullName(updateProfileRequest.getFullName());
+		}
+
+		if (updateProfileRequest.getUserName() != null) {
+			user.setUserName(updateProfileRequest.getUserName());
+		}
+
+		if (updateProfileRequest.getPhone() != null) {
+			user.setPhone(updateProfileRequest.getPhone());
+		}
+
+		if (updateProfileRequest.getAvatarUrl() != null) {
+			user.setAvatarURL(updateProfileRequest.getAvatarUrl());
+		}
 		user.setUpdatedAt(LocalDateTime.now());
 		
 		UsersEntity updateUser = usersRepository.save(user); // save thông tin update
 		
 		ProfileResponse profileResponse = new ProfileResponse();
 		profileResponse.setFullName(updateUser.getFullName());
+		profileResponse.setUserName(updateUser.getUserName());
 		profileResponse.setPhone(updateUser.getPhone());
 		profileResponse.setUserId(updateUser.getId());
 		profileResponse.setEmail(updateUser.getEmail());
@@ -85,5 +107,70 @@ public class UsersServiceImpl implements UsersService{
 		changePasswordResponse.setMessage("Đổi mật khẩu thành công !");
 		
 		return changePasswordResponse;
+	}
+
+	
+	// Khóa tài khoản theo id
+	@Override
+	public LockUserResponse lockUserResponse(Long id) {
+		Optional<UsersEntity> optionalUser = usersRepository.findById(id);
+		
+		if (optionalUser.isEmpty()) {
+			throw new BadRequestException("Người dùng không tồn tại !");
+		}
+		
+		UsersEntity user = optionalUser.get();
+		
+		if (! user.isActive()) {
+			throw new BadRequestException("Tài khoản đã bị khóa !");
+		}
+		
+		user.setActive(false); // khóa tài khoản
+		usersRepository.save(user); // lưu DB
+		
+		/*
+		 * Thu hồi Refresh Token TH tài khoản vẫn còn hiệu lực 
+		 * của refresh token thì vẫn có thể xin access token truy cập tiếp
+		 * */
+		
+		List<UserSessionsEntity> sessions = userSessionsRepository.findByUserId(user);
+		for (UserSessionsEntity item : sessions) {
+			item.setIsRevoked(true); // bị thu hồi => khi unlock không cần revoked = true 
+		}
+		
+		userSessionsRepository.saveAll(sessions); // lưu nhiều đối tượng 
+		
+		LockUserResponse lockUserResponse = new LockUserResponse();
+		lockUserResponse.setMessage("Tài khoản đã bị khóa ");
+		return lockUserResponse;
+	}
+
+	
+	// Mở tài khoản theo id
+	@Override
+	public UnlockResponse unlockResponse(Long id) {
+		
+		Optional<UsersEntity> optionalUser = usersRepository.findById(id);
+		
+		if (optionalUser.isEmpty()) {
+			throw new BadRequestException("Người dùng không tồn tại !");
+		}
+		
+		UsersEntity user = optionalUser.get();
+		
+		
+		// Kiểm tra tài khoản được mở chưa
+		if (user.isActive()) {
+			throw new BadRequestException("Tài khoản đã được mở !");
+		}
+		
+		// Mở tài khoản 
+		user.setActive(true);
+		
+		usersRepository.save(user);
+		
+		UnlockResponse response = new UnlockResponse();
+		response.setMessage("Tài khoản đã được mở !");
+		return response;
 	}	
 }

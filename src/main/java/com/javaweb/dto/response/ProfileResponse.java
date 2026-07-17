@@ -10,6 +10,8 @@ import lombok.Setter;
 public class ProfileResponse {
 
 		private String fullName;
+
+		private String userName;
 		
 		private Long userId;
 		

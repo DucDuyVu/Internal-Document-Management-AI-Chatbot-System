@@ -3,10 +3,14 @@ package com.javaweb.service.impl;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.javaweb.entity.UsersEntity;
@@ -15,21 +19,36 @@ import com.javaweb.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import lombok.Getter;
-import lombok.Setter;
+
 
 @Service
-@Getter
-@Setter
 public class JwtServiceImpl implements JwtService {
+	
+	@Value("${jwt.secret}")
+	private String secretKey;
 
-	private static final String SECRET_KEY = "12345678901234567890123456789012";
+	@Value("${jwt.access-token-expired}")
+	private Duration accessTokenExpired;
+
+	@Value("${jwt.refresh-token-expired}")
+	private Duration refreshTokenExpired;
 	
-	private static final long ACCESS_TOKEN_EXPIRED = 1000 * 60 * 30;
+	@Value("${jwt.reset-password-token-expired}")
+	private Duration resetPasswordTokenExpired;
 	
+	// Ký JWT khi tạo token + xác thực JWT khi đọc token
 	private Key getSigningKey() {
 		return Keys.hmacShaKeyFor(
-				SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+				secretKey.getBytes(StandardCharsets.UTF_8));
+	}
+	
+	// Giải mã JWT và lấy toàn bộ Claims (token)
+	private Claims extractAllClaims(String token) {
+		return Jwts.parser()
+				.verifyWith((SecretKey) getSigningKey())
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
 	}
 	@Override
 	public String generateAccessToken(UsersEntity user) {
@@ -39,20 +58,12 @@ public class JwtServiceImpl implements JwtService {
 				.claim("role", user.getRole())
 				.issuedAt(new Date())
 				.expiration(new Date(
-						System.currentTimeMillis() + ACCESS_TOKEN_EXPIRED
+						System.currentTimeMillis() + resetPasswordTokenExpired.toMillis()
 						))
 				.signWith(getSigningKey())
 				.compact();
 	}
 	
-	private Claims extractAllClaims(String token) {
-		return Jwts.parser()
-				.verifyWith((SecretKey) getSigningKey())
-				.build()
-				.parseSignedClaims(token)
-				.getPayload();
-	}
-
 	@Override
 	public String extractEmail(String token) {
 		
@@ -84,5 +95,45 @@ public class JwtServiceImpl implements JwtService {
 			e.printStackTrace();
 			return false;
 		}
+	}
+	@Override
+	public String generateRefreshToken(UsersEntity user) {
+		
+		return Jwts.builder()
+				.subject(user.getEmail())
+				.claim("userId", user.getId())
+				.claim("role", user.getRole())
+				.claim("type", "refresh")
+				.issuedAt(new Date())
+				.expiration(new Date(
+				        System.currentTimeMillis() + refreshTokenExpired.toMillis()
+				))
+				.signWith(getSigningKey())
+				.compact();
+	}
+	
+	
+	// Lấy thời gian hết hạn refresh token
+	@Override
+	public LocalDateTime extractExpirations(String token) {
+		return extractAllClaims(token)
+				.getExpiration()  // trả về Date 
+				.toInstant()
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime(); // convert LocalDateTime
+	}
+
+	@Override
+	public String generateResetPasswordToken(UsersEntity user) {
+		return Jwts.builder()
+				.subject(user.getEmail())
+				.claim("userId", user.getId())
+				.claim("type", "reset")
+				.issuedAt(new Date())
+				.expiration(new Date(
+						System.currentTimeMillis() + accessTokenExpired.toMillis()
+						))
+				.signWith(getSigningKey())
+				.compact();
 	}
 }

@@ -21,3 +21,8 @@ uploads/
 src/main/resources/application-local.properties
 ## Test Spring Boot để check đc API của gemini profile with secrets
 src/test/resources/application-test.properties
+/.apt_generated
+/.apt_generated_tests
+/query
+/*.sql
+/*.txt

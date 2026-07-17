@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/register.css}" href="../static/css/register.css">
+</head>
+<body>
+
+<div class="card">
+    <div class="mark"><span>DT</span></div>
+
+    <div class="head">
+        <span class="eyebrow">Đăng ký</span>
+        <h1>Tạo tài khoản mới</h1>
+        <p>Bắt đầu quản lý công việc cùng đội nhóm.</p>
+    </div>
+
+    <div class="error-msg" id="errorMsg">
+        <span>⚠</span>
+        <span id="errorText">Email này đã được sử dụng.</span>
+    </div>
+
+    <form id="registerForm">
+        <div class="field">
+            <input type="text" id="fullName" placeholder=" " required>
+            <label for="fullName">Họ và tên</label>
+        </div>
+
+        <div class="field">
+            <input type="email" id="email" placeholder=" " required>
+            <label for="email">Email</label>
+        </div>
+
+        <div class="field">
+            <input type="password" id="password" placeholder=" " required>
+            <label for="password">Mật khẩu</label>
+            <button type="button" class="toggle-pass" id="togglePass">Hiện</button>
+        </div>
+        <p class="hint" id="passHint">Tối thiểu 8 ký tự, gồm chữ và số.</p>
+
+        <div class="field">
+            <input type="password" id="confirmPassword" placeholder=" " required>
+            <label for="confirmPassword">Xác nhận mật khẩu</label>
+            <button type="button" class="toggle-pass" id="toggleConfirmPass">Hiện</button>
+        </div>
+
+        <label class="terms">
+            <input type="checkbox" id="agreeTerms" required>
+            <span>Tôi đồng ý với <a th:href="@{/terms}" href="/terms">Điều khoản dịch vụ</a> và <a th:href="@{/privacy}" href="/privacy">Chính sách bảo mật</a>.</span>
+        </label>
+
+        <button type="submit" class="btn-submit" id="submitBtn">
+            <span class="spinner"></span>
+            <span class="btn-label">Tạo tài khoản</span>
+        </button>
+    </form>
+
+    <div class="divider">hoặc</div>
+
+    <p class="signup-line">Đã có tài khoản? <a th:href="@{/login}" href="/login">Đăng nhập</a></p>
+</div>
+
+<script th:src="@{/js/register.js}" src="../static/js/register.js"></script>
+</body>
+</html>
