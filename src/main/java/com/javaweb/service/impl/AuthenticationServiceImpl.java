@@ -1,24 +1,28 @@
 package com.javaweb.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.Iterator;
-import java.util.Optional;
-
-import com.javaweb.dto.request.*;
-import com.javaweb.dto.response.*;
+import com.javaweb.dto.request.LoginRequest;
+import com.javaweb.dto.request.LogoutRequest;
+import com.javaweb.dto.request.RefreshTokenRequest;
+import com.javaweb.dto.request.RegisterRequest;
+import com.javaweb.dto.response.LoginResponse;
+import com.javaweb.dto.response.LogoutResponse;
+import com.javaweb.dto.response.RefreshTokenResponse;
+import com.javaweb.dto.response.RegisterResponse;
+import com.javaweb.entity.UserSessionsEntity;
+import com.javaweb.entity.UsersEntity;
+import com.javaweb.exception.BadRequestException;
+import com.javaweb.repository.UserSessionsRepository;
+import com.javaweb.repository.UsersRepository;
+import com.javaweb.service.AuthenticationService;
 import com.javaweb.service.EmailService;
+import com.javaweb.service.JwtService;
 import com.javaweb.service.OtpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.javaweb.entity.UserSessionsEntity;
-import com.javaweb.entity.UsersEntity;
-import com.javaweb.repository.UserSessionsRepository;
-import com.javaweb.exception.BadRequestException;
-import com.javaweb.repository.UsersRepository;
-import com.javaweb.service.AuthenticationService;
-import com.javaweb.service.JwtService;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 /*
  * Xử lí Register, Login, Logout, Refresh Token

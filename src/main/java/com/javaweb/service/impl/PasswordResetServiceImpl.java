@@ -15,10 +15,8 @@ import com.javaweb.service.EmailService;
 import com.javaweb.service.JwtService;
 import com.javaweb.service.OtpService;
 import com.javaweb.service.PasswordResetService;
-import jakarta.mail.MessagingException;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

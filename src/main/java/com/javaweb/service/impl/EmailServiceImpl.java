@@ -1,6 +1,5 @@
 package com.javaweb.service.impl;
 
-import com.javaweb.exception.BadRequestException;
 import com.javaweb.service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;

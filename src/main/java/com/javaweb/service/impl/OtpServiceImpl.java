@@ -4,13 +4,11 @@ import com.javaweb.entity.PasswordResetTokens;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.repository.PasswordResetTokensRepository;
 import com.javaweb.service.OtpService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
-
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
