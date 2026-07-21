@@ -331,7 +331,18 @@ async function loadUsers() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/admin/users?page=${AdminState.users.page}&size=${AdminState.users.pageSize}`);
+        const searchTerm = document.getElementById('userSearch')?.value?.toLowerCase() || '';
+        const roleFilter = document.getElementById('userRoleFilter')?.value || '';
+        const deptFilter = document.getElementById('userDeptFilter')?.value || '';
+        const statusFilter = document.getElementById('userStatusFilter')?.value || '';
+
+        let url = `/api/admin/users?page=${AdminState.users.page}&size=${AdminState.users.pageSize}`;
+        if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+        if (roleFilter) url += `&role=${encodeURIComponent(roleFilter)}`;
+        if (deptFilter) url += `&departmentId=${encodeURIComponent(deptFilter)}`;
+        if (statusFilter) url += `&status=${encodeURIComponent(statusFilter)}`;
+
+        const response = await apiRequest(url);
 
         AdminState.users.data = response.content || response;
         AdminState.users.total = response.totalElements || response.length;
@@ -380,6 +391,7 @@ function renderUserTable() {
                     ${roles[user.role] || user.role}
                 </span>
             </td>
+            <td>${user.departmentName || '—'}</td>
             <td>
                 <span class="status-badge ${user.isActive ? 'active' : 'locked'}">
                     ${user.isActive ? 'Hoạt động' : 'Đã khoá'}
@@ -397,10 +409,10 @@ function renderUserTable() {
                     </button>
                     <!-- Khóa/Mở khóa -->
                     <button class="btn-icon" style="background:transparent; color:${user.isActive ? '#10b981' : '#ef4444'}; border:1px solid transparent; border-radius:6px; padding:6px; transition:all 0.2s; display:flex; align-items:center;" onmouseover="this.style.background='${user.isActive ? '#dcfce7' : '#fee2e2'}'; this.style.color='${user.isActive ? '#059669' : '#dc2626'}'" onmouseout="this.style.background='transparent'; this.style.color='${user.isActive ? '#10b981' : '#ef4444'}'" onclick="toggleUserStatus(${user.id}, ${user.isActive})" title="${user.isActive ? 'Đang mở (Bấm để khóa)' : 'Đã khóa (Bấm để mở)'}">
-                        ${user.isActive 
-                            ? `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>`
-                            : `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>`
-                        }
+                        ${user.isActive
+            ? `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>`
+            : `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>`
+        }
                     </button>
                 </div>
             </td>
@@ -421,22 +433,10 @@ function filterUsers() {
     const deptFilter = document.getElementById('userDeptFilter')?.value || '';
     const statusFilter = document.getElementById('userStatusFilter')?.value || '';
 
-    AdminState.users.filtered = AdminState.users.data.filter(user => {
-        const matchesSearch = !searchTerm ||
-            user.fullName?.toLowerCase().includes(searchTerm) ||
-            user.email?.toLowerCase().includes(searchTerm) ||
-            user.username?.toLowerCase().includes(searchTerm);
+    AdminState.users.filtered = AdminState.users.data;
 
-        const matchesRole = !roleFilter || user.role === roleFilter;
-        const matchesDept = !deptFilter || user.departmentId == deptFilter;
-        const matchesStatus = !statusFilter ||
-            (statusFilter === 'active' && user.isActive) ||
-            (statusFilter === 'locked' && !user.isActive);
-
-        return matchesSearch && matchesRole && matchesDept && matchesStatus;
-    });
-
-    renderUserTable();
+    AdminState.users.page = 1;
+    loadUsers();
 }
 
 // =============================================
@@ -1561,7 +1561,7 @@ async function loadAdminProfile() {
         const sidebarAvatar = document.getElementById('sidebarAvatar');
         if (sidebarName) sidebarName.textContent = response.fullName || 'Admin';
         if (sidebarDept) sidebarDept.textContent = 'Quản trị viên';
-        
+
         if (sidebarAvatar) {
             if (response.avatarUrl) {
                 sidebarAvatar.innerHTML = `<img src="${response.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
@@ -1750,7 +1750,7 @@ async function updateProfile() {
         if (avatarInput && avatarInput.files && avatarInput.files.length > 0) {
             const formData = new FormData();
             formData.append('file', avatarInput.files[0]);
-            
+
             const uploadRes = await apiRequest('/api/users/upload-avatar', {
                 method: 'POST',
                 body: formData,
@@ -1786,9 +1786,9 @@ async function updateProfile() {
         if (typeof updateUserUI !== 'undefined') {
             updateUserUI(typeof getUser !== 'undefined' ? getUser() : null);
         }
-        
+
         loadAdminProfile(); // Reload profile
-        
+
         // Switch back to Info tab
         const infoBtn = document.querySelector('.settings-tab[onclick*="ptInfo"]');
         if (infoBtn) {
@@ -1947,7 +1947,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Password strength listener
     const newPwdInput = document.getElementById('newPassword');
     if (newPwdInput) {
-        newPwdInput.addEventListener('input', function() {
+        newPwdInput.addEventListener('input', function () {
             checkPassStrength(this.value);
         });
     }

@@ -12,6 +12,6 @@ public interface DepartmentsRepository extends JpaRepository<DepartmentsEntity, 
 
     boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
-    List<DepartmentsEntity> findAllByDeletedAtIsNull();
+    List<DepartmentsEntity> findAllByDeletedAtIsNullOrderByIdAsc();
 
 }

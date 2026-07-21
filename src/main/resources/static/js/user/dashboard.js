@@ -1051,12 +1051,7 @@ async function updateProfile() {
     const avatarInput = document.getElementById('editAvatarUrl');
     let avatarUrl = null;
 
-    if (!fullName) {
-        if (typeof showToast !== 'undefined') {
-            showToast('Vui lòng nhập họ và tên', 'warning');
-        }
-        return;
-    }
+
 
     try {
         if (typeof apiRequest === 'undefined') {
@@ -1083,7 +1078,7 @@ async function updateProfile() {
         if (avatarUrl) payload.avatarUrl = avatarUrl;
 
         await apiRequest('/api/users/profile', {
-            method: 'PUT',
+            method: 'PATCH',
             body: JSON.stringify(payload)
         });
 

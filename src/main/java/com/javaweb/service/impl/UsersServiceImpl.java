@@ -1,5 +1,11 @@
 package com.javaweb.service.impl;
 
+import com.javaweb.dto.response.AdminUserResponse;
+import com.javaweb.enums.UserRole;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import com.javaweb.dto.request.ChangePasswordRequest;
 import com.javaweb.dto.request.UpdateProfileRequest;
 import com.javaweb.dto.response.ChangePasswordResponse;
@@ -44,6 +50,12 @@ public class UsersServiceImpl implements UsersService {
 		profileResponse.setEmail(user.getEmail());
 		profileResponse.setUserId(user.getId());
 		profileResponse.setRole(user.getRole().name());
+		profileResponse.setAvatarUrl(user.getAvatarURL());
+
+		if (user.getDepartment() != null) {
+			profileResponse.setDepartmentName(user.getDepartment().getName());
+		}
+
 		return profileResponse;
 	}
 
@@ -51,19 +63,19 @@ public class UsersServiceImpl implements UsersService {
 	@Override
 	public ProfileResponse updateProfile(UsersEntity user, UpdateProfileRequest updateProfileRequest) {
 
-		if (updateProfileRequest.getFullName() != null) {
+		if (updateProfileRequest.getFullName() != null && !updateProfileRequest.getFullName().trim().isEmpty()) {
 			user.setFullName(updateProfileRequest.getFullName());
 		}
 
-		if (updateProfileRequest.getUserName() != null) {
+		if (updateProfileRequest.getUserName() != null && !updateProfileRequest.getUserName().trim().isEmpty()) {
 			user.setUserName(updateProfileRequest.getUserName());
 		}
 
-		if (updateProfileRequest.getPhone() != null) {
+		if (updateProfileRequest.getPhone() != null && !updateProfileRequest.getPhone().trim().isEmpty()) {
 			user.setPhone(updateProfileRequest.getPhone());
 		}
 
-		if (updateProfileRequest.getAvatarUrl() != null) {
+		if (updateProfileRequest.getAvatarUrl() != null && !updateProfileRequest.getAvatarUrl().trim().isEmpty()) {
 			user.setAvatarURL(updateProfileRequest.getAvatarUrl());
 		}
 		user.setUpdatedAt(LocalDateTime.now());
@@ -77,6 +89,7 @@ public class UsersServiceImpl implements UsersService {
 		profileResponse.setUserId(updateUser.getId());
 		profileResponse.setEmail(updateUser.getEmail());
 		profileResponse.setRole(updateUser.getRole().name());
+		profileResponse.setAvatarUrl(updateUser.getAvatarURL());
 
 		return profileResponse; // trả về client
 	}
@@ -172,17 +185,38 @@ public class UsersServiceImpl implements UsersService {
 	}
 
 	@Override
-	public org.springframework.data.domain.Page<com.javaweb.dto.response.AdminUserResponse> getAllUsers(int page,
-			int size) {
-		org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page - 1,
-				size);
-		return usersRepository.findAll(pageable).map(user -> {
-			com.javaweb.dto.response.AdminUserResponse response = new com.javaweb.dto.response.AdminUserResponse();
+	public Page<AdminUserResponse> getAllUsers(int page,
+			int size, String search, String role, Long departmentId, String status) {
+		// Phân trang (FE đánh trang từ 1, Spring Data JPA đánh trang từ 0)
+		Pageable pageable = PageRequest.of(page - 1, size);
+
+		// Xử lý vai trò
+		UserRole enumRole = null;
+		if (role != null && !role.isEmpty()) {
+			try {
+				enumRole = UserRole.valueOf(role.toUpperCase());
+			} catch (Exception e) {
+			}
+		}
+
+		// Xử lý đưa active = true, locked = false
+		Boolean isActive = null;
+		if ("active".equalsIgnoreCase(status))
+			isActive = true;
+		else if ("locked".equalsIgnoreCase(status))
+			isActive = false;
+
+		String querySearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+
+		return usersRepository.searchUsers(querySearch, enumRole, departmentId, isActive, pageable).map(user -> {
+			AdminUserResponse response = new AdminUserResponse();
 			response.setId(user.getId());
 			response.setFullName(user.getFullName());
 			response.setUsername(user.getUserName());
 			response.setEmail(user.getEmail());
-			response.setRole(user.getRole().name());
+			if (user.getRole() != null) {
+				response.setRole(user.getRole().name());
+			}
 			response.setActive(user.isActive());
 			if (user.getDepartment() != null) {
 				response.setDepartmentName(user.getDepartment().getName());

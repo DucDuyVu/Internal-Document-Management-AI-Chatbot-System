@@ -26,14 +26,6 @@
       <span class="sidebar-logo-name">IDMS <em>AI</em></span>
     </a>
 
-    <!-- Thông tin người dùng trong Sidebar -->
-    <div class="sidebar-user-card" onclick="switchTab('tabProfile', null)" style="cursor:pointer;" title="Xem hồ sơ cá nhân">
-      <div class="sidebar-user-avatar" id="sidebarAvatar">U</div>
-      <div class="sidebar-user-info">
-        <div class="sidebar-user-name" id="sidebarName">Đang tải...</div>
-        <div class="sidebar-user-dept" id="sidebarDept">—</div>
-      </div>
-    </div>
 
     <p class="nav-section-label">Menu chính</p>
     <ul class="sidebar-nav" id="sidebarNav">
@@ -65,11 +57,6 @@
       </li>
     </ul>
 
-    <div class="sidebar-footer">
-      <button id="logoutBtn" class="btn-sidebar-logout">
-        🚪 Đăng xuất
-      </button>
-    </div>
   </aside>
 
   <!-- Overlay for mobile -->
@@ -86,7 +73,7 @@
       </div>
       <div class="topbar-right">
         <span class="role-badge user">Nhân viên</span>
-        <div class="user-pill" onclick="switchTab('tabProfile', null)" style="cursor:pointer;">
+        <div class="user-pill" onclick="switchTab('tabProfile', null); if(typeof loadTabData === 'function') loadTabData('tabProfile');" style="cursor:pointer;">
           <div class="user-avatar" id="userAvatar">U</div>
           <span class="user-name" id="fullName">Đang tải...</span>
         </div>

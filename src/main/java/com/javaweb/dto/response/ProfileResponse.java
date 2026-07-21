@@ -20,4 +20,8 @@ public class ProfileResponse {
 		private String role;
 		
 		private String phone;
+		
+		private String avatarUrl;
+
+		private String departmentName;
 }

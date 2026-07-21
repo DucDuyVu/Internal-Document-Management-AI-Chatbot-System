@@ -1,181 +1,184 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layouts/admin-layout}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layouts/admin-layout}">
+
 <head>
-    <title>Tổng quan hệ thống</title>
+  <title>Hệ thống quản lý tài liệu</title>
 </head>
+
 <body>
-<div layout:fragment="content">
+  <div layout:fragment="content">
 
-      <!-- ===== TAB: TỔNG QUAN ===== -->
-      <div id="tabOverview">
+    <!-- ===== TAB: TỔNG QUAN ===== -->
+    <div id="tabOverview">
 
-        <!-- Welcome Banner -->
-        <div class="welcome-banner">
-          <div class="welcome-text">
-            <h1>Xin chào, <span id="welcomeName">Admin</span>! 🛡️</h1>
-            <div class="welcome-meta">
-              <span>📧 <strong id="adminEmail">—</strong></span>
-              <span>🎖️ <strong>Quản trị viên hệ thống</strong></span>
+      <!-- Welcome Banner -->
+      <div class="welcome-banner">
+        <div class="welcome-text">
+          <h1>Xin chào, <span id="welcomeName">Admin</span>! 🛡️</h1>
+          <div class="welcome-meta">
+            <span>📧 <strong id="adminEmail">—</strong></span>
+            <span>🎖️ <strong>Quản trị viên hệ thống</strong></span>
+          </div>
+        </div>
+        <div class="welcome-icon">🛡️</div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div>
+        <div class="section-header">
+          <h2>📊 Thống kê hệ thống</h2>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-icon purple">👥</div>
+            <div>
+              <div class="stat-label">Tổng người dùng</div>
+              <div class="stat-value" id="statTotalUsers">—</div>
             </div>
           </div>
-          <div class="welcome-icon">🛡️</div>
+          <div class="stat-card">
+            <div class="stat-icon indigo">🏢</div>
+            <div>
+              <div class="stat-label">Phòng ban</div>
+              <div class="stat-value" id="statTotalDepts">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon sky">📄</div>
+            <div>
+              <div class="stat-label">Tổng tài liệu</div>
+              <div class="stat-value" id="statTotalDocs">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div>
+              <div class="stat-label">Hoàn thành</div>
+              <div class="stat-value" id="statCompletedDocs">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber">🔒</div>
+            <div>
+              <div class="stat-label">TK bị khoá</div>
+              <div class="stat-value" id="statLockedUsers">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">❌</div>
+            <div>
+              <div class="stat-label">Tài liệu lỗi</div>
+              <div class="stat-value" id="statFailedDocs">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon indigo">💬</div>
+            <div>
+              <div class="stat-label">Phiên Chat AI</div>
+              <div class="stat-value" id="statTotalChats">—</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon sky">🪙</div>
+            <div>
+              <div class="stat-label">Token AI</div>
+              <div class="stat-value" id="statTotalTokens">—</div>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <!-- Stat Cards -->
+      <!-- Quick Actions + Activity -->
+      <div class="two-col">
         <div>
           <div class="section-header">
-            <h2>📊 Thống kê hệ thống</h2>
+            <h2>⚡ Thao tác nhanh</h2>
           </div>
-          <div class="stat-grid">
-            <div class="stat-card">
-              <div class="stat-icon purple">👥</div>
-              <div>
-                <div class="stat-label">Tổng người dùng</div>
-                <div class="stat-value" id="statTotalUsers">—</div>
-              </div>
+          <div class="quick-grid">
+            <div class="quick-card" onclick="switchTab('tabUsers')">
+              <div class="quick-card-icon">👥</div><span>Người dùng</span>
             </div>
-            <div class="stat-card">
-              <div class="stat-icon indigo">🏢</div>
-              <div>
-                <div class="stat-label">Phòng ban</div>
-                <div class="stat-value" id="statTotalDepts">—</div>
-              </div>
+            <div class="quick-card" onclick="switchTab('tabDepartments')">
+              <div class="quick-card-icon">🏢</div><span>Phòng ban</span>
             </div>
-            <div class="stat-card">
-              <div class="stat-icon sky">📄</div>
-              <div>
-                <div class="stat-label">Tổng tài liệu</div>
-                <div class="stat-value" id="statTotalDocs">—</div>
-              </div>
+            <div class="quick-card" onclick="switchTab('tabDocuments')">
+              <div class="quick-card-icon">📁</div><span>Tài liệu</span>
             </div>
-            <div class="stat-card">
-              <div class="stat-icon green">✅</div>
-              <div>
-                <div class="stat-label">Hoàn thành</div>
-                <div class="stat-value" id="statCompletedDocs">—</div>
-              </div>
+            <div class="quick-card" onclick="switchTab('tabPermissions')">
+              <div class="quick-card-icon">🔐</div><span>Phân quyền</span>
             </div>
-            <div class="stat-card">
-              <div class="stat-icon amber">🔒</div>
-              <div>
-                <div class="stat-label">TK bị khoá</div>
-                <div class="stat-value" id="statLockedUsers">—</div>
-              </div>
+            <div class="quick-card" onclick="switchTab('tabUpload')">
+              <div class="quick-card-icon">📤</div><span>Upload PDF</span>
             </div>
-            <div class="stat-card">
-              <div class="stat-icon red">❌</div>
-              <div>
-                <div class="stat-label">Tài liệu lỗi</div>
-                <div class="stat-value" id="statFailedDocs">—</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon indigo">💬</div>
-              <div>
-                <div class="stat-label">Phiên Chat AI</div>
-                <div class="stat-value" id="statTotalChats">—</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon sky">🪙</div>
-              <div>
-                <div class="stat-label">Token AI</div>
-                <div class="stat-value" id="statTotalTokens">—</div>
-              </div>
+            <div class="quick-card" onclick="switchTab('tabLogs')">
+              <div class="quick-card-icon">📋</div><span>Audit Log</span>
             </div>
           </div>
         </div>
-
-        <!-- Quick Actions + Activity -->
-        <div class="two-col">
-          <div>
-            <div class="section-header">
-              <h2>⚡ Thao tác nhanh</h2>
-            </div>
-            <div class="quick-grid">
-              <div class="quick-card" onclick="switchTab('tabUsers')">
-                <div class="quick-card-icon">👥</div><span>Người dùng</span>
-              </div>
-              <div class="quick-card" onclick="switchTab('tabDepartments')">
-                <div class="quick-card-icon">🏢</div><span>Phòng ban</span>
-              </div>
-              <div class="quick-card" onclick="switchTab('tabDocuments')">
-                <div class="quick-card-icon">📁</div><span>Tài liệu</span>
-              </div>
-              <div class="quick-card" onclick="switchTab('tabPermissions')">
-                <div class="quick-card-icon">🔐</div><span>Phân quyền</span>
-              </div>
-              <div class="quick-card" onclick="switchTab('tabUpload')">
-                <div class="quick-card-icon">📤</div><span>Upload PDF</span>
-              </div>
-              <div class="quick-card" onclick="switchTab('tabLogs')">
-                <div class="quick-card-icon">📋</div><span>Audit Log</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <div class="section-header">
-              <h2>🕐 Hoạt động gần đây</h2>
-            </div>
-            <div class="activity-card">
-              <ul class="activity-list" id="recentActivityList">
-                <li class="activity-item">
-                  <div class="activity-dot indigo"></div>
-                  <div class="activity-info">
-                    <p>Đang tải...</p><span>—</span>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <!-- Department Stats -->
         <div>
           <div class="section-header">
-            <h2>📋 Thống kê theo phòng ban</h2>
+            <h2>🕐 Hoạt động gần đây</h2>
           </div>
-          <div class="activity-card" id="deptStatsList">
-            <p class="empty-state text-muted text-center p-4">Đang tải thống kê...</p>
+          <div class="activity-card">
+            <ul class="activity-list" id="recentActivityList">
+              <li class="activity-item">
+                <div class="activity-dot indigo"></div>
+                <div class="activity-info">
+                  <p>Đang tải...</p><span>—</span>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
+      </div>
 
-      </div><!-- end tabOverview -->
+      <!-- Department Stats -->
+      <div>
+        <div class="section-header">
+          <h2>📋 Thống kê theo phòng ban</h2>
+        </div>
+        <div class="activity-card" id="deptStatsList">
+          <p class="empty-state text-muted text-center p-4">Đang tải thống kê...</p>
+        </div>
+      </div>
 
-      <!-- ===== TAB: NGƯỜI DÙNG ===== -->
-      <div id="tabUsers" style="display:none;">
-        <div class="section-card">
-          <div class="card-header">
-            <h2>👥 Quản lý người dùng</h2>
-            <button class="btn-primary-sm" onclick="openAddUserModal()">+ Thêm người dùng</button>
+    </div><!-- end tabOverview -->
+
+    <!-- ===== TAB: NGƯỜI DÙNG ===== -->
+    <div id="tabUsers" style="display:none;">
+      <div class="section-card">
+        <div class="card-header">
+          <h2>👥 Quản lý người dùng</h2>
+          <button class="btn-primary-sm" onclick="openAddUserModal()">+ Thêm người dùng</button>
+        </div>
+        <div class="card-body">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="userSearch" placeholder="Tìm theo tên, email hoặc username...">
           </div>
-          <div class="card-body">
-            <div class="search-wrap">
-              <span class="search-icon">🔍</span>
-              <input type="text" id="userSearch" placeholder="Tìm theo tên, email hoặc username...">
-            </div>
-            <div class="filter-bar">
-              <select id="userRoleFilter" class="filter-select">
-                <option value="">Tất cả vai trò</option>
-                <option value="ADMIN">Admin</option>
-                <option value="MANAGER">Manager</option>
-                <option value="USER">User</option>
-              </select>
-              <select id="userDeptFilter" class="filter-select">
-                <option value="">Tất cả phòng ban</option>
-              </select>
-              <select id="userStatusFilter" class="filter-select">
-                <option value="">Tất cả trạng thái</option>
-                <option value="active">Đang hoạt động</option>
-                <option value="locked">Bị khoá</option>
-              </select>
-            </div>
-            <div class="table-card">
-              <div class="table-wrapper">
-                <table>
-                  <thead>
+          <div class="filter-bar">
+            <select id="userRoleFilter" class="filter-select">
+              <option value="">Tất cả vai trò</option>
+              <option value="ADMIN">Admin</option>
+              <option value="MANAGER">Manager</option>
+              <option value="USER">User</option>
+            </select>
+            <select id="userDeptFilter" class="filter-select">
+              <option value="">Tất cả phòng ban</option>
+            </select>
+            <select id="userStatusFilter" class="filter-select">
+              <option value="">Tất cả trạng thái</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="locked">Bị khoá</option>
+            </select>
+          </div>
+          <div class="table-card">
+            <div class="table-wrapper">
+              <table>
+                <thead>
                   <tr>
-                    <th>#</th>
+                    <th>STT</th>
                     <th>Họ và tên</th>
                     <th>Email</th>
                     <th>Vai trò</th>
@@ -183,75 +186,75 @@
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
                   </tr>
-                  </thead>
-                  <tbody id="userTableBody">
+                </thead>
+                <tbody id="userTableBody">
                   <tr>
                     <td colspan="7" class="empty-state"><span>👥</span>Đang tải dữ liệu...</td>
                   </tr>
-                  </tbody>
-                </table>
-              </div>
+                </tbody>
+              </table>
             </div>
-            <div class="pagination" id="userPagination"></div>
           </div>
+          <div class="pagination" id="userPagination"></div>
         </div>
       </div>
+    </div>
 
-      <!-- ===== TAB: PHÒNG BAN ===== -->
-      <div id="tabDepartments" style="display:none;">
-        <div class="section-card">
-          <div class="card-header">
-            <h2>🏢 Quản lý phòng ban</h2>
-            <button class="btn-primary-sm" onclick="openAddDepartmentModal()">+ Thêm phòng ban</button>
-          </div>
-          <div class="card-body">
-            <div class="table-card">
-              <div class="table-wrapper">
-                <table>
-                  <thead>
+    <!-- ===== TAB: PHÒNG BAN ===== -->
+    <div id="tabDepartments" style="display:none;">
+      <div class="section-card">
+        <div class="card-header">
+          <h2>🏢 Quản lý phòng ban</h2>
+          <button class="btn-primary-sm" onclick="openAddDepartmentModal()">+ Thêm phòng ban</button>
+        </div>
+        <div class="card-body">
+          <div class="table-card">
+            <div class="table-wrapper">
+              <table>
+                <thead>
                   <tr>
-                    <th>#</th>
+                    <th>STT</th>
                     <th>Tên phòng ban</th>
                     <th>Mô tả</th>
                     <th>Số người dùng</th>
                     <th>Thao tác</th>
                   </tr>
-                  </thead>
-                  <tbody id="deptTableBody">
+                </thead>
+                <tbody id="deptTableBody">
                   <tr>
                     <td colspan="5" class="empty-state"><span>🏢</span>Đang tải dữ liệu...</td>
                   </tr>
-                  </tbody>
-                </table>
-              </div>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- ===== TAB: TÀI LIỆU ===== -->
-      <div id="tabDocuments" style="display:none;">
-        <div class="section-card">
-          <div class="card-header">
-            <h2>📁 Quản lý tài liệu</h2>
-            <button class="btn-primary-sm" onclick="switchTab('tabUpload')">📤 Upload PDF mới</button>
+    <!-- ===== TAB: TÀI LIỆU ===== -->
+    <div id="tabDocuments" style="display:none;">
+      <div class="section-card">
+        <div class="card-header">
+          <h2>📁 Quản lý tài liệu</h2>
+          <button class="btn-primary-sm" onclick="switchTab('tabUpload')">📤 Upload PDF mới</button>
+        </div>
+        <div class="card-body">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="docSearchInput" placeholder="Tìm kiếm tài liệu...">
           </div>
-          <div class="card-body">
-            <div class="search-wrap">
-              <span class="search-icon">🔍</span>
-              <input type="text" id="docSearchInput" placeholder="Tìm kiếm tài liệu...">
-            </div>
-            <div class="tab-bar" id="docStatusTabs">
-              <button class="tab-btn active" onclick="filterDocs('ALL', this)">Tất cả</button>
-              <button class="tab-btn" onclick="filterDocs('COMPLETED', this)">✅ Hoàn thành</button>
-              <button class="tab-btn" onclick="filterDocs('PENDING', this)">⏳ Chờ xử lý</button>
-              <button class="tab-btn" onclick="filterDocs('PROCESSING', this)">⚙️ Đang xử lý</button>
-              <button class="tab-btn" onclick="filterDocs('FAILED', this)">❌ Lỗi</button>
-            </div>
-            <div class="table-card">
-              <div class="table-wrapper">
-                <table>
-                  <thead>
+          <div class="tab-bar" id="docStatusTabs">
+            <button class="tab-btn active" onclick="filterDocs('ALL', this)">Tất cả</button>
+            <button class="tab-btn" onclick="filterDocs('COMPLETED', this)">✅ Hoàn thành</button>
+            <button class="tab-btn" onclick="filterDocs('PENDING', this)">⏳ Chờ xử lý</button>
+            <button class="tab-btn" onclick="filterDocs('PROCESSING', this)">⚙️ Đang xử lý</button>
+            <button class="tab-btn" onclick="filterDocs('FAILED', this)">❌ Lỗi</button>
+          </div>
+          <div class="table-card">
+            <div class="table-wrapper">
+              <table>
+                <thead>
                   <tr>
                     <th>#</th>
                     <th>Tên tài liệu</th>
@@ -263,32 +266,32 @@
                     <th>Ngày upload</th>
                     <th>Thao tác</th>
                   </tr>
-                  </thead>
-                  <tbody id="docTableBody">
+                </thead>
+                <tbody id="docTableBody">
                   <tr>
                     <td colspan="9" class="empty-state"><span>📁</span>Đang tải tài liệu...</td>
                   </tr>
-                  </tbody>
-                </table>
-              </div>
+                </tbody>
+              </table>
             </div>
-            <div class="pagination" id="docPagination"></div>
           </div>
+          <div class="pagination" id="docPagination"></div>
         </div>
       </div>
+    </div>
 
-      <!-- ===== TAB: PHÂN QUYỀN ===== -->
-      <div id="tabPermissions" style="display:none;">
-        <div class="section-card">
-          <div class="card-header">
-            <h2>🔐 Quản lý phân quyền truy cập tài liệu</h2>
-            <button class="btn-primary-sm" onclick="openShareDocumentModal()">+ Chia sẻ tài liệu</button>
-          </div>
-          <div class="card-body">
-            <div class="table-card">
-              <div class="table-wrapper">
-                <table>
-                  <thead>
+    <!-- ===== TAB: PHÂN QUYỀN ===== -->
+    <div id="tabPermissions" style="display:none;">
+      <div class="section-card">
+        <div class="card-header">
+          <h2>🔐 Quản lý phân quyền truy cập tài liệu</h2>
+          <button class="btn-primary-sm" onclick="openShareDocumentModal()">+ Chia sẻ tài liệu</button>
+        </div>
+        <div class="card-body">
+          <div class="table-card">
+            <div class="table-wrapper">
+              <table>
+                <thead>
                   <tr>
                     <th>Tài liệu</th>
                     <th>Phòng ban được chia sẻ</th>
@@ -297,107 +300,107 @@
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
                   </tr>
-                  </thead>
-                  <tbody id="permTableBody">
+                </thead>
+                <tbody id="permTableBody">
                   <tr>
                     <td colspan="6" class="empty-state"><span>🔐</span>Đang tải dữ liệu...</td>
                   </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== TAB: UPLOAD PDF ===== -->
-      <div id="tabUpload" style="display:none;">
-        <div class="section-card">
-          <div class="card-header">
-            <h2>📤 Upload tài liệu PDF</h2>
-          </div>
-          <div class="card-body">
-            <p class="upload-hint-text">
-              Tải lên tài liệu PDF để hệ thống AI tự động phân tích, chia nhỏ và lập chỉ mục nội dung.
-              Sau khi upload, tài liệu sẽ chuyển qua các trạng thái:
-              <strong>Chờ xử lý → Đang xử lý → Hoàn thành</strong>.
-            </p>
-
-            <div class="upload-area" id="uploadArea">
-              <div class="upload-hint-icon">📄</div>
-              <p><strong>Nhấp để chọn file PDF</strong> hoặc kéo thả vào đây</p>
-              <p class="upload-hint-subtext">Chỉ hỗ trợ định dạng PDF · Tối đa 50MB</p>
-              <input type="file" id="fileInput" accept=".pdf" style="display:none;">
-            </div>
-
-            <div id="selectedFile" class="file-selected-box" style="display:none;">
-              <span>📄</span>
-              <div style="flex:1;">
-                <div class="file-selected-name" id="selectedFileName">—</div>
-                <div class="file-selected-size" id="selectedFileSize">—</div>
-              </div>
-              <button onclick="clearFile()" class="btn-icon-danger">✕</button>
-            </div>
-
-            <div class="form-group mt-4">
-              <label for="departmentId">Phòng ban (tùy chọn)</label>
-              <select id="departmentId" class="form-input">
-                <option value="">-- Chọn phòng ban --</option>
-              </select>
-            </div>
-
-            <button class="btn-primary w-full mt-4" id="uploadBtn" disabled>
-              📤 Tải lên & Xử lý
-            </button>
-
-            <!-- Upload progress -->
-            <div id="uploadStatus" style="display:none;" class="mt-4">
-              <div class="upload-progress-text" id="uploadStatusText">Đang tải lên...</div>
-              <div class="upload-progress-bar">
-                <div id="uploadProgress" class="upload-progress-fill"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent uploads -->
-        <div class="section-card">
-          <div class="card-header">
-            <h2>Tài liệu vừa upload</h2>
-          </div>
-          <div class="table-card">
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                <tr>
-                  <th>Tên file</th>
-                  <th>Trạng thái</th>
-                  <th>Chunks AI</th>
-                  <th>Thời gian</th>
-                </tr>
-                </thead>
-                <tbody id="recentUploadBody">
-                <tr>
-                  <td colspan="4" class="empty-state"><span>📤</span>Chưa có tài liệu nào được upload.</td>
-                </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- ===== TAB: AI CHAT LOG ===== -->
-      <div id="tabChat" style="display:none;">
-        <div class="section-card">
-          <div class="card-header">
-            <h2>💬 Lịch sử phiên AI Chat</h2>
+    <!-- ===== TAB: UPLOAD PDF ===== -->
+    <div id="tabUpload" style="display:none;">
+      <div class="section-card">
+        <div class="card-header">
+          <h2>📤 Upload tài liệu PDF</h2>
+        </div>
+        <div class="card-body">
+          <p class="upload-hint-text">
+            Tải lên tài liệu PDF để hệ thống AI tự động phân tích, chia nhỏ và lập chỉ mục nội dung.
+            Sau khi upload, tài liệu sẽ chuyển qua các trạng thái:
+            <strong>Chờ xử lý → Đang xử lý → Hoàn thành</strong>.
+          </p>
+
+          <div class="upload-area" id="uploadArea">
+            <div class="upload-hint-icon">📄</div>
+            <p><strong>Nhấp để chọn file PDF</strong> hoặc kéo thả vào đây</p>
+            <p class="upload-hint-subtext">Chỉ hỗ trợ định dạng PDF · Tối đa 50MB</p>
+            <input type="file" id="fileInput" accept=".pdf" style="display:none;">
           </div>
-          <div class="card-body">
-            <div class="table-card">
-              <div class="table-wrapper">
-                <table>
-                  <thead>
+
+          <div id="selectedFile" class="file-selected-box" style="display:none;">
+            <span>📄</span>
+            <div style="flex:1;">
+              <div class="file-selected-name" id="selectedFileName">—</div>
+              <div class="file-selected-size" id="selectedFileSize">—</div>
+            </div>
+            <button onclick="clearFile()" class="btn-icon-danger">✕</button>
+          </div>
+
+          <div class="form-group mt-4">
+            <label for="departmentId">Phòng ban (tùy chọn)</label>
+            <select id="departmentId" class="form-input">
+              <option value="">-- Chọn phòng ban --</option>
+            </select>
+          </div>
+
+          <button class="btn-primary w-full mt-4" id="uploadBtn" disabled>
+            📤 Tải lên & Xử lý
+          </button>
+
+          <!-- Upload progress -->
+          <div id="uploadStatus" style="display:none;" class="mt-4">
+            <div class="upload-progress-text" id="uploadStatusText">Đang tải lên...</div>
+            <div class="upload-progress-bar">
+              <div id="uploadProgress" class="upload-progress-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent uploads -->
+      <div class="section-card">
+        <div class="card-header">
+          <h2>Tài liệu vừa upload</h2>
+        </div>
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tên file</th>
+                  <th>Trạng thái</th>
+                  <th>Chunks AI</th>
+                  <th>Thời gian</th>
+                </tr>
+              </thead>
+              <tbody id="recentUploadBody">
+                <tr>
+                  <td colspan="4" class="empty-state"><span>📤</span>Chưa có tài liệu nào được upload.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: AI CHAT LOG ===== -->
+    <div id="tabChat" style="display:none;">
+      <div class="section-card">
+        <div class="card-header">
+          <h2>💬 Lịch sử phiên AI Chat</h2>
+        </div>
+        <div class="card-body">
+          <div class="table-card">
+            <div class="table-wrapper">
+              <table>
+                <thead>
                   <tr>
                     <th>#</th>
                     <th>Người dùng</th>
@@ -406,311 +409,331 @@
                     <th>Cập nhật lần cuối</th>
                     <th>Thao tác</th>
                   </tr>
-                  </thead>
-                  <tbody id="chatTableBody">
+                </thead>
+                <tbody id="chatTableBody">
                   <tr>
                     <td colspan="6" class="empty-state"><span>💬</span>Đang tải dữ liệu...</td>
                   </tr>
-                  </tbody>
-                </table>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination" id="chatPagination"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: AUDIT LOG ===== -->
+    <div id="tabLogs" style="display:none;">
+      <div class="section-card">
+        <div class="card-header">
+          <h2>📋 Nhật ký hoạt động hệ thống</h2>
+        </div>
+        <div class="card-body">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="logSearch" placeholder="Tìm theo hành động, người dùng...">
+          </div>
+          <div class="activity-card no-border no-shadow">
+            <ul class="activity-list" id="logList">
+              <li class="activity-item">
+                <div class="activity-dot indigo"></div>
+                <div class="activity-info">
+                  <p>Đang tải nhật ký...</p><span>—</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="pagination" id="logPagination"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: HỒ SƠ CÁ NHÂN ===== -->
+    <div id="tabProfile" style="display:none;">
+      <div class="section-header">
+        <h2>👤 Hồ sơ quản trị viên</h2>
+      </div>
+
+      <div class="settings-layout">
+        <!-- Left Nav -->
+        <div class="settings-nav">
+          <button class="settings-tab active" onclick="switchProfileTab('ptInfo', this)">Thông tin cá nhân</button>
+          <button class="settings-tab" onclick="switchProfileTab('ptUpdate', this)">Cập nhật hồ sơ</button>
+          <button class="settings-tab" onclick="switchProfileTab('ptPassword', this)">Bảo mật</button>
+          <button class="settings-tab" onclick="switchProfileTab('ptActivity', this)">Lịch sử hoạt động</button>
+        </div>
+
+        <!-- Right Content -->
+        <div class="settings-content">
+
+          <!-- Thông tin cá nhân -->
+          <div id="ptInfo" class="settings-card active">
+            <div class="settings-header">
+              <h3>Thông tin cá nhân</h3>
+              <p>Chi tiết thông tin định danh và tài khoản của bạn trên hệ thống.</p>
+            </div>
+            <div class="settings-profile-grid">
+
+              <div class="profile-info-list">
+                <div class="profile-info-row">
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Họ và tên</span>
+                    <span class="profile-info-value" id="viewFullName">—</span>
+                  </div>
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Email</span>
+                    <span class="profile-info-value" id="viewEmail">—</span>
+                  </div>
+                </div>
+                <div class="profile-info-row">
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Số điện thoại</span>
+                    <span class="profile-info-value" id="viewPhone">—</span>
+                  </div>
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Phòng ban</span>
+                    <span class="profile-info-value" id="viewDept">—</span>
+                  </div>
+                </div>
+                <div class="profile-info-row">
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Vai trò</span>
+                    <span class="profile-info-value" id="viewRole">—</span>
+                  </div>
+                  <div class="profile-info-item">
+                    <!-- Empty for alignment -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Avatar Preview -->
+              <div class="settings-avatar-section">
+                <div class="settings-avatar" id="profileAvatar">A</div>
+                <div class="settings-role-badge admin" id="profileRoleBadge">Quản trị viên</div>
+                <div class="settings-stats">
+                  <div class="settings-stat-item">
+                    <span>Người dùng</span>
+                    <span id="psUserCount">—</span>
+                  </div>
+                  <div class="settings-stat-item">
+                    <span>Tài liệu</span>
+                    <span id="psDocCount">—</span>
+                  </div>
+                  <div class="settings-stat-item">
+                    <span>Phòng ban</span>
+                    <span id="psDeptCount">—</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="pagination" id="chatPagination"></div>
           </div>
+
+          <!-- Cập nhật hồ sơ -->
+          <div id="ptUpdate" class="settings-card">
+            <div class="settings-header">
+              <h3>Cập nhật hồ sơ</h3>
+              <p>Chỉnh sửa thông tin liên lạc và ảnh đại diện của bạn.</p>
+            </div>
+            <div class="settings-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Họ và tên</label>
+                  <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
+                </div>
+                <div class="form-group">
+                  <label>Số điện thoại</label>
+                  <input type="tel" id="editPhone" class="form-input" placeholder="Nhập số điện thoại">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group" style="width: 100%;">
+                  <label>Đường dẫn Ảnh đại diện (Avatar URL)</label>
+                  <input type="file" id="editAvatarUrl" class="form-input" accept="image/*">
+                </div>
+              </div>
+              <div class="form-actions" style="margin-top: 32px;">
+                <button class="btn btn-primary" onclick="updateProfile()">Lưu thay đổi</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Đổi mật khẩu -->
+          <div id="ptPassword" class="settings-card">
+            <div class="settings-header">
+              <h3>Bảo mật</h3>
+              <p>Cập nhật mật khẩu để bảo vệ tài khoản của bạn.</p>
+            </div>
+            <div class="form-group max-w-md">
+              <label>Mật khẩu hiện tại</label>
+              <div class="pass-wrap">
+                <input type="password" id="currentPassword" class="form-input" placeholder="Nhập mật khẩu hiện tại">
+                <button class="pass-eye" onclick="togglePassVis('currentPassword')">👁</button>
+              </div>
+            </div>
+            <div class="form-group max-w-md">
+              <label>Mật khẩu mới</label>
+              <div class="pass-wrap">
+                <input type="password" id="newPassword" class="form-input" placeholder="Tối thiểu 8 ký tự">
+                <button class="pass-eye" onclick="togglePassVis('newPassword')">👁</button>
+              </div>
+              <div class="pass-strength-bar">
+                <div class="pass-strength-fill" id="passStrengthFill" style="width:0%"></div>
+              </div>
+              <div class="pass-strength-label" id="passStrengthLabel"></div>
+            </div>
+            <div class="form-group max-w-md">
+              <label>Xác nhận mật khẩu mới</label>
+              <div class="pass-wrap">
+                <input type="password" id="confirmPassword" class="form-input" placeholder="Nhập lại mật khẩu mới">
+                <button class="pass-eye" onclick="togglePassVis('confirmPassword')">👁</button>
+              </div>
+            </div>
+            <div class="form-actions max-w-md" style="margin-top: 32px;">
+              <button class="btn btn-primary" onclick="changePassword()">Đổi mật khẩu</button>
+            </div>
+          </div>
+
+          <!-- Lịch sử hoạt động -->
+          <div id="ptActivity" class="settings-card">
+            <div class="settings-header">
+              <h3>Lịch sử hoạt động</h3>
+              <p>Nhật ký các thao tác gần đây của bạn trên hệ thống.</p>
+            </div>
+            <ul class="activity-list-v2" id="profileActivityList">
+              <li class="activity-empty">Đang tải lịch sử hoạt động...</li>
+            </ul>
+          </div>
+
         </div>
       </div>
 
-      <!-- ===== TAB: AUDIT LOG ===== -->
-      <div id="tabLogs" style="display:none;">
-        <div class="section-card">
-          <div class="card-header">
-            <h2>📋 Nhật ký hoạt động hệ thống</h2>
-          </div>
-          <div class="card-body">
-            <div class="search-wrap">
-              <span class="search-icon">🔍</span>
-              <input type="text" id="logSearch" placeholder="Tìm theo hành động, người dùng...">
-            </div>
-            <div class="activity-card no-border no-shadow">
-              <ul class="activity-list" id="logList">
-                <li class="activity-item">
-                  <div class="activity-dot indigo"></div>
-                  <div class="activity-info">
-                    <p>Đang tải nhật ký...</p><span>—</span>
-                  </div>
-                </li>
-              </ul>
-            </div>
-            <div class="pagination" id="logPagination"></div>
-          </div>
-        </div>
+    </div>
+
+  <!-- ===== MODALS ===== -->
+
+  <!-- MODAL: Thêm người dùng -->
+  <div class="modal-overlay" id="addUserModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>➕ Thêm người dùng mới</h3>
+        <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
       </div>
-
-      <!-- ===== TAB: HỒ SƠ CÁ NHÂN ===== -->
-      <div id="tabProfile" style="display:none;">
-        <div class="section-header">
-          <h2>👤 Hồ sơ quản trị viên</h2>
-        </div>
-
-        <div class="settings-layout">
-          <!-- Left Nav -->
-          <div class="settings-nav">
-            <button class="settings-tab active" onclick="switchProfileTab('ptInfo', this)">Thông tin cá nhân</button>
-            <button class="settings-tab" onclick="switchProfileTab('ptUpdate', this)">Cập nhật hồ sơ</button>
-            <button class="settings-tab" onclick="switchProfileTab('ptPassword', this)">Bảo mật</button>
-            <button class="settings-tab" onclick="switchProfileTab('ptActivity', this)">Lịch sử hoạt động</button>
-          </div>
-
-          <!-- Right Content -->
-          <div class="settings-content">
-            
-            <!-- Thông tin cá nhân -->
-            <div id="ptInfo" class="settings-card active">
-              <div class="settings-header">
-                <h3>Thông tin cá nhân</h3>
-                <p>Chi tiết thông tin định danh và tài khoản của bạn trên hệ thống.</p>
-              </div>
-              <div class="settings-profile-grid">
-                
-                <div class="profile-info-list">
-                  <div class="profile-info-row">
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Họ và tên</span>
-                      <span class="profile-info-value" id="viewFullName">—</span>
-                    </div>
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Email</span>
-                      <span class="profile-info-value" id="viewEmail">—</span>
-                    </div>
-                  </div>
-                  <div class="profile-info-row">
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Số điện thoại</span>
-                      <span class="profile-info-value" id="viewPhone">—</span>
-                    </div>
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Phòng ban</span>
-                      <span class="profile-info-value" id="viewDept">—</span>
-                    </div>
-                  </div>
-                  <div class="profile-info-row">
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Vai trò</span>
-                      <span class="profile-info-value" id="viewRole">—</span>
-                    </div>
-                    <div class="profile-info-item">
-                      <!-- Empty for alignment -->
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Avatar Preview -->
-                <div class="settings-avatar-section">
-                  <div class="settings-avatar" id="profileAvatar">A</div>
-                  <div class="settings-role-badge admin" id="profileRoleBadge">Quản trị viên</div>
-                  <div class="settings-stats">
-                    <div class="settings-stat-item">
-                      <span>Người dùng</span>
-                      <span id="psUserCount">—</span>
-                    </div>
-                    <div class="settings-stat-item">
-                      <span>Tài liệu</span>
-                      <span id="psDocCount">—</span>
-                    </div>
-                    <div class="settings-stat-item">
-                      <span>Phòng ban</span>
-                      <span id="psDeptCount">—</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Cập nhật hồ sơ -->
-            <div id="ptUpdate" class="settings-card">
-              <div class="settings-header">
-                <h3>Cập nhật hồ sơ</h3>
-                <p>Chỉnh sửa thông tin liên lạc và ảnh đại diện của bạn.</p>
-              </div>
-              <div class="settings-form">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Họ và tên</label>
-                    <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
-                  </div>
-                  <div class="form-group">
-                    <label>Số điện thoại</label>
-                    <input type="tel" id="editPhone" class="form-input" placeholder="Nhập số điện thoại">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group" style="width: 100%;">
-                    <label>Đường dẫn Ảnh đại diện (Avatar URL)</label>
-                    <input type="file" id="editAvatarUrl" class="form-input" accept="image/*">
-                  </div>
-                </div>
-                <div class="form-actions" style="margin-top: 32px;">
-                  <button class="btn btn-primary" onclick="updateProfile()">Lưu thay đổi</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Đổi mật khẩu -->
-            <div id="ptPassword" class="settings-card">
-              <div class="settings-header">
-                <h3>Bảo mật</h3>
-                <p>Cập nhật mật khẩu để bảo vệ tài khoản của bạn.</p>
-              </div>
-              <div class="form-group max-w-md">
-                <label>Mật khẩu hiện tại</label>
-                <div class="pass-wrap">
-                  <input type="password" id="currentPassword" class="form-input" placeholder="Nhập mật khẩu hiện tại">
-                  <button class="pass-eye" onclick="togglePassVis('currentPassword')">👁</button>
-                </div>
-              </div>
-              <div class="form-group max-w-md">
-                <label>Mật khẩu mới</label>
-                <div class="pass-wrap">
-                  <input type="password" id="newPassword" class="form-input" placeholder="Tối thiểu 8 ký tự">
-                  <button class="pass-eye" onclick="togglePassVis('newPassword')">👁</button>
-                </div>
-                <div class="pass-strength-bar">
-                  <div class="pass-strength-fill" id="passStrengthFill" style="width:0%"></div>
-                </div>
-                <div class="pass-strength-label" id="passStrengthLabel"></div>
-              </div>
-              <div class="form-group max-w-md">
-                <label>Xác nhận mật khẩu mới</label>
-                <div class="pass-wrap">
-                  <input type="password" id="confirmPassword" class="form-input" placeholder="Nhập lại mật khẩu mới">
-                  <button class="pass-eye" onclick="togglePassVis('confirmPassword')">👁</button>
-                </div>
-              </div>
-              <div class="form-actions max-w-md" style="margin-top: 32px;">
-                <button class="btn btn-primary" onclick="changePassword()">Đổi mật khẩu</button>
-              </div>
-            </div>
-
-            <!-- Lịch sử hoạt động -->
-            <div id="ptActivity" class="settings-card">
-              <div class="settings-header">
-                <h3>Lịch sử hoạt động</h3>
-                <p>Nhật ký các thao tác gần đây của bạn trên hệ thống.</p>
-              </div>
-              <ul class="activity-list-v2" id="profileActivityList">
-                <li class="activity-empty">Đang tải lịch sử hoạt động...</li>
-              </ul>
-            </div>
-
-          </div>
-        </div>
-
+      <div class="form-group">
+        <label for="newFullName">Họ và tên</label>
+        <input type="text" id="newFullName" class="form-input" placeholder="Nhập họ và tên">
+        <span class="error-msg" id="errNewFullName" style="display:none;"></span>
       </div>
-
-
-    </div><!-- end page-body -->
-  </main>
-
-</div><!-- end layout -->
-
-<!-- ===== MODALS ===== -->
-
-<!-- MODAL: Thêm người dùng -->
-<div class="modal-overlay" id="addUserModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>➕ Thêm người dùng mới</h3>
-      <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
-    </div>
-    <div class="form-group">
-      <label for="newFullName">Họ và tên</label>
-      <input type="text" id="newFullName" class="form-input" placeholder="Nhập họ và tên">
-      <span class="error-msg" id="errNewFullName" style="display:none;"></span>
-    </div>
-    <div class="form-group">
-      <label for="newEmail">Email</label>
-      <input type="email" id="newEmail" class="form-input" placeholder="vd: nguyen@congty.vn">
-      <span class="error-msg" id="errNewEmail" style="display:none;"></span>
-    </div>
-    <div class="form-group">
-      <label for="newPasswordForm">Mật khẩu tạm thời</label>
-      <input type="password" id="newPasswordForm" class="form-input" placeholder="Tối thiểu 8 ký tự">
-      <span class="error-msg" id="errNewPasswordForm" style="display:none;"></span>
-    </div>
-    <div class="form-group">
-      <label for="newRole">Vai trò</label>
-      <select id="newRole" class="form-input">
-        <option value="USER">Người dùng (USER)</option>
-        <option value="MANAGER">Quản lý (MANAGER)</option>
-        <option value="ADMIN">Quản trị viên (ADMIN)</option>
-      </select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('addUserModal')">Hủy</button>
-      <button class="btn-primary-sm" onclick="submitAddUser()">Tạo tài khoản</button>
+      <div class="form-group">
+        <label for="newEmail">Email</label>
+        <input type="email" id="newEmail" class="form-input" placeholder="vd: nguyen@congty.vn">
+        <span class="error-msg" id="errNewEmail" style="display:none;"></span>
+      </div>
+      <div class="form-group">
+        <label for="newPasswordForm">Mật khẩu tạm thời</label>
+        <input type="password" id="newPasswordForm" class="form-input" placeholder="Tối thiểu 8 ký tự">
+        <span class="error-msg" id="errNewPasswordForm" style="display:none;"></span>
+      </div>
+      <div class="form-group">
+        <label for="newRole">Vai trò</label>
+        <select id="newRole" class="form-input">
+          <option value="USER">Người dùng (USER)</option>
+          <option value="MANAGER">Quản lý (MANAGER)</option>
+          <option value="ADMIN">Quản trị viên (ADMIN)</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addUserModal')">Hủy</button>
+        <button class="btn-primary-sm" onclick="submitAddUser()">Tạo tài khoản</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- MODAL: Thêm/Sửa phòng ban -->
-<div class="modal-overlay" id="departmentModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="deptModalTitle">➕ Thêm phòng ban mới</h3>
-      <button class="modal-close" onclick="closeModal('departmentModal')">✕</button>
-    </div>
-    <div class="form-group">
-      <label for="deptName">Tên phòng ban</label>
-      <input type="text" id="deptName" class="form-input" placeholder="Nhập tên phòng ban">
-    </div>
-    <div class="form-group">
-      <label for="deptDescription">Mô tả</label>
-      <textarea id="deptDescription" class="form-input" rows="3" placeholder="Mô tả phòng ban..."></textarea>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('departmentModal')">Hủy</button>
-      <button class="btn-primary-sm" id="deptSubmitBtn" onclick="submitAddDepartment()">Tạo phòng ban</button>
+  <!-- MODAL: Thêm/Sửa phòng ban -->
+  <div class="modal-overlay" id="departmentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="deptModalTitle">➕ Thêm phòng ban mới</h3>
+        <button class="modal-close" onclick="closeModal('departmentModal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label for="deptName">Tên phòng ban</label>
+        <input type="text" id="deptName" class="form-input" placeholder="Nhập tên phòng ban">
+      </div>
+      <div class="form-group">
+        <label for="deptDescription">Mô tả</label>
+        <textarea id="deptDescription" class="form-input" rows="3" placeholder="Mô tả phòng ban..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('departmentModal')">Hủy</button>
+        <button class="btn-primary-sm" id="deptSubmitBtn" onclick="submitAddDepartment()">Tạo phòng ban</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- MODAL: Chia sẻ tài liệu -->
-<div class="modal-overlay" id="shareDocModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>🔗 Chia sẻ tài liệu cho phòng ban</h3>
-      <button class="modal-close" onclick="closeModal('shareDocModal')">✕</button>
-    </div>
-    <div class="form-group">
-      <label for="shareDocId">Chọn tài liệu</label>
-      <select id="shareDocId" class="form-input"></select>
-    </div>
-    <div class="form-group">
-      <label for="shareDeptId">Chọn phòng ban</label>
-      <select id="shareDeptId" class="form-input"></select>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('shareDocModal')">Hủy</button>
-      <button class="btn-primary-sm" onclick="submitShareDocument()">Chia sẻ</button>
+  <!-- MODAL: Chuyển phòng ban cho người dùng -->
+  <div class="modal-overlay" id="changeDepartmentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🏢 Chuyển phòng ban</h3>
+        <button class="modal-close" onclick="closeModal('changeDepartmentModal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Người dùng</label>
+        <input type="text" id="changeDeptUserName" class="form-input" readonly disabled
+          style="background-color: #f3f4f6; color: #6b7280; cursor: not-allowed;">
+      </div>
+      <div class="form-group">
+        <label for="changeDeptSelect">Chọn phòng ban mới</label>
+        <select id="changeDeptSelect" class="form-input">
+          <option value="">-- Trống (Không thuộc phòng ban nào) --</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('changeDepartmentModal')">Hủy</button>
+        <button class="btn-primary-sm" id="btnSubmitChangeDept">Lưu thay đổi</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- MODAL: Xem chi tiết tài liệu -->
-<div class="modal-overlay" id="docViewerModal">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
-      <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
-    </div>
-    <div id="docViewerContent" style="max-height:50vh;overflow-y:auto;"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
-      <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
+  <!-- MODAL: Chia sẻ tài liệu -->
+  <div class="modal-overlay" id="shareDocModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🔗 Chia sẻ tài liệu cho phòng ban</h3>
+        <button class="modal-close" onclick="closeModal('shareDocModal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label for="shareDocId">Chọn tài liệu</label>
+        <select id="shareDocId" class="form-input"></select>
+      </div>
+      <div class="form-group">
+        <label for="shareDeptId">Chọn phòng ban</label>
+        <select id="shareDeptId" class="form-input"></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('shareDocModal')">Hủy</button>
+        <button class="btn-primary-sm" onclick="submitShareDocument()">Chia sẻ</button>
+      </div>
     </div>
   </div>
-</div>
 
-</div>
+  <!-- MODAL: Xem chi tiết tài liệu -->
+  <div class="modal-overlay" id="docViewerModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
+        <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
+      </div>
+      <div id="docViewerContent" style="max-height:50vh;overflow-y:auto;"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
+        <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
+      </div>
+    </div>
+  </div>
+
+  </div>
 </body>
+
 </html>

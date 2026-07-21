@@ -27,7 +27,7 @@ public class DepartmentsServiceImpl implements DepartmentsService {
     // Xử lý lấy danh sách phòng ban
     @Override
     public List<AdminDepartmentResponse> getAllDepartments() {
-        List<DepartmentsEntity> departments = departmentsRepository.findAllByDeletedAtIsNull();
+        List<DepartmentsEntity> departments = departmentsRepository.findAllByDeletedAtIsNullOrderByIdAsc();
 
         return departments.stream().map(dept -> {
             long count = usersRepository.countByDepartmentId(dept.getId());
@@ -145,12 +145,16 @@ public class DepartmentsServiceImpl implements DepartmentsService {
         UsersEntity user = usersRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("Không tìm thấy user !"));
 
-        // Tìm phòng ban có tồn tại không
-        DepartmentsEntity department = departmentsRepository.findByIdAndDeletedAtIsNull(departmentId)
-                .orElseThrow(() -> new BadRequestException("Không tồn tại phòng ban !"));
-
-        // Gắn cả đối tượng vào user
-        user.setDepartment(department);
+        if (departmentId != null) {
+            // Tìm phòng ban có tồn tại không
+            DepartmentsEntity department = departmentsRepository.findByIdAndDeletedAtIsNull(departmentId)
+                    .orElseThrow(() -> new BadRequestException("Không tồn tại phòng ban !"));
+            // Gắn cả đối tượng vào user
+            user.setDepartment(department);
+        } else {
+            // Xóa khỏi phòng ban
+            user.setDepartment(null);
+        }
 
         usersRepository.save(user);
     }

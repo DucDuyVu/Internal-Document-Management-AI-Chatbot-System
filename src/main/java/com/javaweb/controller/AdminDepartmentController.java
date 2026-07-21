@@ -35,7 +35,7 @@ public class AdminDepartmentController {
         return ResponseEntity.ok(departmentsService.getAllDepartments());
     }
 
-    // Lấy danh sách theo id phòng ban
+    // Lấy thông tin chi tiết phòng ban theo ID
     @GetMapping("/{id}")
     public ResponseEntity<AdminDepartmentResponse> getDepartmentById(@PathVariable Long id) {
         AdminDepartmentResponse department = departmentsService.getDepartmentById(id);

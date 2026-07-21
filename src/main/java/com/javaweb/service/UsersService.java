@@ -1,9 +1,12 @@
 package com.javaweb.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.security.core.userdetails.UserDetailsService;
+
 import com.javaweb.dto.request.ChangePasswordRequest;
 import com.javaweb.dto.request.UpdateProfileRequest;
+import com.javaweb.dto.response.AdminUserResponse;
 import com.javaweb.dto.response.ChangePasswordResponse;
-import com.javaweb.dto.response.ForgotPasswordResponse;
 import com.javaweb.dto.response.LockUserResponse;
 import com.javaweb.dto.response.ProfileResponse;
 import com.javaweb.dto.response.UnlockResponse;
@@ -21,5 +24,6 @@ public interface UsersService {
 
 	UnlockResponse unlockResponse(Long id);
 
-	org.springframework.data.domain.Page<com.javaweb.dto.response.AdminUserResponse> getAllUsers(int page, int size);
+	Page<AdminUserResponse> getAllUsers(int page, int size, String search, String role, Long departmentId,
+			String status);
 }
