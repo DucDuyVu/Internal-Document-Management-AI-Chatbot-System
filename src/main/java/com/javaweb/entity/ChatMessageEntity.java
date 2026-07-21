@@ -36,7 +36,7 @@ public class ChatMessageEntity {
 	@Column(name = "role")
 	private ChatMessageRole role;
 	
-	@Column(name = "content")
+	@Column(name = "content", columnDefinition = "TEXT")
 	private String content;
 	
 	@Column(name = "token_count")
