@@ -10,7 +10,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.data.domain.Sort;
 import com.javaweb.dto.request.ChangePasswordRequest;
 import com.javaweb.dto.request.UpdateProfileRequest;
 import com.javaweb.dto.response.ChangePasswordResponse;
@@ -196,8 +196,8 @@ public class UsersServiceImpl implements UsersService {
 	@Override
 	public Page<AdminUserResponse> getAllUsers(int page,
 			int size, String search, String role, Long departmentId, String status) {
-		// Phân trang (FE đánh trang từ 1, Spring Data JPA đánh trang từ 0)
-		Pageable pageable = PageRequest.of(page - 1, size);
+		// Phân trang và Sắp xếp: User mới nhất (id lớn nhất) lên đầu danh sách
+		Pageable pageable = PageRequest.of(page - 1, size, Sort.by("id").descending());
 
 		// Xử lý vai trò
 		UserRole enumRole = null;

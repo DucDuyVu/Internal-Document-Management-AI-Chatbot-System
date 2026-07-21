@@ -620,19 +620,27 @@
         <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
       </div>
       <div class="form-group">
-        <label for="newFullName">Họ và tên</label>
+        <label for="newUserName">Tên đăng nhập (Username) <span style="color:red">*</span></label>
+        <input type="text" id="newUserName" class="form-input" placeholder="Nhập username viết liền không dấu">
+      </div>
+      <div class="form-group">
+        <label for="newFullName">Họ và tên <span style="color:red">*</span></label>
         <input type="text" id="newFullName" class="form-input" placeholder="Nhập họ và tên">
-        <span class="error-msg" id="errNewFullName" style="display:none;"></span>
       </div>
       <div class="form-group">
-        <label for="newEmail">Email</label>
+        <label for="newEmail">Email <span style="color:red">*</span></label>
         <input type="email" id="newEmail" class="form-input" placeholder="vd: nguyen@congty.vn">
-        <span class="error-msg" id="errNewEmail" style="display:none;"></span>
       </div>
       <div class="form-group">
-        <label for="newPasswordForm">Mật khẩu tạm thời</label>
-        <input type="password" id="newPasswordForm" class="form-input" placeholder="Tối thiểu 8 ký tự">
-        <span class="error-msg" id="errNewPasswordForm" style="display:none;"></span>
+        <label for="newPhone">Số điện thoại</label>
+        <input type="text" id="newPhone" class="form-input" placeholder="Nhập số điện thoại">
+      </div>
+      <div class="form-group">
+        <label for="newPasswordForm">Mật khẩu <span style="color:red">*</span></label>
+        <div class="pass-wrap">
+          <input type="password" id="newPasswordForm" class="form-input" placeholder="Tối thiểu 8 ký tự">
+          <button type="button" class="pass-eye" onclick="togglePassVis('newPasswordForm')">👁</button>
+        </div>
       </div>
       <div class="form-group">
         <label for="newRole">Vai trò</label>
@@ -642,9 +650,52 @@
           <option value="ADMIN">Quản trị viên (ADMIN)</option>
         </select>
       </div>
+      <div class="form-group">
+        <label for="newDepartmentId">Phòng ban</label>
+        <select id="newDepartmentId" class="form-input">
+          <option value="">-- Trống (Chưa có phòng ban) --</option>
+        </select>
+      </div>
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeModal('addUserModal')">Hủy</button>
         <button class="btn-primary-sm" onclick="submitAddUser()">Tạo tài khoản</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Sửa người dùng -->
+  <div class="modal-overlay" id="editUserModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>✏️ Chỉnh sửa người dùng</h3>
+        <button class="modal-close" onclick="closeModal('editUserModal')">✕</button>
+      </div>
+      <input type="hidden" id="editUserId">
+      <div class="form-group">
+        <label for="editFullName">Họ và tên</label>
+        <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
+      </div>
+      <div class="form-group">
+        <label for="editPhone">Số điện thoại</label>
+        <input type="text" id="editPhone" class="form-input" placeholder="Nhập số điện thoại (tùy chọn)">
+      </div>
+      <div class="form-group">
+        <label for="editRole">Vai trò</label>
+        <select id="editRole" class="form-input">
+          <option value="USER">Người dùng (USER)</option>
+          <option value="MANAGER">Quản lý (MANAGER)</option>
+          <option value="ADMIN">Quản trị viên (ADMIN)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="editDepartmentId">Phòng ban</label>
+        <select id="editDepartmentId" class="form-input">
+          <option value="">-- Trống (Chưa có phòng ban) --</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('editUserModal')">Hủy</button>
+        <button class="btn-primary-sm" onclick="submitEditUser()">Lưu thay đổi</button>
       </div>
     </div>
   </div>

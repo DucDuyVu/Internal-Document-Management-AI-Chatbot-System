@@ -443,8 +443,8 @@ function filterUsers() {
 // ADD USER MODAL
 // =============================================
 
-function openAddUserModal() {
-    const inputs = ['newFullName', 'newEmail', 'newPassword'];
+async function openAddUserModal() {
+    const inputs = ['newUserName', 'newFullName', 'newEmail', 'newPhone', 'newPasswordForm'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -452,6 +452,23 @@ function openAddUserModal() {
 
     const role = document.getElementById('newRole');
     if (role) role.value = 'USER';
+    
+    // Load danh sách phòng ban
+    try {
+        const depts = await apiRequest('/api/admin/departments', { method: 'GET' });
+        const select = document.getElementById('newDepartmentId');
+        if (select) {
+            select.innerHTML = '<option value="">-- Trống (Chưa có phòng ban) --</option>';
+            
+            // Xử lý cả 2 trường hợp List hoặc Pageable
+            const dataList = Array.isArray(depts) ? depts : (depts.content || []);
+            dataList.forEach(d => {
+                select.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+            });
+        }
+    } catch (e) {
+        console.error("Lỗi tải danh sách phòng ban:", e);
+    }
 
     if (typeof openModal !== 'undefined') {
         openModal('addUserModal');
@@ -459,15 +476,19 @@ function openAddUserModal() {
 }
 
 async function submitAddUser() {
+    const userName = document.getElementById('newUserName')?.value?.trim() || '';
     const fullName = document.getElementById('newFullName')?.value?.trim() || '';
     const email = document.getElementById('newEmail')?.value?.trim() || '';
-    const password = document.getElementById('newPassword')?.value?.trim() || '';
+    const phone = document.getElementById('newPhone')?.value?.trim() || '';
+    const password = document.getElementById('newPasswordForm')?.value || '';
     const role = document.getElementById('newRole')?.value || 'USER';
+    let departmentId = document.getElementById('newDepartmentId')?.value || null;
+    if (departmentId === "") departmentId = null;
 
     // Validation
-    if (!fullName || !email || !password) {
+    if (!userName || !fullName || !email || !password) {
         if (typeof showToast !== 'undefined') {
-            showToast('Vui lòng điền đầy đủ thông tin', 'warning');
+            showToast('Vui lòng điền đầy đủ Username, Họ tên, Email, Mật khẩu', 'warning');
         }
         return;
     }
@@ -487,10 +508,13 @@ async function submitAddUser() {
         await apiRequest('/api/admin/users', {
             method: 'POST',
             body: JSON.stringify({
+                userName,
                 fullName,
                 email,
+                phone,
                 password,
-                role
+                role,
+                departmentId
             })
         });
 
@@ -503,7 +527,7 @@ async function submitAddUser() {
         }
 
         loadUsers();
-        logAdminActivity('CREATE_USER', 'USER', null, { email, role });
+        logAdminActivity('CREATE_USER', 'USER', null, { userName, email, role });
 
     } catch (error) {
         console.error('Error creating user:', error);
@@ -1912,17 +1936,116 @@ window.checkPassStrength = checkPassStrength;
 window.changePassword = changePassword;
 
 // ===== STUB FUNCTIONS (to be implemented) =====
-function editUser(userId) {
-    if (typeof showToast !== 'undefined') {
-        showToast('Đang phát triển...', 'info');
+async function editUser(userId) {
+    const user = AdminState.users.data.find(u => u.id === userId);
+    if (!user) {
+        if (typeof showToast !== 'undefined') showToast('Không tìm thấy dữ liệu người dùng', 'error');
+        return;
+    }
+    
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editFullName').value = user.fullName || '';
+    document.getElementById('editPhone').value = ''; // API chưa trả về phone nên để trống
+    
+    // Gán role
+    const roleSelect = document.getElementById('editRole');
+    if (roleSelect) roleSelect.value = user.role || 'USER';
+
+    // Tải danh sách phòng ban
+    try {
+        const depts = await apiRequest('/api/admin/departments', { method: 'GET' });
+        const select = document.getElementById('editDepartmentId');
+        if (select) {
+            select.innerHTML = '<option value="">-- Trống (Chưa có phòng ban) --</option>';
+            const dataList = Array.isArray(depts) ? depts : (depts.content || []);
+            dataList.forEach(d => {
+                // Check theo tên vì API user list trả về tên phòng ban chứ không trả id
+                const selected = (user.departmentName && d.name === user.departmentName) ? 'selected' : '';
+                select.innerHTML += `<option value="${d.id}" ${selected}>${d.name}</option>`;
+            });
+        }
+    } catch (e) {
+        console.error("Lỗi tải danh sách phòng ban:", e);
+    }
+
+    if (typeof openModal !== 'undefined') openModal('editUserModal');
+}
+
+async function submitEditUser() {
+    const userId = document.getElementById('editUserId').value;
+    const fullName = document.getElementById('editFullName')?.value?.trim() || null;
+    const phone = document.getElementById('editPhone')?.value?.trim() || null;
+    const role = document.getElementById('editRole')?.value || null;
+    let departmentId = document.getElementById('editDepartmentId')?.value || null;
+    if (departmentId === "") departmentId = null;
+
+    try {
+        await apiRequest(`/api/admin/users/${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ fullName, phone, role, departmentId })
+        });
+
+        if (typeof closeModal !== 'undefined') closeModal('editUserModal');
+        if (typeof showToast !== 'undefined') showToast('Cập nhật người dùng thành công!', 'success');
+        
+        loadUsers();
+        logAdminActivity('UPDATE_USER', 'USER', null, { userId, role, departmentId });
+    } catch (error) {
+        console.error('Error updating user:', error);
+        if (typeof showToast !== 'undefined') showToast(error.message || 'Lỗi cập nhật', 'error');
     }
 }
 
-function changeUserDepartment(userId) {
-    if (typeof showToast !== 'undefined') {
-        showToast('Đang phát triển...', 'info');
+async function changeUserDepartment(userId) {
+    const user = AdminState.users.data.find(u => u.id === userId);
+    if (!user) return;
+    
+    document.getElementById('changeDeptUserName').value = user.fullName || user.username;
+    
+    try {
+        const depts = await apiRequest('/api/admin/departments', { method: 'GET' });
+        const select = document.getElementById('changeDeptSelect');
+        if (select) {
+            select.innerHTML = '<option value="">-- Trống (Chưa có phòng ban) --</option>';
+            const dataList = Array.isArray(depts) ? depts : (depts.content || []);
+            dataList.forEach(d => {
+                const selected = (user.departmentName && d.name === user.departmentName) ? 'selected' : '';
+                select.innerHTML += `<option value="${d.id}" ${selected}>${d.name}</option>`;
+            });
+        }
+    } catch (e) {
+        console.error(e);
     }
+    
+    // Gắn sự kiện submit
+    const submitBtn = document.getElementById('btnSubmitChangeDept');
+    if (submitBtn) {
+        submitBtn.onclick = async function() {
+            let departmentId = document.getElementById('changeDeptSelect').value || null;
+            if (departmentId === "") departmentId = null;
+            
+            try {
+                // Tận dụng chung API Update User
+                await apiRequest(`/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ departmentId })
+                });
+
+                if (typeof closeModal !== 'undefined') closeModal('changeDepartmentModal');
+                if (typeof showToast !== 'undefined') showToast('Chuyển phòng ban thành công!', 'success');
+                
+                loadUsers();
+                logAdminActivity('TRANSFER_DEPT', 'USER', null, { userId, departmentId });
+            } catch (error) {
+                console.error(error);
+                if (typeof showToast !== 'undefined') showToast(error.message || 'Lỗi khi chuyển phòng ban', 'error');
+            }
+        };
+    }
+
+    if (typeof openModal !== 'undefined') openModal('changeDepartmentModal');
 }
+
 
 // ===== INITIALIZE =====
 document.addEventListener('DOMContentLoaded', function () {
