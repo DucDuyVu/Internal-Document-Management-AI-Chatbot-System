@@ -1,5 +1,7 @@
 package com.javaweb.service;
 
+import com.javaweb.dto.request.CreateUserRequest;
+import com.javaweb.dto.request.UpdateUserRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
@@ -26,4 +28,10 @@ public interface UsersService {
 
 	Page<AdminUserResponse> getAllUsers(int page, int size, String search, String role, Long departmentId,
 			String status);
+
+	AdminUserResponse createUser(CreateUserRequest request);
+
+	AdminUserResponse updateUser(Long userId, UpdateUserRequest request);
+
+	void softDeleteUser(Long userId);
 }
