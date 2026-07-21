@@ -30,7 +30,8 @@ public class AdminDepartmentController {
     // Lấy tất cả danh sách phòng ban
     @GetMapping
     public ResponseEntity<List<AdminDepartmentResponse>> getAllDepartments() {
-        // ResponseEntity.ok(..) tạo HTTP Response với trạng thái 200 OK => đưa data cho body response
+        // ResponseEntity.ok(..) tạo HTTP Response với trạng thái 200 OK => đưa data cho
+        // body response
         return ResponseEntity.ok(departmentsService.getAllDepartments());
     }
 
@@ -55,17 +56,18 @@ public class AdminDepartmentController {
         return ResponseEntity.noContent().build(); // trả về 204 + không có body
     }
 
-
     // Update phòng ban (Sửa)
     @PutMapping("/{id}")
-    public ResponseEntity<AdminDepartmentResponse> updateDepartment(@PathVariable Long id, @RequestBody AdminDepartmentRequest request) {
+    public ResponseEntity<AdminDepartmentResponse> updateDepartment(@PathVariable Long id,
+            @RequestBody AdminDepartmentRequest request) {
         AdminDepartmentResponse updated = departmentsService.updateDepartment(id, request);
         return ResponseEntity.ok(updated);
     }
 
     // Chuyển user sang phòng ban khác
-    @PutMapping("{userId}/departmentId")
-    public ResponseEntity<Void> assignDepartment(@PathVariable Long userId, @RequestBody AssignDepartmentRequest request) {
+    @PutMapping("/{userId}/departmentId")
+    public ResponseEntity<Void> assignDepartment(@PathVariable Long userId,
+            @RequestBody AssignDepartmentRequest request) {
         departmentsService.assignUserToDepartment(userId, request.getDepartmentId());
         return ResponseEntity.noContent().build(); // trả về 204 không cần trả ra body
     }

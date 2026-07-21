@@ -45,7 +45,7 @@ public class DepartmentsServiceImpl implements DepartmentsService {
     public AdminDepartmentResponse createDepartment(AdminDepartmentRequest request) {
 
         // check tên phòng ban có trùng không
-        if(departmentsRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(request.getName())) {
+        if (departmentsRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(request.getName())) {
             throw new BadRequestException("Tên phòng ban đã tồn tại ! ");
         }
 
@@ -75,8 +75,10 @@ public class DepartmentsServiceImpl implements DepartmentsService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng ban !"));
 
         // Check trùng tên
-        if (! department.getName().equalsIgnoreCase(request.getName())) {
-            throw new BadRequestException("Phòng ban đã tồn tại ");
+        if (!department.getName().equalsIgnoreCase(request.getName())) {
+            if (departmentsRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(request.getName())) {
+                throw new BadRequestException("Phòng ban đã tồn tại ");
+            }
         }
 
         // Gán dữ liệu mới
