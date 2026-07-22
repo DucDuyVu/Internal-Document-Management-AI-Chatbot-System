@@ -203,17 +203,22 @@ async function loadOverviewStats() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest('/api/admin/statistics');
+        // Tạm thời gọi các API có sẵn để lấy dữ liệu thống kê (do chưa có API /statistics tổng)
+        const [usersRes, lockedUsersRes, deptsRes] = await Promise.all([
+            apiRequest('/api/admin/users?page=1&size=1'),
+            apiRequest('/api/admin/users?status=locked&page=1&size=1'),
+            apiRequest('/api/admin/departments')
+        ]);
 
         const elements = {
-            'statTotalUsers': response.totalUsers || 0,
-            'statTotalDepts': response.totalDepartments || 0,
-            'statTotalDocs': response.totalDocuments || 0,
-            'statCompletedDocs': response.completedDocuments || 0,
-            'statLockedUsers': response.lockedUsers || 0,
-            'statFailedDocs': response.failedDocuments || 0,
-            'statTotalChats': response.totalChatSessions || 0,
-            'statTotalTokens': typeof formatNumber !== 'undefined' ? formatNumber(response.totalTokens || 0) : (response.totalTokens || 0)
+            'statTotalUsers': usersRes.totalElements || 0,
+            'statTotalDepts': Array.isArray(deptsRes) ? deptsRes.length : (deptsRes.content ? deptsRes.content.length : 0),
+            'statTotalDocs': '-',
+            'statCompletedDocs': '-',
+            'statLockedUsers': lockedUsersRes.totalElements || 0,
+            'statFailedDocs': '-',
+            'statTotalChats': '-',
+            'statTotalTokens': '-'
         };
 
         Object.keys(elements).forEach(id => {
@@ -223,9 +228,6 @@ async function loadOverviewStats() {
 
     } catch (error) {
         console.error('Error loading overview stats:', error);
-        if (typeof showToast !== 'undefined') {
-            showToast('Không thể tải thống kê tổng quan', 'error');
-        }
     }
 }
 
@@ -414,6 +416,10 @@ function renderUserTable() {
             : `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>`
         }
                     </button>
+                    <!-- Xóa -->
+                    <button class="btn-icon" style="background:transparent; color:#ef4444; border:1px solid transparent; border-radius:6px; padding:6px; transition:all 0.2s; display:flex; align-items:center;" onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626'" onmouseout="this.style.background='transparent'; this.style.color='#ef4444'" onclick="deleteUser(${user.id}, '${user.fullName}')" title="Xóa người dùng">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
                 </div>
             </td>
         </tr>
@@ -540,6 +546,32 @@ async function submitAddUser() {
 // =============================================
 // TOGGLE USER STATUS (LOCK/UNLOCK)
 // =============================================
+
+function deleteUser(userId, fullName) {
+    showConfirmDialog(
+        '⚠️ Xác nhận xóa người dùng',
+        `Bạn có chắc chắn muốn xóa người dùng <strong>${fullName}</strong> không? Hành động này không thể hoàn tác.`,
+        async () => {
+            try {
+                await apiRequest(`/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (typeof showToast !== 'undefined') {
+                    showToast('Xóa người dùng thành công', 'success');
+                }
+                
+                loadUsers();
+                logAdminActivity('DELETE_USER', 'USER', userId, { fullName });
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                if (typeof showToast !== 'undefined') {
+                    showToast(error.message || 'Lỗi khi xóa người dùng', 'error');
+                }
+            }
+        }
+    );
+}
 
 function toggleUserStatus(userId, currentStatus) {
     const action = currentStatus ? 'khoá' : 'mở khoá';
@@ -1908,6 +1940,7 @@ function getActionLabel(action) {
 window.openAddUserModal = openAddUserModal;
 window.submitAddUser = submitAddUser;
 window.toggleUserStatus = toggleUserStatus;
+window.deleteUser = deleteUser;
 window.editUser = editUser;
 window.changeUserDepartment = changeUserDepartment;
 window.openAddDepartmentModal = openAddDepartmentModal;
@@ -1944,45 +1977,26 @@ async function editUser(userId) {
     }
     
     document.getElementById('editUserId').value = user.id;
-    document.getElementById('editFullName').value = user.fullName || '';
-    document.getElementById('editPhone').value = ''; // API chưa trả về phone nên để trống
+    document.getElementById('modalEditFullName').value = user.fullName || '';
+    document.getElementById('modalEditPhone').value = ''; // API chưa trả về phone nên để trống
     
     // Gán role
     const roleSelect = document.getElementById('editRole');
     if (roleSelect) roleSelect.value = user.role || 'USER';
 
-    // Tải danh sách phòng ban
-    try {
-        const depts = await apiRequest('/api/admin/departments', { method: 'GET' });
-        const select = document.getElementById('editDepartmentId');
-        if (select) {
-            select.innerHTML = '<option value="">-- Trống (Chưa có phòng ban) --</option>';
-            const dataList = Array.isArray(depts) ? depts : (depts.content || []);
-            dataList.forEach(d => {
-                // Check theo tên vì API user list trả về tên phòng ban chứ không trả id
-                const selected = (user.departmentName && d.name === user.departmentName) ? 'selected' : '';
-                select.innerHTML += `<option value="${d.id}" ${selected}>${d.name}</option>`;
-            });
-        }
-    } catch (e) {
-        console.error("Lỗi tải danh sách phòng ban:", e);
-    }
 
     if (typeof openModal !== 'undefined') openModal('editUserModal');
 }
 
 async function submitEditUser() {
     const userId = document.getElementById('editUserId').value;
-    const fullName = document.getElementById('editFullName')?.value?.trim() || null;
-    const phone = document.getElementById('editPhone')?.value?.trim() || null;
+    const fullName = document.getElementById('modalEditFullName')?.value?.trim() || null;
+    const phone = document.getElementById('modalEditPhone')?.value?.trim() || null;
     const role = document.getElementById('editRole')?.value || null;
-    let departmentId = document.getElementById('editDepartmentId')?.value || null;
-    if (departmentId === "") departmentId = null;
-
     try {
         await apiRequest(`/api/admin/users/${userId}`, {
             method: 'PUT',
-            body: JSON.stringify({ fullName, phone, role, departmentId })
+            body: JSON.stringify({ fullName, phone, role })
         });
 
         if (typeof closeModal !== 'undefined') closeModal('editUserModal');
@@ -2025,8 +2039,8 @@ async function changeUserDepartment(userId) {
             if (departmentId === "") departmentId = null;
             
             try {
-                // Tận dụng chung API Update User
-                await apiRequest(`/api/admin/users/${userId}`, {
+                // Gọi API chuyển phòng ban chuẩn
+                await apiRequest(`/api/admin/departments/${userId}/departmentId`, {
                     method: 'PUT',
                     body: JSON.stringify({ departmentId })
                 });

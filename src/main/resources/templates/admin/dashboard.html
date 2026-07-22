@@ -256,7 +256,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th>STT</th>
                     <th>Tên tài liệu</th>
                     <th>Phòng ban</th>
                     <th>Loại</th>
@@ -402,7 +402,7 @@
               <table>
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th>STT</th>
                     <th>Người dùng</th>
                     <th>Số tin nhắn</th>
                     <th>Thời gian tạo</th>
@@ -610,179 +610,173 @@
 
     </div>
 
-  <!-- ===== MODALS ===== -->
+    <!-- ===== MODALS ===== -->
 
-  <!-- MODAL: Thêm người dùng -->
-  <div class="modal-overlay" id="addUserModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>➕ Thêm người dùng mới</h3>
-        <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
-      </div>
-      <div class="form-group">
-        <label for="newUserName">Tên đăng nhập (Username) <span style="color:red">*</span></label>
-        <input type="text" id="newUserName" class="form-input" placeholder="Nhập username viết liền không dấu">
-      </div>
-      <div class="form-group">
-        <label for="newFullName">Họ và tên <span style="color:red">*</span></label>
-        <input type="text" id="newFullName" class="form-input" placeholder="Nhập họ và tên">
-      </div>
-      <div class="form-group">
-        <label for="newEmail">Email <span style="color:red">*</span></label>
-        <input type="email" id="newEmail" class="form-input" placeholder="vd: nguyen@congty.vn">
-      </div>
-      <div class="form-group">
-        <label for="newPhone">Số điện thoại</label>
-        <input type="text" id="newPhone" class="form-input" placeholder="Nhập số điện thoại">
-      </div>
-      <div class="form-group">
-        <label for="newPasswordForm">Mật khẩu <span style="color:red">*</span></label>
-        <div class="pass-wrap">
-          <input type="password" id="newPasswordForm" class="form-input" placeholder="Tối thiểu 8 ký tự">
-          <button type="button" class="pass-eye" onclick="togglePassVis('newPasswordForm')">👁</button>
+    <!-- MODAL: Thêm người dùng -->
+    <div class="modal-overlay" id="addUserModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>➕ Thêm người dùng mới</h3>
+          <button class="modal-close" onclick="closeModal('addUserModal')">✕</button>
+        </div>
+        <div class="form-group">
+          <label for="newUserName">Tên đăng nhập (Username) <span style="color:red">*</span></label>
+          <input type="text" id="newUserName" class="form-input" placeholder="Nhập username viết liền không dấu">
+        </div>
+        <div class="form-group">
+          <label for="newFullName">Họ và tên <span style="color:red">*</span></label>
+          <input type="text" id="newFullName" class="form-input" placeholder="Nhập họ và tên">
+        </div>
+        <div class="form-group">
+          <label for="newEmail">Email <span style="color:red">*</span></label>
+          <input type="email" id="newEmail" class="form-input" placeholder="vd: nguyen@congty.vn">
+        </div>
+        <div class="form-group">
+          <label for="newPhone">Số điện thoại</label>
+          <input type="text" id="newPhone" class="form-input" placeholder="Nhập số điện thoại">
+        </div>
+        <div class="form-group">
+          <label for="newPasswordForm">Mật khẩu <span style="color:red">*</span></label>
+          <div class="pass-wrap">
+            <input type="password" id="newPasswordForm" class="form-input" placeholder="Tối thiểu 8 ký tự">
+            <button type="button" class="pass-eye" onclick="togglePassVis('newPasswordForm')">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="newRole">Vai trò</label>
+          <select id="newRole" class="form-input">
+            <option value="USER">Người dùng (USER)</option>
+            <option value="MANAGER">Quản lý (MANAGER)</option>
+            <option value="ADMIN">Quản trị viên (ADMIN)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="newDepartmentId">Phòng ban</label>
+          <select id="newDepartmentId" class="form-input">
+            <option value="">-- Trống (Chưa có phòng ban) --</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('addUserModal')">Hủy</button>
+          <button class="btn-primary-sm" onclick="submitAddUser()">Tạo tài khoản</button>
         </div>
       </div>
-      <div class="form-group">
-        <label for="newRole">Vai trò</label>
-        <select id="newRole" class="form-input">
-          <option value="USER">Người dùng (USER)</option>
-          <option value="MANAGER">Quản lý (MANAGER)</option>
-          <option value="ADMIN">Quản trị viên (ADMIN)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="newDepartmentId">Phòng ban</label>
-        <select id="newDepartmentId" class="form-input">
-          <option value="">-- Trống (Chưa có phòng ban) --</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('addUserModal')">Hủy</button>
-        <button class="btn-primary-sm" onclick="submitAddUser()">Tạo tài khoản</button>
-      </div>
     </div>
-  </div>
 
-  <!-- MODAL: Sửa người dùng -->
-  <div class="modal-overlay" id="editUserModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>✏️ Chỉnh sửa người dùng</h3>
-        <button class="modal-close" onclick="closeModal('editUserModal')">✕</button>
-      </div>
-      <input type="hidden" id="editUserId">
-      <div class="form-group">
-        <label for="editFullName">Họ và tên</label>
-        <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
-      </div>
-      <div class="form-group">
-        <label for="editPhone">Số điện thoại</label>
-        <input type="text" id="editPhone" class="form-input" placeholder="Nhập số điện thoại (tùy chọn)">
-      </div>
-      <div class="form-group">
-        <label for="editRole">Vai trò</label>
-        <select id="editRole" class="form-input">
-          <option value="USER">Người dùng (USER)</option>
-          <option value="MANAGER">Quản lý (MANAGER)</option>
-          <option value="ADMIN">Quản trị viên (ADMIN)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="editDepartmentId">Phòng ban</label>
-        <select id="editDepartmentId" class="form-input">
-          <option value="">-- Trống (Chưa có phòng ban) --</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('editUserModal')">Hủy</button>
-        <button class="btn-primary-sm" onclick="submitEditUser()">Lưu thay đổi</button>
+    <!-- MODAL: Sửa người dùng -->
+    <div class="modal-overlay" id="editUserModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>✏️ Chỉnh sửa người dùng</h3>
+          <button class="modal-close" onclick="closeModal('editUserModal')">✕</button>
+        </div>
+        <input type="hidden" id="editUserId">
+        <div class="form-group">
+          <label for="modalEditFullName">Họ và tên</label>
+          <input type="text" id="modalEditFullName" class="form-input" placeholder="Nhập họ và tên">
+        </div>
+        <div class="form-group">
+          <label for="modalEditPhone">Số điện thoại</label>
+          <input type="text" id="modalEditPhone" class="form-input" placeholder="Nhập số điện thoại (tùy chọn)">
+        </div>
+        <div class="form-group">
+          <label for="editRole">Vai trò</label>
+          <select id="editRole" class="form-input">
+            <option value="USER">Người dùng (USER)</option>
+            <option value="MANAGER">Quản lý (MANAGER)</option>
+            <option value="ADMIN">Quản trị viên (ADMIN)</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('editUserModal')">Hủy</button>
+          <button class="btn-primary-sm" onclick="submitEditUser()">Lưu thay đổi</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL: Thêm/Sửa phòng ban -->
-  <div class="modal-overlay" id="departmentModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="deptModalTitle">➕ Thêm phòng ban mới</h3>
-        <button class="modal-close" onclick="closeModal('departmentModal')">✕</button>
-      </div>
-      <div class="form-group">
-        <label for="deptName">Tên phòng ban</label>
-        <input type="text" id="deptName" class="form-input" placeholder="Nhập tên phòng ban">
-      </div>
-      <div class="form-group">
-        <label for="deptDescription">Mô tả</label>
-        <textarea id="deptDescription" class="form-input" rows="3" placeholder="Mô tả phòng ban..."></textarea>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('departmentModal')">Hủy</button>
-        <button class="btn-primary-sm" id="deptSubmitBtn" onclick="submitAddDepartment()">Tạo phòng ban</button>
+    <!-- MODAL: Thêm/Sửa phòng ban -->
+    <div class="modal-overlay" id="departmentModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="deptModalTitle">➕ Thêm phòng ban mới</h3>
+          <button class="modal-close" onclick="closeModal('departmentModal')">✕</button>
+        </div>
+        <div class="form-group">
+          <label for="deptName">Tên phòng ban</label>
+          <input type="text" id="deptName" class="form-input" placeholder="Nhập tên phòng ban">
+        </div>
+        <div class="form-group">
+          <label for="deptDescription">Mô tả</label>
+          <textarea id="deptDescription" class="form-input" rows="3" placeholder="Mô tả phòng ban..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('departmentModal')">Hủy</button>
+          <button class="btn-primary-sm" id="deptSubmitBtn" onclick="submitAddDepartment()">Tạo phòng ban</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL: Chuyển phòng ban cho người dùng -->
-  <div class="modal-overlay" id="changeDepartmentModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>🏢 Chuyển phòng ban</h3>
-        <button class="modal-close" onclick="closeModal('changeDepartmentModal')">✕</button>
-      </div>
-      <div class="form-group">
-        <label>Người dùng</label>
-        <input type="text" id="changeDeptUserName" class="form-input" readonly disabled
-          style="background-color: #f3f4f6; color: #6b7280; cursor: not-allowed;">
-      </div>
-      <div class="form-group">
-        <label for="changeDeptSelect">Chọn phòng ban mới</label>
-        <select id="changeDeptSelect" class="form-input">
-          <option value="">-- Trống (Không thuộc phòng ban nào) --</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('changeDepartmentModal')">Hủy</button>
-        <button class="btn-primary-sm" id="btnSubmitChangeDept">Lưu thay đổi</button>
+    <!-- MODAL: Chuyển phòng ban cho người dùng -->
+    <div class="modal-overlay" id="changeDepartmentModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>🏢 Chuyển phòng ban</h3>
+          <button class="modal-close" onclick="closeModal('changeDepartmentModal')">✕</button>
+        </div>
+        <div class="form-group">
+          <label>Người dùng</label>
+          <input type="text" id="changeDeptUserName" class="form-input" readonly disabled
+            style="background-color: #f3f4f6; color: #6b7280; cursor: not-allowed;">
+        </div>
+        <div class="form-group">
+          <label for="changeDeptSelect">Chọn phòng ban mới</label>
+          <select id="changeDeptSelect" class="form-input">
+            <option value="">-- Trống (Không thuộc phòng ban nào) --</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('changeDepartmentModal')">Hủy</button>
+          <button class="btn-primary-sm" id="btnSubmitChangeDept">Lưu thay đổi</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL: Chia sẻ tài liệu -->
-  <div class="modal-overlay" id="shareDocModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>🔗 Chia sẻ tài liệu cho phòng ban</h3>
-        <button class="modal-close" onclick="closeModal('shareDocModal')">✕</button>
-      </div>
-      <div class="form-group">
-        <label for="shareDocId">Chọn tài liệu</label>
-        <select id="shareDocId" class="form-input"></select>
-      </div>
-      <div class="form-group">
-        <label for="shareDeptId">Chọn phòng ban</label>
-        <select id="shareDeptId" class="form-input"></select>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('shareDocModal')">Hủy</button>
-        <button class="btn-primary-sm" onclick="submitShareDocument()">Chia sẻ</button>
+    <!-- MODAL: Chia sẻ tài liệu -->
+    <div class="modal-overlay" id="shareDocModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>🔗 Chia sẻ tài liệu cho phòng ban</h3>
+          <button class="modal-close" onclick="closeModal('shareDocModal')">✕</button>
+        </div>
+        <div class="form-group">
+          <label for="shareDocId">Chọn tài liệu</label>
+          <select id="shareDocId" class="form-input"></select>
+        </div>
+        <div class="form-group">
+          <label for="shareDeptId">Chọn phòng ban</label>
+          <select id="shareDeptId" class="form-input"></select>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('shareDocModal')">Hủy</button>
+          <button class="btn-primary-sm" onclick="submitShareDocument()">Chia sẻ</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- MODAL: Xem chi tiết tài liệu -->
-  <div class="modal-overlay" id="docViewerModal">
-    <div class="modal modal-lg">
-      <div class="modal-header">
-        <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
-        <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
-      </div>
-      <div id="docViewerContent" style="max-height:50vh;overflow-y:auto;"></div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
-        <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
+    <!-- MODAL: Xem chi tiết tài liệu -->
+    <div class="modal-overlay" id="docViewerModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
+          <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
+        </div>
+        <div id="docViewerContent" style="max-height:50vh;overflow-y:auto;"></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
+          <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
+        </div>
       </div>
     </div>
-  </div>
 
   </div>
 </body>

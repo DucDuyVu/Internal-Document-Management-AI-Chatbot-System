@@ -57,7 +57,8 @@ public class AdminUserController {
 		return usersService.createUser(request);
 	}
 
-	@PutMapping("/{id}")
+	// Chỉnh sửa thông tin user
+	@PutMapping("/{userId}")
 	public AdminUserResponse updateUser(@PathVariable Long userId, @RequestBody UpdateUserRequest request) {
 		return usersService.updateUser(userId, request);
 	}
