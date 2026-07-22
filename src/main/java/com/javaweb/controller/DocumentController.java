@@ -2,9 +2,15 @@ package com.javaweb.controller;
 
 import com.javaweb.dto.document.DocumentResponse;
 import com.javaweb.dto.document.DocumentUploadRequest;
+import com.javaweb.dto.response.DocumentPermissionReponse;
+import com.javaweb.entity.DocumentPermissionsEntity;
+import com.javaweb.security.CustomUserDetails;
+import com.javaweb.service.DocumentPermissionService;
 import com.javaweb.service.DocumentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * Controller expose API cho Upload PDF và tra cứu trạng thái xử lý.
@@ -27,6 +35,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/documents")
 public class DocumentController {
 
+    @Autowired
+    private DocumentPermissionService documentPermissionService;
     private final DocumentService documentService;
 
     public DocumentController(DocumentService documentService) {
@@ -64,6 +74,13 @@ public class DocumentController {
     @GetMapping("/{id}")
     public ResponseEntity<DocumentResponse> getStatus(@PathVariable Long id) {
         return ResponseEntity.ok(documentService.getDocumentStatus(id));
+    }
+
+    // Xem danh sách phòng ban được chia sẻ 1 tài liệu
+    @GetMapping("/docId/permissions")
+    public ResponseEntity<List<DocumentPermissionsEntity>> getPermissions(@PathVariable Long docId,
+                                                                          @AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<DocumentPermissionReponse> result = documentPermissionService.getPermissions(docId, userDetails.getUser());
     }
 }
 
