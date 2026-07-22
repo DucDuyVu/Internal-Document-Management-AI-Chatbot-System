@@ -8,11 +8,13 @@ import com.javaweb.dto.chat.ChatSessionRequest;
 import com.javaweb.dto.chat.ChatSessionResponse;
 import com.javaweb.entity.ChatSessionsEntity;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.exception.BadRequestException;
 import com.javaweb.repository.ChatSessionsRepository;
 import com.javaweb.service.ChatSessionService;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 /**
  * ChatSessionServiceImpl — Triển khai ChatSessionService, chứa toàn bộ
@@ -95,6 +97,39 @@ public class ChatSessionServiceImpl implements ChatSessionService {
                         session.getUpdatedAt()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Xem JavaDoc ở ChatSessionService.deleteSession().
+     *
+     * Tại sao dùng chung message lỗi cho "không tồn tại" và "không thuộc
+     * currentUser": tránh lộ thông tin cho kẻ tấn công dò sessionId - nếu
+     * trả 2 message khác nhau ("không tồn tại" vs "không có quyền"), họ
+     * có thể suy ra được sessionId nào tồn tại nhưng thuộc người khác,
+     * dù không đọc được nội dung. Đây là nguyên tắc bảo mật đã áp dụng
+     * nhất quán từ saveUserMessage() và getMessageHistory().
+     */
+    @Override
+    public void deleteSession(Long sessionId, UsersEntity currentUser) {
+
+        ChatSessionsEntity session = chatSessionsRepository.findById(sessionId)
+                .orElseThrow(() -> new BadRequestException(
+                        "Chat session không tồn tại hoặc bạn không có quyền truy cập"));
+
+        if (!session.getUserChatId().getId().equals(currentUser.getId())) {
+            throw new BadRequestException(
+                    "Chat session không tồn tại hoặc bạn không có quyền truy cập");
+        }
+
+        // Chặn xóa lặp lại - nếu đã xóa mềm từ trước, báo lỗi rõ ràng thay
+        // vì âm thầm ghi đè deleted_at bằng thời điểm mới, để client biết
+        // chính xác đây không phải lần xóa đầu tiên
+        if (session.getDeletedAt() != null) {
+            throw new BadRequestException("Chat session này đã bị xóa trước đó");
+        }
+
+        session.setDeletedAt(LocalDateTime.now());
+        chatSessionsRepository.save(session);
     }
 }
 

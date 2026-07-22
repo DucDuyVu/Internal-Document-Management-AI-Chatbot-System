@@ -1,258 +1,427 @@
-:root{
-  --bg: #F5F5F1;
-  --card: #FFFFFF;
-  --ink: #15201B;
-  --ink-soft: #6B7770;
-  --accent: #1F6F54;
-  --accent-dark: #16543F;
-  --accent-soft: #E4EFE9;
-  --border: #E6E6E0;
-  --error: #B3432B;
+/* ==============================================
+   register.css – IDMS Đăng ký
+   Font: Be Vietnam Pro | Design: đồng bộ login
+   ============================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #4f46e5;
+  --primary-h: #4338ca;
+  --primary-bg: #eef2ff;
+  --primary-ring: rgba(79, 70, 229, 0.2);
+  --text: #111827;
+  --text-sub: #6b7280;
+  --text-placeholder: #9ca3af;
+  --border: #d1d5db;
+  --border-focus: #4f46e5;
+  --white: #ffffff;
+  --bg: #f5f5ff;
+  --error: #dc2626;
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --transition: 0.18s ease;
 }
 
-*{ margin:0; padding:0; box-sizing:border-box; }
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-body{
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--ink);
+html {
+  height: 100%;
+}
+
+body {
+  font-family: 'Be Vietnam Pro', sans-serif;
   min-height: 100vh;
+  background: var(--bg);
+
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
+  align-items: flex-start;
+
+  padding: 40px 16px;
+
   -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+
+  position: relative;
+
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-body::before{
-  content:"";
-  position: absolute;
-  width: 520px;
-  height: 520px;
-  background: radial-gradient(circle, rgba(31,111,84,0.06) 0%, rgba(31,111,84,0) 70%);
-  top: -120px;
-  right: -120px;
+body::before {
+  content: "";
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.12) 0%, transparent 70%);
+  top: -150px;
+  right: -100px;
+  pointer-events: none;
 }
-body::after{
-  content:"";
-  position: absolute;
-  width: 420px;
-  height: 420px;
-  background: radial-gradient(circle, rgba(31,111,84,0.05) 0%, rgba(31,111,84,0) 70%);
+
+body::after {
+  content: "";
+  position: fixed;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
   bottom: -100px;
-  left: -100px;
+  left: -80px;
+  pointer-events: none;
 }
 
-.card{
+/* ===== CARD ===== */
+.card {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 400px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 40px 36px 32px 36px;
-  box-shadow: 0 1px 2px rgba(21,32,27,0.04), 0 12px 32px -12px rgba(21,32,27,0.10);
+  max-width: 440px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 40px 40px 36px;
+  box-shadow:
+    0 0 0 1px rgba(79, 70, 229, 0.07),
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 20px 48px -10px rgba(79, 70, 229, 0.15);
+  animation: slideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.mark{
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: var(--accent);
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===== LOGO ===== */
+.mark {
   display: flex;
   align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.mark-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  border-radius: 10px;
+  display: flex;
   justify-content: center;
-  margin-bottom: 20px;
-}
-.mark span{
-  font-family: 'Fraunces', serif;
-  color: #F5F7F0;
-  font-size: 18px;
-  font-weight: 600;
+  align-items: flex-start;
+  font-size: 1.15rem;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
 }
 
-.head{ margin-bottom: 24px; }
+.mark-text {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
 
-.head span.eyebrow{
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.12em;
+.mark-text em {
+  font-style: normal;
+  color: var(--primary);
+  margin-left: 3px;
+}
+
+/* ===== HEADING ===== */
+.head {
+  margin-bottom: 24px;
+}
+
+.head .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-bg);
+  border-radius: 50px;
+  padding: 3px 12px;
   text-transform: uppercase;
-  color: var(--accent);
+  letter-spacing: 0.09em;
+  margin-bottom: 10px;
 }
 
-.head h1{
-  font-family: 'Fraunces', serif;
+.head h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 7px;
+}
+
+.head p {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+/* ===== ERROR ===== */
+.error-msg {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error);
+  font-size: 0.83rem;
   font-weight: 500;
-  font-size: 25px;
-  margin-top: 8px;
-  color: var(--ink);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 18px;
 }
 
-.head p{
-  margin-top: 6px;
-  font-size: 13.5px;
-  color: var(--ink-soft);
+.error-msg.show {
+  display: flex;
 }
 
-.field{
-  position: relative;
+/* ===== FORM FIELDS ===== */
+.field {
   margin-bottom: 14px;
 }
 
-.field input{
+.field label {
+  display: block;
+  font-size: 0.845rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.field-wrap {
+  position: relative;
+}
+
+.field input {
   width: 100%;
-  padding: 15px 14px 7px 14px;
-  height: 50px;
-  border: 1.4px solid var(--border);
-  border-radius: 10px;
-  background: var(--card);
-  font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
+  height: 48px;
+  padding: 0 44px 0 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
 }
 
-.field input:focus{
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3.5px var(--accent-soft);
+.field input::placeholder {
+  color: var(--text-placeholder);
+  font-weight: 400;
 }
 
-.field label{
+.field input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3.5px var(--primary-ring);
+  background: #fafafe;
+}
+
+.field input.no-icon {
+  padding-right: 14px;
+}
+
+/* Toggle password */
+.toggle-pass {
   position: absolute;
-  left: 14px;
-  top: 15px;
-  font-size: 14px;
-  color: var(--ink-soft);
-  pointer-events: none;
-  transition: all 0.15s ease;
-}
-
-.field input:focus + label,
-.field input:not(:placeholder-shown) + label{
-  top: 7px;
-  font-size: 10.5px;
-  color: var(--accent);
-  letter-spacing: 0.02em;
-}
-
-.field input::placeholder{ color: transparent; }
-
-.toggle-pass{
-  position: absolute;
-  right: 13px;
-  top: 14px;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--ink-soft);
-  font-size: 11.5px;
-  font-family: 'Inter', sans-serif;
-  padding: 4px;
+  color: var(--text-sub);
+  font-size: 0.78rem;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-weight: 600;
+  transition: color var(--transition);
 }
-.toggle-pass:hover{ color: var(--accent); }
 
-/* ---- riêng cho trang đăng ký ---- */
-.hint{
-  font-size: 11.5px;
-  color: var(--ink-soft);
-  margin: -6px 0 14px 2px;
+.toggle-pass:hover {
+  color: var(--primary);
 }
-.hint.ok{ color: var(--accent); }
-.hint.bad{ color: var(--error); }
 
-.terms{
+/* Hint */
+.hint {
+  font-size: 0.775rem;
+  color: var(--text-sub);
+  margin: 4px 0 14px 2px;
+}
+
+.hint.ok {
+  color: #16a34a;
+}
+
+.hint.bad {
+  color: var(--error);
+}
+
+/* Terms */
+.terms {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin: 6px 0 20px 0;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  line-height: 1.5;
+  gap: 9px;
+  margin: 8px 0 20px;
+  font-size: 0.845rem;
+  color: var(--text-sub);
+  line-height: 1.55;
+  cursor: pointer;
 }
-.terms input{ accent-color: var(--accent); width: 14px; height: 14px; margin-top: 2px; flex-shrink: 0; }
-.terms a{ color: var(--accent); text-decoration: none; font-weight: 500; }
-.terms a:hover{ text-decoration: underline; }
-/* ---------------------------------- */
 
-.btn-submit{
-  width: 100%;
-  height: 48px;
-  border-radius: 10px;
-  border: none;
-  background: var(--accent);
-  color: #F7FBF8;
-  font-size: 14.5px;
+.terms input {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.terms a {
+  color: var(--primary);
+  text-decoration: none;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
+}
+
+.terms a:hover {
+  text-decoration: underline;
+}
+
+/* ===== SUBMIT BUTTON ===== */
+.btn-submit {
+  width: 100%;
+  height: 50px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: 'Be Vietnam Pro', sans-serif;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-.btn-submit:hover{ background: var(--accent-dark); }
-.btn-submit:active{ transform: scale(0.99); }
-.btn-submit:disabled{ opacity: 0.55; cursor: not-allowed; }
-.btn-submit:focus-visible{ outline: 2.5px solid var(--ink); outline-offset: 2px; }
-
-.spinner{
-  width: 15px; height: 15px;
-  border-radius: 50%;
-  border: 2px solid rgba(247,251,248,0.35);
-  border-top-color: #F7FBF8;
-  display: none;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin{ to{ transform: rotate(360deg); } }
-.btn-submit.loading .spinner{ display: inline-block; }
-
-.error-msg{
-  display: none;
-  align-items: center;
   gap: 8px;
-  background: #FBEEEA;
-  border: 1px solid #F0D2C7;
-  color: var(--error);
-  font-size: 12.5px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
 }
-.error-msg.show{ display: flex; }
 
-.divider{
+.btn-submit:hover {
+  background: var(--primary-h);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-submit:active {
+  transform: scale(0.99);
+  box-shadow: none;
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Spinner */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  display: none;
+  animation: spin 0.65s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-submit.loading .spinner {
+  display: inline-block;
+}
+
+/* ===== DIVIDER ===== */
+.divider {
   display: flex;
   align-items: center;
   gap: 12px;
   margin: 22px 0;
-  color: var(--ink-soft);
-  font-size: 12px;
+  color: var(--text-sub);
+  font-size: 0.8rem;
 }
-.divider::before, .divider::after{
-  content:"";
-  flex:1;
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
   height: 1px;
   background: var(--border);
 }
 
-.signup-line{
+/* ===== SIGNUP LINE ===== */
+.signup-line {
   text-align: center;
-  font-size: 13.5px;
-  color: var(--ink-soft);
-}
-.signup-line a{
-  color: var(--ink);
-  font-weight: 600;
-  text-decoration: none;
-  border-bottom: 1.5px solid var(--accent);
+  font-size: 0.875rem;
+  color: var(--text-sub);
 }
 
-@media (prefers-reduced-motion: reduce){
-  .spinner{ animation: none; }
+.signup-line a {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 3px;
+}
+
+.signup-line a:hover {
+  text-decoration: underline;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .card {
+    padding: 28px 20px 26px;
+  }
+
+  .head h1 {
+    font-size: 1.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .spinner,
+  .card {
+    animation: none;
+  }
 }

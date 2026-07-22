@@ -21,8 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.javaweb.dto.chat.ChatMessageHistoryResponse;
-import com.javaweb.service.ChatMessageService;
-
+import org.springframework.web.bind.annotation.DeleteMapping;
 /**
  * ChatSessionController — REST Controller xử lý các request liên quan đến
  * vòng đời chat session (tạo, liệt kê, xoá mềm).
@@ -123,6 +122,26 @@ public class ChatSessionController {
         List<ChatMessageHistoryResponse> response = chatMessageService.getMessageHistory(id, currentUser);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Xóa mềm 1 chat session của user đang đăng nhập.
+     *
+     * Được gọi từ: DELETE /api/chat/sessions/{id}
+     * Input: id session lấy từ path variable — không có body.
+     * Output: 204 No Content nếu xóa thành công.
+     * Lưu ý: mọi validate (tồn tại, đúng chủ, chưa xóa trước đó) nằm ở
+     *        tầng Service — Controller chỉ chuyển tiếp và trả status.
+     */
+    @DeleteMapping("/sessions/{id}")
+    public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UsersEntity currentUser = (UsersEntity) authentication.getPrincipal();
+
+        chatSessionService.deleteSession(id, currentUser);
+
+        return ResponseEntity.noContent().build();
     }
 }
 

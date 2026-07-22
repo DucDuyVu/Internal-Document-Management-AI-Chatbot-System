@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+          content="IDMS – Hệ thống Quản lý Tài liệu Nội bộ và AI Chatbot giúp doanh nghiệp tổ chức, tìm kiếm tài liệu thông minh.">
+    <title>IDMS – Quản lý Tài liệu & AI Chatbot</title>
+
+    <!-- Google Fonts: Be Vietnam Pro – hỗ trợ tiếng Việt tốt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet" th:href="@{/css/landing.css}">
+</head>
+
+<body>
+
+<!-- ============================
+ NAVBAR
+============================ -->
+<nav class="navbar" id="navbar">
+    <a href="/" class="nav-logo" id="logo">
+        <div class="nav-logo-icon">📁</div>
+        IDMS <span>AI</span>
+    </a>
+
+    <ul class="nav-links">
+        <li><a href="#features">Tính năng</a></li>
+        <li><a href="#how">Cách dùng</a></li>
+        <li><a href="#cta">Liên hệ</a></li>
+    </ul>
+
+    <div class="nav-actions">
+        <a href="/login" class="btn btn-outline" id="btn-login">Đăng nhập</a>
+        <a href="/register" class="btn btn-primary" id="btn-register">Đăng ký</a>
+    </div>
+</nav>
+
+<!-- ============================
+ HERO
+============================ -->
+<section class="hero" id="hero">
+
+    <div class="hero-text">
+        <span class="hero-tag">Hệ thống nội bộ dành cho doanh nghiệp</span>
+
+        <h1>
+            Quản lý tài liệu<br>
+            <span class="highlight">thông minh với AI</span>
+        </h1>
+
+        <p class="hero-desc">
+            Tổ chức, tìm kiếm và truy vấn kho tài liệu nội bộ dễ dàng hơn bao giờ hết nhờ
+            sức mạnh của trí tuệ nhân tạo — tiết kiệm thời gian, nâng cao hiệu quả làm việc.
+        </p>
+
+        <div class="hero-btns">
+            <a href="/register" class="btn btn-primary btn-lg" id="hero-btn-start">Bắt đầu miễn phí</a>
+            <a href="/login" class="btn btn-outline btn-lg" id="hero-btn-login">Đăng nhập</a>
+        </div>
+
+        <div class="hero-meta">
+            <div class="meta-item">
+                <div class="meta-icon">🔒</div>
+                Bảo mật JWT
+            </div>
+            <div class="meta-item">
+                <div class="meta-icon">🤖</div>
+                Tích hợp AI
+            </div>
+            <div class="meta-item">
+                <div class="meta-icon">🔍</div>
+                Tìm kiếm nhanh
+            </div>
+        </div>
+    </div>
+
+    <div class="hero-image">
+        <img th:src="@{/images/landing_hero.png}" src="/images/landing_hero.png"
+             alt="Giao diện quản lý tài liệu IDMS">
+    </div>
+
+</section>
+
+<!-- ============================
+ FEATURES
+============================ -->
+<section class="section features-section" id="features">
+    <div class="section-head center reveal">
+        <span class="section-label">Tính năng</span>
+        <h2 class="section-title">Những gì hệ thống cung cấp</h2>
+        <p class="section-sub">Bộ công cụ đơn giản nhưng hiệu quả giúp doanh nghiệp số hóa và khai thác tài liệu nội
+            bộ.</p>
+    </div>
+
+    <div class="features-grid">
+
+        <div class="feature-card reveal">
+            <div class="feat-icon">📄</div>
+            <h3>Quản lý tài liệu tập trung</h3>
+            <p>Lưu trữ và phân loại tài liệu theo thư mục. Hỗ trợ nhiều định dạng: PDF, Word, Excel.</p>
+        </div>
+
+        <div class="feature-card reveal" style="transition-delay:0.08s">
+            <div class="feat-icon">🤖</div>
+            <h3>AI Chatbot hỗ trợ tức thì</h3>
+            <p>Đặt câu hỏi bằng tiếng Việt tự nhiên, chatbot trả lời dựa trên nội dung tài liệu của bạn.</p>
+        </div>
+
+        <div class="feature-card reveal" style="transition-delay:0.16s">
+            <div class="feat-icon">🔍</div>
+            <h3>Tìm kiếm ngữ nghĩa</h3>
+            <p>Hệ thống hiểu ý nghĩa câu tìm kiếm thay vì chỉ so khớp từ khóa đơn thuần.</p>
+        </div>
+
+        <div class="feature-card reveal" style="transition-delay:0.24s">
+            <div class="feat-icon">🔐</div>
+            <h3>Phân quyền chi tiết</h3>
+            <p>Quản lý quyền truy cập theo vai trò: Admin, Manager, User. Bảo mật xác thực JWT.</p>
+        </div>
+
+    </div>
+</section>
+
+<!-- ============================
+ HOW IT WORKS
+============================ -->
+<section class="section how-section" id="how">
+    <div class="section-head center reveal">
+        <span class="section-label">Cách sử dụng</span>
+        <h2 class="section-title">Bắt đầu trong 4 bước đơn giản</h2>
+        <p class="section-sub">Không cần kỹ thuật phức tạp, triển khai nhanh chóng cho toàn bộ đội nhóm.</p>
+    </div>
+
+    <div class="steps">
+        <div class="step-card reveal">
+            <div class="step-num">1</div>
+            <h4>Đăng ký tài khoản</h4>
+            <p>Tạo tài khoản miễn phí và thiết lập thông tin tổ chức trong vài phút.</p>
+        </div>
+        <div class="step-card reveal" style="transition-delay:0.1s">
+            <div class="step-num">2</div>
+            <h4>Tải lên tài liệu</h4>
+            <p>Upload toàn bộ kho tài liệu lên hệ thống một cách nhanh chóng và dễ dàng.</p>
+        </div>
+        <div class="step-card reveal" style="transition-delay:0.2s">
+            <div class="step-num">3</div>
+            <h4>AI học nội dung</h4>
+            <p>Hệ thống tự động phân tích và lập chỉ mục toàn bộ nội dung tài liệu.</p>
+        </div>
+        <div class="step-card reveal" style="transition-delay:0.3s">
+            <div class="step-num">4</div>
+            <h4>Tìm kiếm & hỏi đáp</h4>
+            <p>Tìm tài liệu hoặc đặt câu hỏi cho AI bằng ngôn ngữ tự nhiên mọi lúc.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ============================
+ CTA
+============================ -->
+<section class="cta-section" id="cta">
+    <h2 class="reveal">Sẵn sàng dùng thử hệ thống?</h2>
+    <p class="reveal">Đăng ký tài khoản miễn phí và trải nghiệm ngay hôm nay.</p>
+    <div class="cta-actions reveal" style="justify-content:center; gap:12px;">
+        <a href="/register" class="btn btn-white btn-lg reveal" id="cta-register">Đăng ký ngay</a>
+        <a href="/login" class="btn btn-white-outline btn-lg reveal" id="cta-login">Đăng nhập</a>
+    </div>
+</section>
+
+<!-- ============================
+ FOOTER
+============================ -->
+<footer class="footer">
+    <div class="footer-logo-txt">IDMS <span>AI</span></div>
+    <p class="footer-copy">© 2026 IDMS – Hệ thống Quản lý Tài liệu Nội bộ & AI Chatbot</p>
+    <nav class="footer-nav">
+        <a href="/login">Đăng nhập</a>
+        <a href="/register">Đăng ký</a>
+    </nav>
+</footer>
+
+<script th:src="@{/js/landing.js}" src="/js/landing.js"></script>
+</body>
+
+</html>

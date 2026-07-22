@@ -9,6 +9,5 @@ import lombok.Setter;
 public class ForgotPasswordResponse {
 
 	private String message;
-	
-	private String resetToken;
+
 }

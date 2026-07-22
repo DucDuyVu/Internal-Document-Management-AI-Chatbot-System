@@ -1,32 +1,28 @@
 package com.javaweb.service.impl;
 
-import java.time.LocalDateTime;
-import java.util.Iterator;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import com.javaweb.dto.request.ForgotPasswordRequest;
 import com.javaweb.dto.request.LoginRequest;
 import com.javaweb.dto.request.LogoutRequest;
 import com.javaweb.dto.request.RefreshTokenRequest;
 import com.javaweb.dto.request.RegisterRequest;
-import com.javaweb.dto.request.ResetPasswordRequest;
-import com.javaweb.dto.response.ForgotPasswordResponse;
 import com.javaweb.dto.response.LoginResponse;
 import com.javaweb.dto.response.LogoutResponse;
 import com.javaweb.dto.response.RefreshTokenResponse;
+import com.javaweb.dto.response.RegisterResponse;
 import com.javaweb.entity.UserSessionsEntity;
 import com.javaweb.entity.UsersEntity;
-import com.javaweb.repository.UserSessionsRepository;
-import com.javaweb.dto.response.RegisterResponse;
-import com.javaweb.dto.response.ResetPasswordResponse;
 import com.javaweb.exception.BadRequestException;
+import com.javaweb.repository.UserSessionsRepository;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.AuthenticationService;
+import com.javaweb.service.EmailService;
 import com.javaweb.service.JwtService;
+import com.javaweb.service.OtpService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 /*
  * Xử lí Register, Login, Logout, Refresh Token
@@ -46,7 +42,12 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	
 	@Autowired
 	private UsersRepository usersRepository;
-	
+
+	@Autowired
+	OtpService otpService;
+
+	@Autowired
+	EmailService emailService;
 	// Xử lý login 
 	@Override
 	public LoginResponse login(LoginRequest loginRequest) {
@@ -105,21 +106,29 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 	public RefreshTokenResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
 		// Lấy refresh token 
 		String refreshToken = refreshTokenRequest.getRefreshToken();
+
+		// Kiểm tra JWT hợp lệ
+		if(!jwtService.validateToken(refreshToken)) {
+			throw new BadRequestException("Refresh Token không hợp lệ hoặc đã hết hạn !");
+		}
+
+		String type = jwtService.extractTokenType(refreshToken);
+
+		if(! "refresh".equals(type)) {
+			throw new BadRequestException("Không phải Refresh Token");
+		}
 		Optional<UserSessionsEntity> optinalSession = userSessionsRepo.findByRefreshToken(refreshToken);
 		// check refresh token trong DB có tồn tại không
 		if (optinalSession.isEmpty()) {
-			throw new RuntimeException("Refresh Token không tồn tại !");
+			throw new BadRequestException("Refresh Token không tồn tại !");
 		}
 		
 		// check refresh token còn hạn hay không
 		UserSessionsEntity session = optinalSession.get();
-		if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
-			throw new RuntimeException("Refresh Token đã hết hạn");
-		}
-		
+
 		// check trạng thái (thu hồi)
 		if (session.getIsRevoked()) {
-			throw new RuntimeException("Refresh Token đã bị thu hồi");
+			throw new BadRequestException("Refresh Token đã bị thu hồi");
 		}
 		
 		// Xác thực email
@@ -129,7 +138,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(email);
 		
 		if (optionalUser.isEmpty()) {
-			throw new RuntimeException("Không có user !");
+			throw new BadRequestException("Không có user !");
 		}
 		
 		UsersEntity user = optionalUser.get();
@@ -212,70 +221,5 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		
 		logoutResponse.setMessage("Đã đăng xuất !");
 		return logoutResponse;
-	}
-
-	@Override
-	public ForgotPasswordResponse forgotPassowrd(ForgotPasswordRequest forgotPasswordRequest) {
-		
-		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(forgotPasswordRequest.getEmail());
-		
-		// Check người dùng có trong DB không
-		if (optionalUser.isEmpty()) {
-			throw new BadRequestException("Không tìm thấy người dùng");
-		}
-		
-		UsersEntity user = optionalUser.get();
-		
-		// check trạng thái tài khoản 
-		if (! user.isActive()) {
-			throw new BadRequestException("Tài khoản bị khóa !");
-		}
-		
-		// Sinh resetToken để chuẩn bị cho đổi mật khẩu 
-		String resetToken = jwtService.generateResetPasswordToken(user);
-		
-		ForgotPasswordResponse forgotPasswordResponse = new ForgotPasswordResponse();
-		forgotPasswordResponse.setMessage("Đã tạo yêu cầu đặt lại mật khẩu");
-		forgotPasswordResponse.setResetToken(resetToken);
-		return forgotPasswordResponse;
-	}
-
-	
-	// Xử lý đổi mật khẩu
-	@Override
-	public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
-		// check token
-		if (! jwtService.validateToken(request.getResetToken())) {
-			throw new BadRequestException("Token không hợp lệ hoặc hết hạn");
-		}
-		
-		// Lấy email từ token
-		String email = jwtService.extractEmail(request.getResetToken());
-		
-		// Tìm user
-		Optional<UsersEntity> optionalUser = usersRepository.findByEmail(email);
-		
-		if (optionalUser.isEmpty()) {
-			throw new BadRequestException("Không tìm thấy người dùng !");
-		}
-		
-		UsersEntity user = optionalUser.get();
-		
-		if (! user.isActive()) {
-			throw new BadRequestException("Tài khoản đã bị khóa ! ");
-		}
-		
-		if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
-			throw new BadRequestException("Mật khẩu mới không được trùng mật khẩu cũ !");
-		}
-		
-		// Mã hóa mật khẩu mới
-		user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-		
-		usersRepository.save(user); // lưu ở DB
-		
-		ResetPasswordResponse response = new ResetPasswordResponse();
-		response.setMessage("Đã đặt lại mật khẩu !");
-		return response;
 	}
 }

@@ -1,7 +1,7 @@
 package com.javaweb.rag;
 
-import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.DocumentChunkEntity;
+import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.enums.DocumentStatus;
 import com.javaweb.rag.chunking.ChunkingService;
 import com.javaweb.rag.embedding.EmbeddingService;
