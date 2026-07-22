@@ -59,8 +59,9 @@ public class ChatController {
      * Output: ChatAnswerResponse {answer, sources, distance} (JSON)
      *
      * Lưu ý:
-     *   - departmentId VẪN hard-code null (chưa đổi ở bước này - việc đó
-     *     thuộc Bước 4 Security, đang tạm hoãn để làm Tuần 4 trước).
+     *   - departmentId lấy THẬT từ currentUser.getDepartmentId() (đã sửa,
+     *     không còn hard-code null) - RAG giờ chỉ tìm trong tài liệu của
+     *     đúng phòng ban user, cộng với tài liệu dùng chung (NULL).
      *   - Nếu sessionId sai/không thuộc user -> ChatMessageService ném
      *     BadRequestException ngay ở saveUserMessage(), GlobalExceptionHandler
      *     bắt và trả lỗi rõ ràng cho client, KHÔNG gọi tới RetrievalService
@@ -81,9 +82,27 @@ public class ChatController {
         ChatMessageEntity userMessage = chatMessageService.saveUserMessage(
                 request.getSessionId(), currentUser, request.getQuestion());
 
-        // TODO SECURITY (Bước 4, tạm hoãn): thay null bằng departmentId
-        // thật lấy từ currentUser.getDepartmentId().getId()
-        Integer departmentId = null;
+
+
+        // Lấy departmentId thật của user để lọc RAG đúng phạm vi phòng ban.
+        //
+        // Tại sao phải check null trước khi gọi .getId(): user có thể chưa
+        // được gán vào phòng ban nào (department_id NULL trong bảng users)
+        // - gọi thẳng .getId() trên null sẽ ném NullPointerException.
+        //
+        // Tại sao departmentId = null vẫn là giá trị HỢP LỆ (không phải lỗi):
+        // theo thiết kế RetrievalServiceImpl (Tuần 3), null nghĩa là "chỉ
+        // tìm trong tài liệu dùng chung toàn công ty" (document.department_id
+        // IS NULL) - đúng hành vi cho user chưa thuộc phòng ban nào.
+        //
+        // Tại sao dùng Math.toIntExact() thay vì ép kiểu tay (int) x:
+        // DepartmentsEntity.id là Long, còn RetrievalService.ask() đang
+        // nhận Integer - Math.toIntExact() sẽ NÉM LỖI RÕ RÀNG nếu id vượt
+        // phạm vi int, thay vì âm thầm cho ra số sai (tràn số) như ép kiểu
+        // tay - an toàn hơn khi dữ liệu tăng trưởng về sau.
+        Integer departmentId = (currentUser.getDepartment() != null)
+                ? Math.toIntExact(currentUser.getDepartment().getId())
+                : null;
 
         ChatAnswerResponse answerResponse = retrievalService.ask(request.getQuestion(), departmentId);
 
@@ -112,6 +131,8 @@ public class ChatController {
  *          ▼
  *  ChatController.ask(request, authentication)
  *          │  currentUser = (UsersEntity) authentication.getPrincipal()
+ *          │  departmentId = currentUser.getDepartmentId()?.getId() (Long→Integer)
+ *          │  (null nếu user chưa thuộc phòng ban nào - vẫn hợp lệ)
  *          ▼
  *  chatMessageService.saveUserMessage(sessionId, currentUser, question)
  *          │  - validate session tồn tại + thuộc currentUser
