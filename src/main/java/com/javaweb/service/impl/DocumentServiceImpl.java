@@ -3,12 +3,14 @@ package com.javaweb.service.impl;
 import com.javaweb.dto.document.DocumentResponse;
 import com.javaweb.dto.document.DocumentUploadRequest;
 import com.javaweb.entity.DocumentEntity;
+import com.javaweb.entity.UsersEntity;
 import com.javaweb.entity.enums.DocumentStatus;
 import com.javaweb.exception.DocumentNotFoundException;
 import com.javaweb.exception.InvalidFileException;
 import com.javaweb.rag.DocumentProcessingService;
 import com.javaweb.repository.DocumentChunkRepository;
 import com.javaweb.repository.DocumentRepository;
+import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.DocumentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,46 +49,46 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingService documentProcessingService;
+    private final UsersRepository usersRepository; // thêm field
 
-    public DocumentServiceImpl(DocumentRepository documentRepository,
-                                DocumentChunkRepository documentChunkRepository,
-                                DocumentProcessingService documentProcessingService) {
-        this.documentRepository = documentRepository;
-        this.documentChunkRepository = documentChunkRepository;
-        this.documentProcessingService = documentProcessingService;
-    }
 
-    /**
-     * Dùng ở: DocumentController.upload().
-     * Input: file PDF + metadata (chỉ còn departmentId, vì title đã bỏ).
-     * Output: DocumentResponse với status PENDING (pipeline chạy nền,
-     * chưa xong lúc hàm này return).
-     * Lưu ý: @Transactional chỉ bọc phần ghi DB (tạo Document), KHÔNG
-     * bọc process() — vì process() là @Async, chạy ở thread khác,
-     * transaction của thread hiện tại không "theo" sang được.
-     */
-    @Override
-    @Transactional
-    public DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request) {
-        validateFile(file);
-        String storedPath = storeFile(file);
+public DocumentServiceImpl(DocumentRepository documentRepository,
+                            DocumentChunkRepository documentChunkRepository,
+                            DocumentProcessingService documentProcessingService,
+                            UsersRepository usersRepository) { // thêm param
+    this.documentRepository = documentRepository;
+    this.documentChunkRepository = documentChunkRepository;
+    this.documentProcessingService = documentProcessingService;
+    this.usersRepository = usersRepository;
+}
 
-        DocumentEntity document = new DocumentEntity();
-        document.setFileName(file.getOriginalFilename());
-        document.setFilePath(storedPath);
-        document.setFileType(file.getContentType());
-        document.setFileSize(file.getSize());
-        document.setDepartmentId(request.getDepartmentId());
-        document.setUploadedBy(1L); // TODO SECURITY: thay bằng userId thật khi bật lại Spring Security
-        document.setStatus(DocumentStatus.PENDING);
+@Override
+@Transactional
+public DocumentResponse uploadDocument(MultipartFile file, Long currentUserId) {
+    validateFile(file);
+    String storedPath = storeFile(file);
 
-        DocumentEntity saved = documentRepository.save(document);
+    // Query lại trong transaction này -> department load được an toàn, tránh LazyInitializationException
+    UsersEntity currentUser = usersRepository.findById(currentUserId)
+            .orElseThrow(() -> new RuntimeException("User không tồn tại, id=" + currentUserId));
 
-        // Gọi pipeline nền — KHÔNG đợi kết quả, vì @Async trả về ngay
-        documentProcessingService.process(saved.getId());
+    DocumentEntity document = new DocumentEntity();
+    document.setFileName(file.getOriginalFilename());
+    document.setFilePath(storedPath);
+    document.setFileType(file.getContentType());
+    document.setFileSize(file.getSize());
+    document.setDepartmentId(
+    currentUser.getDepartment() != null 
+        ? currentUser.getDepartment().getId().intValue() 
+        : null
+    );
+    document.setUploadedBy(currentUserId);
+    document.setStatus(DocumentStatus.PENDING);
 
-        return toResponse(saved, 0);
-    }
+    DocumentEntity saved = documentRepository.save(document);
+    documentProcessingService.process(saved.getId());
+    return toResponse(saved, 0);
+}
 
     /**
      * Dùng ở: DocumentController.getStatus() (endpoint polling).

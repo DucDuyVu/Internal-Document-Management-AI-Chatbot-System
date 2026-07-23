@@ -26,3 +26,25 @@ src/test/resources/application-test.properties
 /query
 /*.sql
 /*.txt
+
+
+# Build / IDE
+/target/
+/.apt_generated/
+/.apt_generated_tests/
+/.settings/
+/.classpath
+/.project
+/.vscode/
+
+# Secrets & test config
+application-local.properties
+application-test.properties
+
+# Uploaded files (real user data)
+/uploads/
+
+# Scratch/rác
+/untitled/
+chat-files.txt
+frontend-review.txt

@@ -80,4 +80,6 @@ public class DocumentEntity {
     // Soft delete
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+
 }

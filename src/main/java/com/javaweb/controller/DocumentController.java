@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.javaweb.entity.UsersEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 /**
  * Controller expose API cho Upload PDF và tra cứu trạng thái xử lý.
  *
@@ -43,13 +47,12 @@ public class DocumentController {
      */
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public ResponseEntity<DocumentResponse> upload(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "departmentId", required = false) Integer departmentId
+            @RequestParam("file") MultipartFile file
     ) {
-        DocumentUploadRequest request = new DocumentUploadRequest();
-        request.setDepartmentId(departmentId);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UsersEntity currentUser = (UsersEntity) authentication.getPrincipal();
 
-        DocumentResponse response = documentService.uploadDocument(file, request);
+        DocumentResponse response = documentService.uploadDocument(file, currentUser.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
