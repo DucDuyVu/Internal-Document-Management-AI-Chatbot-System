@@ -1,0 +1,102 @@
+<!doctype html>
+<html
+  lang="vi"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layouts/user-layout}"
+>
+  <!--
+  chat.html — Giao diện AI Chatbot.
+  Dùng đúng bộ class "Chat Layout" đã có sẵn trong dashboard.css
+  (mục "SHARED: Chat Layout (User Dashboard)") — không viết CSS riêng.
+-->
+  <head>
+    <title>Chat AI</title>
+  </head>
+  <body>
+    <span layout:fragment="page-title">💬 AI Chatbot</span>
+
+    <div layout:fragment="content">
+      <div class="chat-full-layout">
+        <!-- ===== Sidebar: danh sách session ===== -->
+        <aside class="chat-sidebar-panel">
+          <div class="chat-sidebar-header">
+            <span>Cuộc trò chuyện</span>
+            <button
+              id="btn-new-session"
+              class="btn-new-chat"
+              title="Tạo cuộc trò chuyện mới"
+            >
+              +
+            </button>
+          </div>
+          <ul id="session-list" class="chat-session-list">
+            <!-- JS render .chat-session-item vào đây -->
+          </ul>
+        </aside>
+
+        <!-- ===== Main panel ===== -->
+        <main class="chat-main-panel">
+          <!-- Trạng thái chưa chọn session -->
+          <div id="chat-empty-state" class="chat-empty-state">
+            <div class="chat-empty-icon">💬</div>
+            <h3>Chưa có cuộc trò chuyện nào được chọn</h3>
+            <p>
+              Chọn một cuộc trò chuyện ở danh sách bên trái, hoặc tạo mới để bắt
+              đầu.
+            </p>
+          </div>
+
+          <!-- Trạng thái đang chat (ẩn cho tới khi chọn session) -->
+          <div
+            id="chat-active-view"
+            class="chat-active-view"
+            style="display: none"
+          >
+            <div class="chat-topbar-inner">
+              <div>
+                <div id="active-session-title" class="chat-session-title">
+                  Cuộc trò chuyện
+                </div>
+                <div class="chat-session-meta">Được hỗ trợ bởi Gemini</div>
+              </div>
+              <div class="chat-topbar-actions">
+                <button id="btn-delete-session" class="chat-action-btn danger">
+                  🗑 Xóa
+                </button>
+              </div>
+            </div>
+
+            <div id="message-list" class="chat-messages">
+              <!-- JS render .chat-message vào đây -->
+            </div>
+
+            <div class="chat-input-area">
+              <form id="chat-form" class="chat-input-wrap">
+                <textarea
+                  id="chat-input"
+                  class="chat-textarea"
+                  placeholder="Nhập câu hỏi..."
+                  rows="1"
+                  required
+                ></textarea>
+                <button
+                  type="submit"
+                  id="btn-send"
+                  class="chat-send-btn"
+                  disabled
+                >
+                  ➤
+                </button>
+              </form>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <th:block layout:fragment="custom-js">
+      <script th:src="@{/js/user/chat.js}"></script>
+    </th:block>
+  </body>
+</html>

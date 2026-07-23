@@ -3,7 +3,7 @@
    Font: Be Vietnam Pro | Responsive Design
    ============================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap");
 
 /* ===== CSS Variables ===== */
 :root {
@@ -74,7 +74,12 @@ html {
 }
 
 body {
-  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family:
+    "Be Vietnam Pro",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   font-size: 0.9375rem;
   font-weight: 400;
   line-height: 1.6;
@@ -159,7 +164,9 @@ img {
   z-index: 100;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: transform var(--transition-slow), width var(--transition-slow);
+  transition:
+    transform var(--transition-slow),
+    width var(--transition-slow);
   border-right: 1px solid var(--border-color);
 }
 
@@ -520,7 +527,12 @@ img {
    WELCOME BANNER
    ============================================= */
 .welcome-banner {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 50%, var(--primary-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-dark) 50%,
+    var(--primary-light) 100%
+  );
   border-radius: var(--radius-xl);
   padding: 28px 32px;
   color: #fff;
@@ -534,7 +546,7 @@ img {
 }
 
 .welcome-banner::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -60px;
   right: -60px;
@@ -545,7 +557,7 @@ img {
 }
 
 .welcome-banner::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -50px;
   left: 30%;
@@ -992,7 +1004,11 @@ img {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark) 0%,
+    var(--primary) 100%
+  );
   box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
   transform: translateY(-2px);
 }
@@ -1486,7 +1502,6 @@ select.form-input {
 }
 
 @keyframes skeleton {
-
   0%,
   100% {
     opacity: 1;
@@ -2482,8 +2497,14 @@ select.form-input {
   font-weight: 700;
   text-align: center;
 }
-.settings-role-badge.user { background: var(--success-bg); color: #065f46; }
-.settings-role-badge.admin { background: var(--warning-bg); color: #92400e; }
+.settings-role-badge.user {
+  background: var(--success-bg);
+  color: #065f46;
+}
+.settings-role-badge.admin {
+  background: var(--warning-bg);
+  color: #92400e;
+}
 
 .settings-stats {
   display: flex;
@@ -2501,8 +2522,13 @@ select.form-input {
   align-items: center;
   font-size: 0.85rem;
 }
-.settings-stat-item span:first-child { color: var(--text-secondary); }
-.settings-stat-item span:last-child { font-weight: 700; color: var(--text-primary); }
+.settings-stat-item span:first-child {
+  color: var(--text-secondary);
+}
+.settings-stat-item span:last-child {
+  font-weight: 700;
+  color: var(--text-primary);
+}
 
 .profile-info-list {
   display: flex;
@@ -2536,8 +2562,6 @@ select.form-input {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-}
-  padding: 24px;
 }
 
 .form-row {
@@ -2778,43 +2802,141 @@ select.form-input {
 /* =============================================
    UTILITIES & REFACTORED COMPONENTS
    ============================================= */
-.text-center { text-align: center !important; }
-.text-muted { color: var(--text-muted) !important; }
-.p-4 { padding: 16px !important; }
-.mt-4 { margin-top: 16px !important; }
-.mb-4 { margin-bottom: 16px !important; }
-.w-full { width: 100% !important; }
-.max-w-sm { max-width: 400px !important; }
-.max-w-md { max-width: 420px !important; }
-.no-border { border: none !important; }
-.no-shadow { box-shadow: none !important; }
+.text-center {
+  text-align: center !important;
+}
+.text-muted {
+  color: var(--text-muted) !important;
+}
+.p-4 {
+  padding: 16px !important;
+}
+.mt-4 {
+  margin-top: 16px !important;
+}
+.mb-4 {
+  margin-bottom: 16px !important;
+}
+.w-full {
+  width: 100% !important;
+}
+.max-w-sm {
+  max-width: 400px !important;
+}
+.max-w-md {
+  max-width: 420px !important;
+}
+.no-border {
+  border: none !important;
+}
+.no-shadow {
+  box-shadow: none !important;
+}
 
 /* Upload Area Component */
-.upload-hint-icon { font-size: 2.5rem; margin-bottom: 8px; color: var(--primary-light); }
-.upload-hint-text { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 20px; }
-.upload-hint-subtext { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
-.file-selected-box { margin-top: 14px; padding: 12px 16px; background: var(--success-bg); border: 1px solid #bbf7d0; border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center; }
-.file-selected-name { font-size: 0.875rem; font-weight: 600; color: #15803d; }
-.file-selected-size { font-size: 0.78rem; color: var(--text-secondary); }
-.btn-icon-danger { background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1rem; transition: color var(--transition); }
-.btn-icon-danger:hover { color: var(--danger); }
-.upload-progress-bar { height: 6px; background: var(--bg-gray-200); border-radius: 50px; overflow: hidden; margin-top: 8px; }
-.upload-progress-fill { height: 100%; background: var(--primary); border-radius: 50px; width: 0%; transition: width 0.3s ease; }
-.upload-progress-text { font-size: 0.875rem; font-weight: 600; color: var(--primary); margin-bottom: 8px; }
+.upload-hint-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  color: var(--primary-light);
+}
+.upload-hint-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.upload-hint-subtext {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.file-selected-box {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--success-bg);
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.file-selected-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #15803d;
+}
+.file-selected-size {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.btn-icon-danger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  transition: color var(--transition);
+}
+.btn-icon-danger:hover {
+  color: var(--danger);
+}
+.upload-progress-bar {
+  height: 6px;
+  background: var(--bg-gray-200);
+  border-radius: 50px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.upload-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 50px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+.upload-progress-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
 
 /* Empty States & Search Hint */
-.chat-empty-icon { font-size: 4rem; margin-bottom: 16px; }
-.search-hint-icon { font-size: 3.5rem; margin-bottom: 12px; }
-.search-hint-subtext { font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+.chat-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+.search-hint-icon {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+}
+.search-hint-subtext {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
 
 /* Modal & Buttons Utilities */
-.modal-body-scroll { max-height: 50vh; overflow-y: auto; }
-.bg-sky { background: #0ea5e9 !important; }
+.modal-body-scroll {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.bg-sky {
+  background: #0ea5e9 !important;
+}
 
 /* Form Validation & Loading States */
-.form-input.has-error { border-color: var(--danger); }
-.form-input.has-error:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2); }
-.error-msg { color: var(--danger); font-size: 0.78rem; margin-top: 4px; display: block; }
+.form-input.has-error {
+  border-color: var(--danger);
+}
+.form-input.has-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+.error-msg {
+  color: var(--danger);
+  font-size: 0.78rem;
+  margin-top: 4px;
+  display: block;
+}
 
 .btn-primary.is-loading {
   position: relative;
@@ -2826,7 +2948,10 @@ select.form-input {
   position: absolute;
   width: 16px;
   height: 16px;
-  top: 0; left: 0; bottom: 0; right: 0;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
   margin: auto;
   border: 2px solid transparent;
   border-top-color: #fff;
@@ -2834,5 +2959,7 @@ select.form-input {
   animation: button-spin 0.6s linear infinite;
 }
 @keyframes button-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
