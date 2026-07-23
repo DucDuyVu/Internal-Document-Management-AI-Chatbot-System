@@ -10,6 +10,11 @@ import com.javaweb.rag.DocumentProcessingService;
 import com.javaweb.repository.DocumentChunkRepository;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.service.DocumentService;
+
+import groovyjarjarantlr4.v4.parse.ANTLRParser.ruleEntry_return;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,12 +36,12 @@ import java.util.UUID;
  * Được gọi bởi: DocumentController.
  *
  * Lưu ý:
- *  - Không dùng title riêng — Document entity (schema.sql thật) không
- *    có cột title, nên fileName được dùng luôn làm tên hiển thị. Nếu
- *    sau này DB có thêm cột title, khôi phục lại resolveTitle() và
- *    set/get title như các version trước.
- *  - Viết constructor injection tay (không Lombok), đồng bộ với
- *    DocumentProcessingService.
+ * - Không dùng title riêng — Document entity (schema.sql thật) không
+ * có cột title, nên fileName được dùng luôn làm tên hiển thị. Nếu
+ * sau này DB có thêm cột title, khôi phục lại resolveTitle() và
+ * set/get title như các version trước.
+ * - Viết constructor injection tay (không Lombok), đồng bộ với
+ * DocumentProcessingService.
  */
 @Service
 public class DocumentServiceImpl implements DocumentService {
@@ -49,8 +54,8 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentProcessingService documentProcessingService;
 
     public DocumentServiceImpl(DocumentRepository documentRepository,
-                                DocumentChunkRepository documentChunkRepository,
-                                DocumentProcessingService documentProcessingService) {
+            DocumentChunkRepository documentChunkRepository,
+            DocumentProcessingService documentProcessingService) {
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
@@ -155,8 +160,19 @@ public class DocumentServiceImpl implements DocumentService {
                 chunkCount,
                 document.getErrorMessage(),
                 document.getCreatedAt(),
-                document.getUpdatedAt()
-        );
+                document.getUpdatedAt());
+    }
+
+    @Override
+    public Page<DocumentResponse> getAllDocuments(Pageable pageable) {
+        Page<DocumentEntity> documPage = documentRepository.findAll(pageable);
+
+        // Map entity -> DTO
+        return documPage.map(doc -> {
+
+            Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
+            return toResponse(doc, chunkCount);
+        });
     }
 }
 
@@ -164,27 +180,27 @@ public class DocumentServiceImpl implements DocumentService {
  * ============================================================
  * FLOW - uploadDocument()
  * ============================================================
- *   DocumentController.upload(file, request)
- *           ↓
- *   validateFile(file)  -- fail -> throw InvalidFileException (400)
- *           ↓ ok
- *   storeFile(file)  -> ghi vào uploads/<uuid>.pdf
- *           ↓
- *   new Document(status=PENDING) -> documentRepository.save()
- *           ↓
- *   documentProcessingService.process(id)  [@Async - không đợi]
- *           ↓
- *   return DocumentResponse(status=PENDING)  -- trả về NGAY
+ * DocumentController.upload(file, request)
+ * ↓
+ * validateFile(file) -- fail -> throw InvalidFileException (400)
+ * ↓ ok
+ * storeFile(file) -> ghi vào uploads/<uuid>.pdf
+ * ↓
+ * new Document(status=PENDING) -> documentRepository.save()
+ * ↓
+ * documentProcessingService.process(id) [@Async - không đợi]
+ * ↓
+ * return DocumentResponse(status=PENDING) -- trả về NGAY
  *
  * ============================================================
- * FLOW - getDocumentStatus()  (frontend gọi lặp lại - polling)
+ * FLOW - getDocumentStatus() (frontend gọi lặp lại - polling)
  * ============================================================
- *   DocumentController.getStatus(id)
- *           ↓
- *   documentRepository.findById(id)  -- not found -> 404
- *           ↓
- *   documentChunkRepository.countByDocumentId(id)
- *           ↓
- *   return DocumentResponse(status hiện tại, chunkCount)
+ * DocumentController.getStatus(id)
+ * ↓
+ * documentRepository.findById(id) -- not found -> 404
+ * ↓
+ * documentChunkRepository.countByDocumentId(id)
+ * ↓
+ * return DocumentResponse(status hiện tại, chunkCount)
  * ============================================================
  */
