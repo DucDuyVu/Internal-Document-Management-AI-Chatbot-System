@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layouts/user-layout}">
+<head>
+  <title>Bảng điều khiển – IDMS</title>
+  <th:block layout:fragment="custom-css">
+  <!-- Styles moved to /css/dashboard.css -->
+  </th:block>
+</head>
+
+<body>
+<div layout:fragment="content">
+
+      <!-- ===== TAB: TRANG CHỦ ===== -->
+      <div id="tabHome">
+
+        <!-- Banner chào mừng -->
+        <div class="welcome-banner">
+          <div class="welcome-text">
+            <h1>Xin chào, <span id="welcomeName">bạn</span>! 👋</h1>
+            <div class="welcome-meta">
+              <span>📧 <strong id="wEmail">—</strong></span>
+              <span>🏢 <strong id="wDept">—</strong></span>
+              <span>🎖️ <strong id="wRole">—</strong></span>
+            </div>
+          </div>
+          <div class="welcome-icon">📄</div>
+        </div>
+
+        <!-- Thẻ thống kê -->
+        <div>
+          <div class="section-header">
+            <h2>Tổng quan của bạn</h2>
+            <span class="section-sub">Cập nhật theo thời gian thực</span>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-icon indigo">📄</div>
+              <div>
+                <div class="stat-label">Tài liệu phòng ban</div>
+                <div class="stat-value" id="statDocCount">—</div>
+                <div class="stat-change">Có thể truy cập</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon sky">💬</div>
+              <div>
+                <div class="stat-label">Phiên Chat AI</div>
+                <div class="stat-value" id="statChatCount">—</div>
+                <div class="stat-change">Tổng hội thoại</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">✅</div>
+              <div>
+                <div class="stat-label">Tài liệu đã xem</div>
+                <div class="stat-value" id="statViewCount">—</div>
+                <div class="stat-change">Tổng lượt xem</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon amber">🔍</div>
+              <div>
+                <div class="stat-label">Lượt tìm kiếm</div>
+                <div class="stat-value" id="statSearchCount">—</div>
+                <div class="stat-change">Tổng số lần</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hai cột: Thao tác nhanh + Hoạt động gần đây -->
+        <div class="two-col">
+          <div>
+            <div class="section-header">
+              <h2>Thao tác nhanh</h2>
+            </div>
+            <div class="quick-grid">
+              <div class="quick-card" onclick="switchTab('tabChat', null)">
+                <div class="quick-card-icon">🤖</div>
+                <span>Hỏi AI ngay</span>
+              </div>
+              <div class="quick-card" onclick="switchTab('tabDocuments', null)">
+                <div class="quick-card-icon">📂</div>
+                <span>Tài liệu của tôi</span>
+              </div>
+              <div class="quick-card" onclick="switchTab('tabSearch', null)">
+                <div class="quick-card-icon">🔍</div>
+                <span>Tìm kiếm</span>
+              </div>
+              <div class="quick-card" onclick="switchTab('tabProfile', null)">
+                <div class="quick-card-icon">👤</div>
+                <span>Hồ sơ cá nhân</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="section-header">
+              <h2>Hoạt động gần đây</h2>
+              <a href="#" onclick="switchTab('tabProfile', null); return false;" class="section-link">Xem tất cả</a>
+            </div>
+            <div class="activity-card">
+              <ul class="activity-list" id="activityList">
+                <li class="activity-item">
+                  <div class="activity-dot indigo"></div>
+                  <div class="activity-info">
+                    <p>Đang tải hoạt động...</p><span>—</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tài liệu mới nhất -->
+        <div>
+          <div class="section-header">
+            <h2>Tài liệu mới nhất của phòng ban</h2>
+            <a href="#" onclick="switchTab('tabDocuments', null); return false;" class="section-link">Xem tất cả →</a>
+          </div>
+          <div class="doc-grid" id="recentDocGrid">
+            <div class="doc-card-skeleton"></div>
+            <div class="doc-card-skeleton"></div>
+            <div class="doc-card-skeleton"></div>
+          </div>
+        </div>
+
+      </div><!-- kết thúc tabHome -->
+
+      <!-- ===== TAB: TÀI LIỆU PHÒNG BAN ===== -->
+      <div id="tabDocuments" style="display:none;">
+        <div class="section-header">
+          <h2>📁 Tài liệu phòng ban</h2>
+          <span class="section-sub" id="deptDocLabel">—</span>
+        </div>
+
+        <!-- Thanh lọc -->
+        <div class="filter-bar">
+          <div class="search-wrap-lg">
+            <span class="search-icon-sm">🔍</span>
+            <input type="text" id="docSearchInput" placeholder="Tìm kiếm tài liệu...">
+          </div>
+          <select id="docTypeFilter" class="filter-select">
+            <option value="">Tất cả loại file</option>
+            <option value="pdf">PDF</option>
+            <option value="docx">Word (DOCX)</option>
+            <option value="xlsx">Excel (XLSX)</option>
+            <option value="pptx">PowerPoint</option>
+          </select>
+          <select id="docSortFilter" class="filter-select">
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+            <option value="name">Theo tên</option>
+            <option value="size">Theo kích thước</option>
+          </select>
+          <div class="view-toggle">
+            <button class="view-btn active" id="btnGridView" onclick="setDocView('grid')"
+                    title="Xem dạng lưới">⊞</button>
+            <button class="view-btn" id="btnListView" onclick="setDocView('list')"
+                    title="Xem dạng danh sách">☰</button>
+          </div>
+        </div>
+
+        <!-- Lưới tài liệu -->
+        <div class="doc-grid" id="docGridView">
+          <div class="doc-card-skeleton"></div>
+          <div class="doc-card-skeleton"></div>
+          <div class="doc-card-skeleton"></div>
+          <div class="doc-card-skeleton"></div>
+        </div>
+
+        <!-- Danh sách tài liệu -->
+        <div class="table-card" id="docListView" style="display:none;">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+              <tr>
+                <th>Tên tài liệu</th>
+                <th>Loại</th>
+                <th>Kích thước</th>
+                <th>Ngày upload</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+              </thead>
+              <tbody id="docListBody">
+              <tr>
+                <td colspan="6" class="empty-state"><span>📁</span>Đang tải...</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Phân trang -->
+        <div class="pagination" id="docPagination">
+          <button class="page-btn" id="prevDocPage" disabled>‹ Trước</button>
+          <span class="page-info" id="pageInfo">Trang 1</span>
+          <button class="page-btn" id="nextDocPage">Sau ›</button>
+        </div>
+
+      </div><!-- kết thúc tabDocuments -->
+
+      <!-- ===== TAB: AI CHATBOT ===== -->
+      <div id="tabChat" style="display:none;">
+        <div class="chat-full-layout">
+
+          <!-- Bảng bên trái: Danh sách phiên chat -->
+          <div class="chat-sidebar-panel" id="chatSidebar">
+            <div class="chat-sidebar-header">
+              <span>Lịch sử hội thoại</span>
+              <button class="btn-new-chat" onclick="createNewChat()" title="Tạo hội thoại mới">＋</button>
+            </div>
+            <div class="chat-search-wrap">
+              <input type="text" id="chatHistorySearch" placeholder="Tìm hội thoại...">
+            </div>
+            <div class="chat-session-list" id="chatSessionList">
+              <div class="chat-session-empty">
+                <span>💬</span><br>Chưa có hội thoại nào
+              </div>
+            </div>
+          </div>
+
+          <!-- Khu vực chat chính -->
+          <div class="chat-main-panel" id="chatMain">
+
+            <!-- Trạng thái trống -->
+            <div class="chat-empty-state" id="chatEmptyState">
+              <div class="chat-empty-icon text-center mb-4" style="font-size:4rem;">🤖</div>
+              <h3>Bắt đầu trò chuyện với AI</h3>
+              <p>Hỏi AI về các tài liệu, quy trình, chính sách nội bộ của phòng ban bạn.</p>
+              <button class="btn-primary mt-4" onclick="createNewChat()">＋ Tạo hội thoại
+                mới</button>
+            </div>
+
+            <!-- Giao diện chat đang hoạt động -->
+            <div class="chat-active-view" id="chatActive" style="display:none;">
+              <div class="chat-topbar-inner">
+                <div>
+                  <div class="chat-session-title" id="chatSessionTitle">Cuộc hội thoại mới</div>
+                  <div class="chat-session-meta" id="chatSessionMeta">—</div>
+                </div>
+                <div class="chat-topbar-actions">
+                  <button class="chat-action-btn" onclick="renameChatSession()" title="Đổi tên">✏️ Đổi tên</button>
+                  <button class="chat-action-btn danger" onclick="deleteChatSession()" title="Xóa hội thoại">🗑️
+                    Xóa</button>
+                </div>
+              </div>
+
+              <!-- Tin nhắn -->
+              <div class="chat-messages" id="chatMessages"></div>
+
+              <!-- Vùng nhập liệu -->
+              <div class="chat-input-area">
+                <div class="chat-input-wrap">
+                    <textarea id="chatInput" class="chat-textarea" placeholder="Nhập câu hỏi về tài liệu nội bộ..."
+                              rows="1"></textarea>
+                  <button class="chat-send-btn" id="chatSendBtn">➤</button>
+                </div>
+                <div class="chat-input-meta">
+                  <span>Nhấn Enter để gửi, Shift+Enter để xuống dòng</span>
+                  <span id="chatTokenInfo"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- kết thúc tabChat -->
+
+      <!-- ===== TAB: TÌM KIẾM TÀI LIỆU ===== -->
+      <div id="tabSearch" style="display:none;">
+        <div class="section-header">
+          <h2>🔍 Tìm kiếm tài liệu</h2>
+        </div>
+
+        <div class="search-hero">
+          <div class="search-hero-input-wrap">
+            <span class="search-hero-icon">🔍</span>
+            <input type="text" id="globalSearchInput" class="search-hero-input"
+                   placeholder="Tìm kiếm tài liệu bằng từ khóa (Vector Search)...">
+            <button class="search-hero-btn" onclick="performSearch()">Tìm kiếm</button>
+          </div>
+          <div class="search-filters-row">
+            <select id="searchDeptFilter" class="filter-select">
+              <option value="">Tất cả phòng ban (có quyền)</option>
+            </select>
+            <select id="searchTypeFilter" class="filter-select">
+              <option value="">Tất cả loại file</option>
+              <option value="pdf">PDF</option>
+              <option value="docx">Word</option>
+              <option value="xlsx">Excel</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="searchResults">
+          <div class="search-hint">
+            <div class="search-hint-icon">🔍</div>
+            <p>Nhập từ khóa để tìm kiếm tài liệu trong phòng ban của bạn.</p>
+            <p class="search-hint-subtext">Hệ thống sử dụng Vector Search để tìm kiếm ngữ
+              nghĩa.</p>
+          </div>
+        </div>
+
+      </div><!-- kết thúc tabSearch -->
+
+      <!-- ===== TAB: HỒ SƠ CÁ NHÂN ===== -->
+      <div id="tabProfile" style="display:none;">
+        <div class="section-header">
+          <h2>👤 Hồ sơ cá nhân</h2>
+        </div>
+
+        <div class="settings-layout">
+          <!-- Left Nav -->
+          <div class="settings-nav">
+            <button class="settings-tab active" onclick="switchProfileTab('ptInfo', this)">Thông tin cá nhân</button>
+            <button class="settings-tab" onclick="switchProfileTab('ptUpdate', this)">Cập nhật hồ sơ</button>
+            <button class="settings-tab" onclick="switchProfileTab('ptPassword', this)">Bảo mật</button>
+            <button class="settings-tab" onclick="switchProfileTab('ptActivity', this)">Lịch sử hoạt động</button>
+          </div>
+
+          <!-- Right Content -->
+          <div class="settings-content">
+            
+            <!-- Thông tin cá nhân -->
+            <div id="ptInfo" class="settings-card active">
+              <div class="settings-header">
+                <h3>Thông tin cá nhân</h3>
+                <p>Chi tiết thông tin định danh và tài khoản của bạn trên hệ thống.</p>
+              </div>
+              <div class="settings-profile-grid">
+                
+                <div class="profile-info-list">
+                  <div class="profile-info-row">
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Họ và tên</span>
+                      <span class="profile-info-value" id="viewFullName">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Email</span>
+                      <span class="profile-info-value" id="viewEmail">—</span>
+                    </div>
+                  </div>
+                  <div class="profile-info-row">
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Số điện thoại</span>
+                      <span class="profile-info-value" id="viewPhone">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Phòng ban</span>
+                      <span class="profile-info-value" id="viewDept">—</span>
+                    </div>
+                  </div>
+                  <div class="profile-info-row">
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Vai trò</span>
+                      <span class="profile-info-value" id="viewRole">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                      <!-- Empty for alignment -->
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Avatar Preview -->
+                <div class="settings-avatar-section">
+                  <div class="settings-avatar" id="profileAvatar">U</div>
+                  <div class="settings-role-badge user" id="profileRoleBadge">Nhân viên</div>
+                  <div class="settings-stats">
+                    <div class="settings-stat-item">
+                      <span>Tài liệu</span>
+                      <span id="psDocCount">—</span>
+                    </div>
+                    <div class="settings-stat-item">
+                      <span>Chat AI</span>
+                      <span id="psChatCount">—</span>
+                    </div>
+                    <div class="settings-stat-item">
+                      <span>Hoạt động</span>
+                      <span id="psActivityCount">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cập nhật hồ sơ -->
+            <div id="ptUpdate" class="settings-card">
+              <div class="settings-header">
+                <h3>Cập nhật hồ sơ</h3>
+                <p>Chỉnh sửa thông tin liên lạc và ảnh đại diện của bạn.</p>
+              </div>
+              <div class="settings-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Họ và tên</label>
+                    <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
+                  </div>
+                  <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="tel" id="editPhone" class="form-input" placeholder="Nhập số điện thoại">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group" style="width: 100%;">
+                    <label>Đường dẫn Ảnh đại diện (Avatar URL)</label>
+                    <input type="file" id="editAvatarUrl" class="form-input" accept="image/*">
+                  </div>
+                </div>
+                <div class="form-actions" style="margin-top: 32px;">
+                  <button class="btn btn-primary" onclick="updateProfile()">Lưu thay đổi</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Đổi mật khẩu -->
+            <div id="ptPassword" class="settings-card">
+              <div class="settings-header">
+                <h3>Bảo mật</h3>
+                <p>Cập nhật mật khẩu để bảo vệ tài khoản của bạn.</p>
+              </div>
+              <div class="form-group max-w-md">
+                <label>Mật khẩu hiện tại</label>
+                <div class="pass-wrap">
+                  <input type="password" id="currentPassword" class="form-input" placeholder="Nhập mật khẩu hiện tại">
+                  <button class="pass-eye" onclick="togglePassVis('currentPassword')">👁</button>
+                </div>
+              </div>
+              <div class="form-group max-w-md">
+                <label>Mật khẩu mới</label>
+                <div class="pass-wrap">
+                  <input type="password" id="newPassword" class="form-input" placeholder="Tối thiểu 8 ký tự">
+                  <button class="pass-eye" onclick="togglePassVis('newPassword')">👁</button>
+                </div>
+                <div class="pass-strength-bar">
+                  <div class="pass-strength-fill" id="passStrengthFill" style="width:0%"></div>
+                </div>
+                <div class="pass-strength-label" id="passStrengthLabel"></div>
+              </div>
+              <div class="form-group max-w-md">
+                <label>Xác nhận mật khẩu mới</label>
+                <div class="pass-wrap">
+                  <input type="password" id="confirmPassword" class="form-input" placeholder="Nhập lại mật khẩu mới">
+                  <button class="pass-eye" onclick="togglePassVis('confirmPassword')">👁</button>
+                </div>
+              </div>
+              <div class="form-actions max-w-md" style="margin-top: 32px;">
+                <button class="btn btn-primary" onclick="changePassword()">Đổi mật khẩu</button>
+              </div>
+            </div>
+
+            <!-- Lịch sử hoạt động -->
+            <div id="ptActivity" class="settings-card">
+              <div class="settings-header">
+                <h3>Lịch sử hoạt động</h3>
+                <p>Nhật ký các thao tác gần đây của bạn trên hệ thống.</p>
+              </div>
+              <ul class="activity-list-v2" id="profileActivityList">
+                <li class="activity-empty">Đang tải lịch sử hoạt động...</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- kết thúc tabProfile -->
+
+    </div><!-- kết thúc page-body -->
+  </main>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- MODAL: Xem chi tiết tài liệu -->
+<div class="modal-overlay" id="docViewerModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
+      <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
+    </div>
+    <div id="docViewerContent" class="modal-body-scroll"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
+      <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
+      <button class="btn-primary-sm bg-sky" onclick="askAIAboutDoc()" id="btnAskAI">💬 Hỏi AI về
+        tài liệu này</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Đổi tên hội thoại -->
+<div class="modal-overlay" id="renameChatModal">
+  <div class="modal max-w-sm">
+    <div class="modal-header">
+      <h3>✏️ Đổi tên hội thoại</h3>
+      <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="newChatTitle">Tên mới</label>
+      <input type="text" id="newChatTitle" class="form-input" placeholder="Nhập tên hội thoại...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
+      <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,50 +1,43 @@
 package com.javaweb.service.impl;
 
-
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.util.Date;
-
-import javax.crypto.SecretKey;
-
-import org.springframework.stereotype.Service;
-
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.service.JwtService;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import lombok.Getter;
-import lombok.Setter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 @Service
-@Getter
-@Setter
 public class JwtServiceImpl implements JwtService {
 
-	private static final String SECRET_KEY = "12345678901234567890123456789012";
-	
-	private static final long ACCESS_TOKEN_EXPIRED = 1000 * 60 * 30;
-	
+	@Value("${jwt.secret}")
+	private String secretKey;
+
+	@Value("${jwt.access-token-expired}")
+	private Duration accessTokenExpired;
+
+	@Value("${jwt.refresh-token-expired}")
+	private Duration refreshTokenExpired;
+
+	@Value("${jwt.reset-password-token-expired}")
+	private Duration resetPasswordTokenExpired;
+
+	// Ký JWT khi tạo token + xác thực JWT khi đọc token
 	private Key getSigningKey() {
 		return Keys.hmacShaKeyFor(
-				SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+				secretKey.getBytes(StandardCharsets.UTF_8));
 	}
-	@Override
-	public String generateAccessToken(UsersEntity user) {
-		return Jwts.builder()
-				.subject(user.getEmail())
-				.claim("userId", user.getId())
-				.claim("role", user.getRole())
-				.issuedAt(new Date())
-				.expiration(new Date(
-						System.currentTimeMillis() + ACCESS_TOKEN_EXPIRED
-						))
-				.signWith(getSigningKey())
-				.compact();
-	}
-	
+
+	// Giải mã JWT và lấy toàn bộ Claims (token)
 	private Claims extractAllClaims(String token) {
 		return Jwts.parser()
 				.verifyWith((SecretKey) getSigningKey())
@@ -54,25 +47,40 @@ public class JwtServiceImpl implements JwtService {
 	}
 
 	@Override
+	public String generateAccessToken(UsersEntity user) {
+		return Jwts.builder()
+				.subject(user.getEmail())
+				.claim("userId", user.getId())
+				.claim("role", user.getRole())
+				.claim("type", "access")
+				.issuedAt(new Date())
+				.expiration(new Date(
+						System.currentTimeMillis() + accessTokenExpired.toMillis()
+						))
+				.signWith(getSigningKey())
+				.compact();
+	}
+
+	@Override
 	public String extractEmail(String token) {
-		
+
 		return extractAllClaims(token)
 				.getSubject();
 	}
 
 	@Override
 	public String extractRole(String token) {
-		
+
 		return extractAllClaims(token)
 				.get("role", String.class);
 	}
 
 	@Override
 	public Long extractUserId(String token) {
-		
+
 		return extractAllClaims(token)
 
-	            .get("userId", Long.class);
+				.get("userId", Long.class);
 	}
 
 	@Override
@@ -84,5 +92,51 @@ public class JwtServiceImpl implements JwtService {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	@Override
+	public String generateRefreshToken(UsersEntity user) {
+
+		return Jwts.builder()
+				.subject(user.getEmail())
+				.claim("userId", user.getId())
+				.claim("role", user.getRole().name())
+				.claim("type", "refresh")
+				.issuedAt(new Date())
+				.expiration(new Date(
+						System.currentTimeMillis() + refreshTokenExpired.toMillis()))
+				.signWith(getSigningKey())
+				.compact();
+	}
+
+	// Lấy thời gian hết hạn refresh token
+	@Override
+	public LocalDateTime extractExpirations(String token) {
+		return extractAllClaims(token)
+				.getExpiration() // trả về Date
+				.toInstant()
+				.atZone(ZoneId.systemDefault())
+				.toLocalDateTime(); // convert LocalDateTime
+	}
+
+	@Override
+	public String extractTokenType(String token) {
+			return extractAllClaims(token)
+					.get("type", String.class);
+	}
+
+
+	//Chỉ dùng để đổi mật khẩu sau khi xác thực OTP
+	@Override
+	public String generateResetPasswordToken(UsersEntity user) {
+		return Jwts.builder()
+				.subject(user.getEmail())
+				.claim("userId", user.getId())
+				.claim("type", "reset")
+				.issuedAt(new Date())
+				.expiration(new Date(
+						System.currentTimeMillis() + accessTokenExpired.toMillis()))
+				.signWith(getSigningKey())
+				.compact();
 	}
 }

@@ -10,6 +10,8 @@ import lombok.Setter;
 public class ProfileResponse {
 
 		private String fullName;
+
+		private String userName;
 		
 		private Long userId;
 		
@@ -18,4 +20,8 @@ public class ProfileResponse {
 		private String role;
 		
 		private String phone;
+		
+		private String avatarUrl;
+
+		private String departmentName;
 }

@@ -1,7 +1,17 @@
 package com.javaweb.entity;
 
 import com.javaweb.entity.enums.DocumentStatus;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -11,12 +21,14 @@ import java.time.LocalDateTime;
  * Entity ánh xạ bảng "document" trong schema.sql.
  * Lưu ý: department_id / uploaded_by / parent_document_id được giữ ở dạng
  * cột thuần (Long/Integer), KHÔNG dùng @ManyToOne, vì:
- *  - Entity Department chưa tồn tại trong project ở thời điểm này.
- *  - Tránh load lồng nhau (N+1) không cần thiết cho Ingestion Pipeline.
+ * - Entity Department chưa tồn tại trong project ở thời điểm này.
+ * - Tránh load lồng nhau (N+1) không cần thiết cho Ingestion Pipeline.
  * Nếu sau này cần join object thật, có thể đổi sang @ManyToOne.
  */
 @Entity
 @Table(name = "document")
+@Getter
+@Setter
 public class DocumentEntity {
 
     @Id
@@ -69,128 +81,5 @@ public class DocumentEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    public DocumentEntity() {
-    }
 
-    // ===== Getters & Setters =====
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public DocumentStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(DocumentStatus status) {
-        this.status = status;
-    }
-
-    public String getErrorMessage() {
-        return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
-    public Integer getRetryCount() {
-        return retryCount;
-    }
-
-    public void setRetryCount(Integer retryCount) {
-        this.retryCount = retryCount;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
-    public String getFilePath() {
-        return filePath;
-    }
-
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-
-    public String getFileType() {
-        return fileType;
-    }
-
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
-    }
-
-    public Long getFileSize() {
-        return fileSize;
-    }
-
-    public void setFileSize(Long fileSize) {
-        this.fileSize = fileSize;
-    }
-
-    public Integer getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(Integer departmentId) {
-        this.departmentId = departmentId;
-    }
-
-    public Long getUploadedBy() {
-        return uploadedBy;
-    }
-
-    public void setUploadedBy(Long uploadedBy) {
-        this.uploadedBy = uploadedBy;
-    }
-
-    public Long getParentDocumentId() {
-        return parentDocumentId;
-    }
-
-    public void setParentDocumentId(Long parentDocumentId) {
-        this.parentDocumentId = parentDocumentId;
-    }
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public void setDeletedAt(LocalDateTime deletedAt) {
-        this.deletedAt = deletedAt;
-    }
 }

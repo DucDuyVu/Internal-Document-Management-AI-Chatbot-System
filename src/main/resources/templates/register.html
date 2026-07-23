@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tạo tài khoản IDMS để bắt đầu quản lý tài liệu nội bộ cùng đội nhóm.">
+  <title>Đăng ký – IDMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- ✅ Sửa đường dẫn CSS -->
+  <link rel="stylesheet" th:href="@{/css/register.css}" href="/css/register.css">
+
+  <!-- ✅ Thêm favicon -->
+  <link rel="icon" type="image/png" th:href="@{/images/favicon.png}" href="/images/favicon.png">
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Logo -->
+  <div class="mark">
+    <div class="mark-icon">📁</div>
+    <span class="mark-text">IDMS <em>AI</em></span>
+  </div>
+
+  <!-- Heading -->
+  <div class="head">
+    <span class="eyebrow">Đăng ký tài khoản</span>
+    <h1>Tạo tài khoản mới</h1>
+    <p>Bắt đầu quản lý tài liệu nội bộ cùng đội nhóm của bạn.</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg">
+    <span>⚠</span>
+    <span id="errorText">Email này đã được sử dụng.</span>
+  </div>
+
+  <!-- Form -->
+  <form id="registerForm" novalidate>
+
+    <div class="field">
+      <label for="fullName">Họ và tên</label>
+      <div class="field-wrap">
+        <input type="text" id="fullName" class="no-icon" placeholder="Nhập họ và tên đầy đủ" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <div class="field-wrap">
+        <input type="email" id="email" class="no-icon" placeholder="vd: nguyen@congty.vn" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="password">Mật khẩu</label>
+      <div class="field-wrap">
+        <input type="password" id="password" placeholder="Tối thiểu 8 ký tự" required>
+        <button type="button" class="toggle-pass" id="togglePass">Hiện</button>
+      </div>
+    </div>
+    <p class="hint" id="passHint">Tối thiểu 8 ký tự, gồm chữ và số.</p>
+
+    <div class="field">
+      <label for="confirmPassword">Xác nhận mật khẩu</label>
+      <div class="field-wrap">
+        <input type="password" id="confirmPassword" placeholder="Nhập lại mật khẩu" required>
+        <button type="button" class="toggle-pass" id="toggleConfirmPass">Hiện</button>
+      </div>
+    </div>
+
+    <label class="terms">
+      <input type="checkbox" id="agreeTerms" required>
+      <span>Tôi đồng ý với
+        <a th:href="@{/terms}" href="/terms">Điều khoản dịch vụ</a>
+        và
+        <a th:href="@{/privacy}" href="/privacy">Chính sách bảo mật</a>.
+      </span>
+    </label>
+
+    <button type="submit" class="btn-submit" id="submitBtn">
+      <span class="spinner"></span>
+      <span class="btn-label">Tạo tài khoản</span>
+    </button>
+
+  </form>
+
+  <div class="divider">hoặc</div>
+
+  <p class="signup-line">
+    Đã có tài khoản?
+    <a th:href="@{/login}" href="/login">Đăng nhập</a>
+  </p>
+
+</div>
+
+<!-- ============================================ -->
+<!-- ✅ QUAN TRỌNG: Load scripts theo đúng thứ tự -->
+<!-- ============================================ -->
+<script th:src="@{/js/common.js}" src="/js/common.js"></script>
+<script th:src="@{/js/auth.js}" src="/js/auth.js"></script>
+<script th:src="@{/js/register.js}" src="/js/register.js"></script>
+
+</body>
+</html>
