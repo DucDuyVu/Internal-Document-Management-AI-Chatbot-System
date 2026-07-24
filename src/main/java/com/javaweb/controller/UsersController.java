@@ -27,6 +27,7 @@ import com.javaweb.dto.request.UpdateProfileRequest;
 import com.javaweb.dto.response.ChangePasswordResponse;
 import com.javaweb.dto.response.ProfileResponse;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.security.CustomUserDetails;
 import com.javaweb.service.UsersService;
 
 @RestController
@@ -37,7 +38,8 @@ public class UsersController {
 
 	@GetMapping("/profile")
 	public ProfileResponse profile(Authentication authentication) {
-		UsersEntity user = (UsersEntity) authentication.getPrincipal();
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+		UsersEntity user = userDetails.getUser();
 		return usersService.getProfile(user);
 	}
 
@@ -46,7 +48,8 @@ public class UsersController {
 			@RequestBody UpdateProfileRequest updateProfileRequest) {
 
 		// Lấy thông tin người dùng đang đăng nhập
-		UsersEntity user = (UsersEntity) authentication.getPrincipal();
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+		UsersEntity user = userDetails.getUser();
 		return usersService.updateProfile(user, updateProfileRequest);
 	}
 
@@ -55,7 +58,8 @@ public class UsersController {
 			@RequestBody ChangePasswordRequest changePasswordRequest) {
 
 		// Lấy thông tin người dùng đang đănh nhập
-		UsersEntity user = (UsersEntity) authentication.getPrincipal();
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+		UsersEntity user = userDetails.getUser();
 		return usersService.changePassword(user, changePasswordRequest);
 	}
 

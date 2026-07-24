@@ -81,9 +81,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			// Chuyển Role (User) => ROLE_
 			List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 
+			CustomUserDetails customUserDetails = new CustomUserDetails(user);
+
 			// Tạo object Authentication đại diện cho người dùng đã xác thực
 			UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-					user,
+					customUserDetails,
 					null,
 					authorities);
 

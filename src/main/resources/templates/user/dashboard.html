@@ -507,5 +507,57 @@
 </div>
 
 </div>
+
+<!-- MODAL: Quản lý quyền -->
+<div class="modal-overlay" id="permissionModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="permissionModalTitle">Quản lý Quyền Truy cập</h3>
+      <button class="modal-close" onclick="closeModal('permissionModal')">✕</button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Section chia sẻ -->
+      <div class="share-section" style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+        <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Chia sẻ tài liệu</h4>
+        <div style="display: flex; gap: 12px; align-items: flex-end;">
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label for="departmentSelect">Chọn phòng ban</label>
+            <select id="departmentSelect" class="form-input">
+              <option value="">-- Đang tải danh sách... --</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btnShareDoc" onclick="shareDocumentPermission()">Chia sẻ</button>
+        </div>
+      </div>
+
+      <!-- Section danh sách đã chia sẻ -->
+      <div>
+        <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Đang chia sẻ cho</h4>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Phòng ban</th>
+                <th>Ngày chia sẻ</th>
+                <th>Người chia sẻ</th>
+                <th style="width: 100px; text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="permissionListBody">
+              <tr><td colspan="4" class="empty-state" style="text-align:center; padding: 20px;">Đang tải dữ liệu...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('permissionModal')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+</div>
 </body>
 </html>

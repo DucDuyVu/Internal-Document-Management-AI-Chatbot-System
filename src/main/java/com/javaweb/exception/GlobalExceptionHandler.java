@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * Bat exception nem ra tu bat ky Controller nao trong ung dung.
- * Gom xu ly ca auth (BadRequestException) va document (InvalidFileException, DocumentNotFoundException).
+ * Gom xu ly ca auth (BadRequestException) va document (InvalidFileException,
+ * DocumentNotFoundException).
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -30,5 +31,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DocumentNotFoundException.class)
     public ResponseEntity<String> handleNotFound(DocumentNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<String> handleNotFound(NotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<String> handleForbidden(ForbiddenException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
     }
 }

@@ -321,10 +321,26 @@ function updateUserUI(user) {
     }
     
     const sideDept = document.getElementById("sidebarDept");
-    if (sideDept) {
-        if (user.role === 'ADMIN') sideDept.textContent = 'Quản trị viên';
-        else if (user.role === 'MANAGER') sideDept.textContent = 'Quản lý';
-        else sideDept.textContent = 'Nhân viên';
+    const topRoleBadge = document.getElementById("topRoleBadge");
+    
+    if (user.role === 'ADMIN') {
+        if (sideDept) sideDept.textContent = 'Quản trị viên';
+        if (topRoleBadge) {
+            topRoleBadge.textContent = 'Quản trị viên';
+            topRoleBadge.className = 'role-badge admin';
+        }
+    } else if (user.role === 'MANAGER') {
+        if (sideDept) sideDept.textContent = 'Quản lý';
+        if (topRoleBadge) {
+            topRoleBadge.textContent = 'QUẢN LÝ';
+            topRoleBadge.className = 'role-badge manager';
+        }
+    } else {
+        if (sideDept) sideDept.textContent = 'Nhân viên';
+        if (topRoleBadge) {
+            topRoleBadge.textContent = 'NHÂN VIÊN';
+            topRoleBadge.className = 'role-badge user';
+        }
     }
 
     // Update Welcome Banner (User Dashboard)

@@ -1,7 +1,10 @@
 package com.javaweb.service;
 
-import com.javaweb.dto.document.DocumentResponse;
-import com.javaweb.dto.document.DocumentUploadRequest;
+import com.javaweb.dto.response.DocumentResponse;
+import com.javaweb.dto.request.DocumentUploadRequest;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -34,13 +37,20 @@ public interface DocumentService {
      * Lưu ý: throw DocumentNotFoundException nếu id không tồn tại.
      */
     DocumentResponse getDocumentStatus(Long id);
+
+    // Lấy danh sách các tài liệu (Admin)
+    Page<DocumentResponse> getAllDocuments(Pageable pageable);
+
+    // Lấy danh sách tài liệu cho User/Manager (bao gồm tài liệu của phòng ban và
+    // được chia sẻ)
+    Page<DocumentResponse> getMyDocuments(com.javaweb.entity.UsersEntity user, Pageable pageable);
 }
 
 /*
  * FLOW:
  * DocumentController
- *      ↓ (gọi qua interface, không biết class thật nào implement)
- * DocumentService  <-- interface (file này)
- *      ↓ (Spring inject bean thật vào lúc runtime)
- * DocumentServiceImpl  <-- implementation thật
+ * ↓ (gọi qua interface, không biết class thật nào implement)
+ * DocumentService <-- interface (file này)
+ * ↓ (Spring inject bean thật vào lúc runtime)
+ * DocumentServiceImpl <-- implementation thật
  */

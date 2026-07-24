@@ -1,4 +1,4 @@
-package com.javaweb.dto.document;
+package com.javaweb.dto.request;
 
 /**
  * DTO nhận metadata đi kèm khi client upload file PDF.
@@ -56,16 +56,16 @@ public class DocumentUploadRequest {
     }
 }
 
-
-/*Frontend (multipart/form-data)
-    ↓
-   file            title, departmentId (form fields)
-    ↓                        ↓
-MultipartFile          DocumentUploadRequest
-    │                        │
-    └───────────┬────────────┘
-                 ↓
-   DocumentController.upload(file, request)
-                 ↓
-   DocumentService.uploadDocument(file, request)
-    */
+/*
+ * Frontend (multipart/form-data)
+ * ↓
+ * file title, departmentId (form fields)
+ * ↓ ↓
+ * MultipartFile DocumentUploadRequest
+ * │ │
+ * └───────────┬────────────┘
+ * ↓
+ * DocumentController.upload(file, request)
+ * ↓
+ * DocumentService.uploadDocument(file, request)
+ */
