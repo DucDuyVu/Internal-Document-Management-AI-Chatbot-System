@@ -1,8 +1,9 @@
 package com.javaweb.service.impl;
 
-import com.javaweb.dto.document.DocumentResponse;
-import com.javaweb.dto.document.DocumentUploadRequest;
+import com.javaweb.dto.response.DocumentResponse;
+import com.javaweb.dto.request.DocumentUploadRequest;
 import com.javaweb.entity.DocumentEntity;
+import com.javaweb.entity.UsersEntity;
 import com.javaweb.entity.enums.DocumentStatus;
 import com.javaweb.exception.DocumentNotFoundException;
 import com.javaweb.exception.InvalidFileException;
@@ -170,6 +171,27 @@ public class DocumentServiceImpl implements DocumentService {
         // Map entity -> DTO
         return documPage.map(doc -> {
 
+            Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
+            return toResponse(doc, chunkCount);
+        });
+    }
+
+    // Xử lý cho user xem được tài liệu phòng ban mình + tài liệu public + tài liệu
+    // được phòng ban khác chia sẻ
+    @Override
+    public Page<DocumentResponse> getMyDocuments(UsersEntity user, Pageable pageable) {
+        Long deptIdLong = (user.getDepartment() != null) ? user.getDepartment().getId() : null;
+        Integer deptIdInt = (deptIdLong != null) ? deptIdLong.intValue() : null;
+
+        Page<DocumentEntity> documPage;
+        if (deptIdInt != null) {
+            documPage = documentRepository.findVisibleToDepartmentWithSharing(deptIdInt, deptIdLong, pageable);
+        } else {
+            // Nếu user không có phòng ban, chỉ thấy tài liệu chung
+            documPage = documentRepository.findVisibleToDepartmentWithSharing(null, null, pageable);
+        }
+
+        return documPage.map(doc -> {
             Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
             return toResponse(doc, chunkCount);
         });

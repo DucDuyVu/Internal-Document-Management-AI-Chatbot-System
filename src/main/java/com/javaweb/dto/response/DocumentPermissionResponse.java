@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DocumentPermissionResponse {
     private Long id;
+    private Long documentId;
+    private String documentTitle;
     private Long departmentId;
     private String departmentName;
     private String grantedByName;

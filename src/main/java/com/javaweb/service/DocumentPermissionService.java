@@ -10,5 +10,7 @@ public interface DocumentPermissionService {
 
     DocumentPermissionResponse share(Long documentId, Long departmentId, UsersEntity grantedBy);
 
+    List<DocumentPermissionResponse> getAllPermissions(UsersEntity currentUser);
+
     void revoke(Long documentId, Long departmentId, UsersEntity currentUser);
 }

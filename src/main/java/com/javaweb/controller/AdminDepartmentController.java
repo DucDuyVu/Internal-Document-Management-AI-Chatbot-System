@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.javaweb.dto.request.AdminDepartmentRequest;
 import com.javaweb.dto.request.AssignDepartmentRequest;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -22,4 +22,25 @@ public interface DocumentPermissionsRepository extends JpaRepository<DocumentPer
     boolean existsByPermissionsDocumentId_IdAndPermissionDepartmentId_IdAndRevokedAtIsNull(Long documentId, Long departmentId);
 
     Optional<DocumentPermissionsEntity> findByPermissionsDocumentId_IdAndPermissionDepartmentId_IdAndRevokedAtIsNull(Long documentId, Long departmentId);
+
+    @Query("""
+            SELECT p FROM DocumentPermissionsEntity p
+            JOIN FETCH p.permissionsDocumentId
+            JOIN FETCH p.permissionDepartmentId
+            JOIN FETCH p.grantedBy
+            WHERE p.revokedAt IS NULL
+            ORDER BY p.createdAt DESC
+            """)
+    List<DocumentPermissionsEntity> findAllActivePermissions();
+
+    @Query("""
+            SELECT p FROM DocumentPermissionsEntity p
+            JOIN FETCH p.permissionsDocumentId d
+            JOIN FETCH p.permissionDepartmentId
+            JOIN FETCH p.grantedBy
+            WHERE p.revokedAt IS NULL
+            AND d.departmentId = :departmentId
+            ORDER BY p.createdAt DESC
+            """)
+    List<DocumentPermissionsEntity> findActivePermissionsByDepartmentId(@Param("departmentId") Integer departmentId);
 }

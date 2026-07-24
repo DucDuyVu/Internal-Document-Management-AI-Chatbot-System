@@ -1,7 +1,7 @@
 package com.javaweb.controller;
 
-import com.javaweb.dto.document.DocumentResponse;
-import com.javaweb.dto.document.DocumentUploadRequest;
+import com.javaweb.dto.response.DocumentResponse;
+import com.javaweb.dto.request.DocumentUploadRequest;
 import com.javaweb.dto.request.ShareDocumentRequest;
 import com.javaweb.dto.response.DocumentPermissionResponse;
 import com.javaweb.repository.DocumentPermissionsRepository;
@@ -9,6 +9,10 @@ import com.javaweb.security.CustomUserDetails;
 import com.javaweb.service.DocumentPermissionService;
 import com.javaweb.service.DocumentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -67,6 +71,26 @@ public class DocumentController {
     }
 
     /**
+     * Lấy danh sách tài liệu của User/Manager đang đăng nhập.
+     * Bao gồm: tài liệu phòng ban mình up + tài liệu phòng ban khác share + tài
+     * liệu public.
+     */
+    @GetMapping
+    public ResponseEntity<Page<DocumentResponse>> getMyDocuments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<DocumentResponse> result = documentService.getMyDocuments(userDetails.getUser(), pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
      * Dùng ở: frontend polling sau khi upload, để biết khi nào status
      * chuyển PENDING -> PROCESSING -> COMPLETED/FAILED.
      * Input: id document (path variable).
@@ -77,6 +101,18 @@ public class DocumentController {
     @GetMapping("/{id}")
     public ResponseEntity<DocumentResponse> getStatus(@PathVariable Long id) {
         return ResponseEntity.ok(documentService.getDocumentStatus(id));
+    }
+
+    // Trả về danh sách tất cả các quyền (cho Admin Dashboard)
+    @GetMapping("/permissions")
+    public ResponseEntity<List<DocumentPermissionResponse>> getAllPermissions(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<DocumentPermissionResponse> result = documentPermissionService.getAllPermissions(userDetails.getUser());
+        return ResponseEntity.ok(result);
     }
 
     // Trả về danh sách phòng ban được xem 1 tài liệu được chia sẻ
@@ -90,7 +126,7 @@ public class DocumentController {
         }
         List<DocumentPermissionResponse> result = documentPermissionService.getPermissions(docId,
                 userDetails.getUser());
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(result); // .ok là method dùng để HTTP Status 200 (OK).
     }
 
     // Chia sẻ tài liệu với phòng ban khác
@@ -110,8 +146,7 @@ public class DocumentController {
     public ResponseEntity<Void> revokePermission(
             @PathVariable Long docId,
             @PathVariable Long departmentId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         documentPermissionService.revoke(docId, departmentId, userDetails.getUser());
 
         return ResponseEntity.noContent().build(); // trả về 204 No Content

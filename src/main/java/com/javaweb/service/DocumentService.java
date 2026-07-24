@@ -1,7 +1,7 @@
 package com.javaweb.service;
 
-import com.javaweb.dto.document.DocumentResponse;
-import com.javaweb.dto.document.DocumentUploadRequest;
+import com.javaweb.dto.response.DocumentResponse;
+import com.javaweb.dto.request.DocumentUploadRequest;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +40,10 @@ public interface DocumentService {
 
     // Lấy danh sách các tài liệu (Admin)
     Page<DocumentResponse> getAllDocuments(Pageable pageable);
+
+    // Lấy danh sách tài liệu cho User/Manager (bao gồm tài liệu của phòng ban và
+    // được chia sẻ)
+    Page<DocumentResponse> getMyDocuments(com.javaweb.entity.UsersEntity user, Pageable pageable);
 }
 
 /*

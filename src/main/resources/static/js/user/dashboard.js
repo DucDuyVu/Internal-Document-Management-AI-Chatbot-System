@@ -236,7 +236,7 @@ async function loadRecentDocuments() {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const docs = await apiRequest('/api/user/documents?page=1&size=6&sort=newest');
+        const docs = await apiRequest('/api/documents?page=0&size=6&sort=newest');
         const grid = document.getElementById('recentDocGrid');
 
         if (!grid) return;
@@ -273,7 +273,7 @@ async function loadUserDocuments() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/user/documents?page=${UserState.documents.page}&size=${UserState.documents.pageSize}`);
+        const response = await apiRequest(`/api/documents?page=${UserState.documents.page - 1}&size=${UserState.documents.pageSize}`);
 
         UserState.documents.data = response.content || response;
         UserState.documents.total = response.totalElements || response.length;
@@ -291,24 +291,38 @@ async function loadUserDocuments() {
 
 function renderUserDocuments() {
     const docs = UserState.documents.filtered;
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+
+    const canManagePerms = (doc) => {
+        if (!currentUser) return false;
+        // ADMIN can manage all. MANAGER can manage if doc belongs to their department
+        return currentUser.role === 'ADMIN' || (currentUser.role === 'MANAGER' && doc.departmentId === currentUser.departmentId);
+    };
 
     // Grid view
     const gridView = document.getElementById('docGridView');
     if (gridView && UserState.documents.view === 'grid') {
         if (!docs || docs.length === 0) {
-            gridView.innerHTML = '<div class="empty-state"><span>📁</span><p>Không tìm thấy tài liệu</p></div>';
+            gridView.innerHTML = '<div class="empty-state"><span>📄</span><p>Không tìm thấy tài liệu</p></div>';
         } else {
             gridView.innerHTML = docs.map(doc => `
-                <div class="doc-card" onclick="viewUserDocument(${doc.id})">
-                    <div class="doc-card-icon">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</div>
-                    <h4>${doc.fileName}</h4>
-                    <div class="doc-card-meta">
-                        <div>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
-                        <div>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
+                <div class="doc-card">
+                    <div onclick="viewUserDocument(${doc.id})" style="cursor:pointer">
+                        <div class="doc-card-icon">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</div>
+                        <h4>${doc.fileName}</h4>
+                        <div class="doc-card-meta">
+                            <div>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
+                            <div>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
+                        </div>
+                        <div class="doc-card-meta" style="margin-top:4px;">
+                            <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
+                        </div>
                     </div>
-                    <div class="doc-card-meta" style="margin-top:4px;">
-                        <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
+                    ${canManagePerms(doc) ? `
+                    <div style="margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 8px; text-align: center;">
+                        <button class="btn-primary-sm" style="width: 100%; background: #64748b;" onclick="openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')">🛡️ Quản lý Quyền</button>
                     </div>
+                    ` : ''}
                 </div>
             `).join('');
         }
@@ -318,7 +332,7 @@ function renderUserDocuments() {
     const listBody = document.getElementById('docListBody');
     if (listBody && UserState.documents.view === 'list') {
         if (!docs || docs.length === 0) {
-            listBody.innerHTML = '<tr><td colspan="6" class="empty-state"><span>📁</span>Không tìm thấy tài liệu</td></tr>';
+            listBody.innerHTML = '<tr><td colspan="6" class="empty-state"><span>📄</span>Không tìm thấy tài liệu</td></tr>';
         } else {
             listBody.innerHTML = docs.map(doc => `
                 <tr>
@@ -333,8 +347,9 @@ function renderUserDocuments() {
                         <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
                     </td>
                     <td>
-                        <button class="btn-icon" onclick="viewUserDocument(${doc.id})">👁️</button>
-                        <button class="btn-icon" onclick="downloadDocument(${doc.id})">⬇️</button>
+                        <button class="btn-icon" onclick="viewUserDocument(${doc.id})" title="Xem">👁️</button>
+                        <button class="btn-icon" onclick="downloadDocument(${doc.id})" title="Tải xuống">⬇️</button>
+                        ${canManagePerms(doc) ? `<button class="btn-icon" onclick="openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')" title="Quản lý Quyền" style="color: #64748b;">🛡️</button>` : ''}
                     </td>
                 </tr>
             `).join('');
@@ -393,7 +408,7 @@ async function viewUserDocument(docId) {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const doc = await apiRequest(`/api/user/documents/${docId}`);
+        const doc = await apiRequest(`/api/documents/${docId}`);
 
         const titleEl = document.getElementById('docViewerTitle');
         const contentEl = document.getElementById('docViewerContent');
@@ -1312,11 +1327,11 @@ async function downloadDocument(docId) {
         }
 
         // Lấy thông tin document
-        const doc = await apiRequest(`/api/user/documents/${docId}`);
+        const doc = await apiRequest(`/api/documents/${docId}`);
 
         // Tạo link tải
         const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
-        const downloadUrl = `${API_BASE}/api/user/documents/${docId}/download`;
+        const downloadUrl = `${API_BASE}/api/documents/${docId}/download`;
 
         // Mở link tải trong tab mới
         window.open(`${downloadUrl}?token=${token}`, '_blank');
@@ -1388,3 +1403,155 @@ document.addEventListener('DOMContentLoaded', function () {
         loadHomeData();
     }
 });
+// ===== DOCUMENT PERMISSION MANAGEMENT =====
+let currentPermissionDocId = null;
+
+async function openPermissionModal(docId, docName) {
+    currentPermissionDocId = docId;
+    document.getElementById('permissionModalTitle').textContent = `Quản lý Quyền Truy cập - ${docName}`;
+    
+    // Reset state
+    document.getElementById('permissionListBody').innerHTML = '<tr><td colspan="4" class="empty-state" style="text-align:center; padding: 20px;">Đang tải dữ liệu...</td></tr>';
+    document.getElementById('departmentSelect').innerHTML = '<option value="">-- Đang tải danh sách... --</option>';
+    
+    openModal('permissionModal');
+    
+    await Promise.all([
+        loadDepartmentsForShare(),
+        loadDocumentPermissions(docId)
+    ]);
+}
+
+async function loadDepartmentsForShare() {
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch('/api/departments', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load departments');
+        const departments = await response.json();
+        const currentUser = JSON.parse(localStorage.getItem('user'));
+        
+        const select = document.getElementById('departmentSelect');
+        select.innerHTML = '<option value="">-- Chọn phòng ban --</option>';
+        
+        departments.forEach(dept => {
+            // Đừng hiển thị phòng ban của chính mình vì mình đã có quyền
+            if (!currentUser || currentUser.departmentId !== dept.id) {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                select.appendChild(option);
+            }
+        });
+    } catch (error) {
+        console.error('Error loading departments:', error);
+        document.getElementById('departmentSelect').innerHTML = '<option value="">Lỗi tải danh sách</option>';
+    }
+}
+
+async function loadDocumentPermissions(docId) {
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/documents/${docId}/permissions`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const tbody = document.getElementById('permissionListBody');
+        if (!response.ok) throw new Error('Failed to load permissions');
+        
+        const permissions = await response.json();
+        
+        if (permissions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty-state" style="text-align:center; padding: 20px; color: #64748b;">Chưa chia sẻ cho phòng ban nào</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = permissions.map(perm => `
+            <tr>
+                <td style="font-weight: 500;">${escapeHtml(perm.permissionDepartmentName)}</td>
+                <td>${formatDate(perm.assignedAt)}</td>
+                <td>${escapeHtml(perm.assignedByUsername)}</td>
+                <td style="text-align: center;">
+                    <button class="btn-icon" style="color: #ef4444;" onclick="revokeDocumentPermission(${perm.permissionDepartmentId})" title="Thu hồi">🗑️</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading permissions:', error);
+        document.getElementById('permissionListBody').innerHTML = '<tr><td colspan="4" class="empty-state" style="text-align:center; color: #ef4444;">Lỗi khi tải dữ liệu</td></tr>';
+    }
+}
+
+async function shareDocumentPermission() {
+    if (!currentPermissionDocId) return;
+    
+    const select = document.getElementById('departmentSelect');
+    const deptId = select.value;
+    
+    if (!deptId) {
+        showToast('Vui lòng chọn phòng ban để chia sẻ', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('btnShareDoc');
+    btn.disabled = true;
+    btn.textContent = 'Đang xử lý...';
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/documents/${currentPermissionDocId}/permissions`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ departmentId: parseInt(deptId) })
+        });
+        
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Lỗi khi chia sẻ');
+        }
+        
+        showToast('Đã chia sẻ thành công', 'success');
+        select.value = ''; // reset
+        await loadDocumentPermissions(currentPermissionDocId); // reload list
+    } catch (error) {
+        console.error('Error sharing document:', error);
+        showToast(error.message || 'Có lỗi xảy ra khi chia sẻ', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Chia sẻ';
+    }
+}
+
+async function revokeDocumentPermission(deptId) {
+    if (!currentPermissionDocId || !confirm('Bạn có chắc chắn muốn thu hồi quyền truy cập của phòng ban này?')) return;
+    
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`/api/documents/${currentPermissionDocId}/permissions/${deptId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Lỗi khi thu hồi');
+        }
+        
+        showToast('Đã thu hồi quyền thành công', 'success');
+        await loadDocumentPermissions(currentPermissionDocId); // reload list
+    } catch (error) {
+        console.error('Error revoking permission:', error);
+        showToast(error.message || 'Có lỗi xảy ra khi thu hồi', 'error');
+    }
+}

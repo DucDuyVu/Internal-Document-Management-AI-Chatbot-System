@@ -61,20 +61,51 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                 List<DocumentPermissionsEntity> permissionsEntities = documentPermissionsRepository
                                 .findByDocumentIdWithDetails(documentId);
 
-                // Map Entity -> DTO
-                return permissionsEntities.stream()
-                                .map(p -> new DocumentPermissionResponse(
-                                                p.getId(),
-                                                p.getPermissionDepartmentId() != null
-                                                                ? p.getPermissionDepartmentId().getId()
-                                                                : null,
-                                                p.getPermissionDepartmentId() != null
-                                                                ? p.getPermissionDepartmentId().getName()
-                                                                : null,
-                                                p.getGrantedBy() != null ? p.getGrantedBy().getFullName() : null,
-                                                p.getCreatedAt()))
-                                .toList();
+        // Map Entity -> DTO
+        return permissionsEntities.stream()
+                .map(p -> new DocumentPermissionResponse(
+                        p.getId(),
+                        p.getPermissionsDocumentId() != null ? p.getPermissionsDocumentId().getId() : null,
+                        p.getPermissionsDocumentId() != null ? p.getPermissionsDocumentId().getFileName() : null,
+                        p.getPermissionDepartmentId() != null ? p.getPermissionDepartmentId().getId() : null,
+                        p.getPermissionDepartmentId() != null ? p.getPermissionDepartmentId().getName() : null,
+                        p.getGrantedBy() != null ? p.getGrantedBy().getFullName() : null,
+                        p.getCreatedAt()))
+                .toList();
+    }
+
+    @Override
+    public List<DocumentPermissionResponse> getAllPermissions(UsersEntity currentUser) {
+        boolean isAdmin = currentUser.getRole() == UserRole.ADMIN;
+        boolean isManager = currentUser.getRole() == UserRole.MANAGER;
+
+        if (!isAdmin && !isManager) {
+            throw new ForbiddenException("Bạn không có quyền xem danh sách chia sẻ!");
         }
+
+        List<DocumentPermissionsEntity> permissionsEntities;
+        if (isAdmin) {
+            permissionsEntities = documentPermissionsRepository.findAllActivePermissions();
+        } else {
+            // isManager
+            if (currentUser.getDepartment() == null) {
+                return List.of();
+            }
+            Integer deptId = currentUser.getDepartment().getId().intValue();
+            permissionsEntities = documentPermissionsRepository.findActivePermissionsByDepartmentId(deptId);
+        }
+
+        return permissionsEntities.stream()
+                .map(p -> new DocumentPermissionResponse(
+                        p.getId(),
+                        p.getPermissionsDocumentId() != null ? p.getPermissionsDocumentId().getId() : null,
+                        p.getPermissionsDocumentId() != null ? p.getPermissionsDocumentId().getFileName() : null,
+                        p.getPermissionDepartmentId() != null ? p.getPermissionDepartmentId().getId() : null,
+                        p.getPermissionDepartmentId() != null ? p.getPermissionDepartmentId().getName() : null,
+                        p.getGrantedBy() != null ? p.getGrantedBy().getFullName() : null,
+                        p.getCreatedAt()))
+                .toList();
+    }
 
         @Override
         @Transactional
@@ -124,6 +155,8 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                                                 targetDept.getName()));
                 return new DocumentPermissionResponse(
                                 saved.getId(),
+                                documentId,
+                                document.getFileName(),
                                 targetDept.getId(),
                                 targetDept.getName(),
                                 grantedBy.getFullName(),
