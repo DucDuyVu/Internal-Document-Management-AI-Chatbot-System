@@ -75,19 +75,19 @@
               <h2>Thao tác nhanh</h2>
             </div>
             <div class="quick-grid">
-              <div class="quick-card" onclick="switchTab('tabChat', null)">
+              <div class="quick-card" onclick="switchTab('tabChat', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabChat');">
                 <div class="quick-card-icon">🤖</div>
                 <span>Hỏi AI ngay</span>
               </div>
-              <div class="quick-card" onclick="switchTab('tabDocuments', null)">
+              <div class="quick-card" onclick="switchTab('tabDocuments', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabDocuments');">
                 <div class="quick-card-icon">📂</div>
                 <span>Tài liệu của tôi</span>
               </div>
-              <div class="quick-card" onclick="switchTab('tabSearch', null)">
+              <div class="quick-card" onclick="switchTab('tabSearch', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabSearch');">
                 <div class="quick-card-icon">🔍</div>
                 <span>Tìm kiếm</span>
               </div>
-              <div class="quick-card" onclick="switchTab('tabProfile', null)">
+              <div class="quick-card" onclick="switchTab('tabProfile', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabProfile');">
                 <div class="quick-card-icon">👤</div>
                 <span>Hồ sơ cá nhân</span>
               </div>
@@ -96,7 +96,7 @@
           <div>
             <div class="section-header">
               <h2>Hoạt động gần đây</h2>
-              <a href="#" onclick="switchTab('tabProfile', null); return false;" class="section-link">Xem tất cả</a>
+              <a href="#" onclick="switchTab('tabProfile', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabProfile'); return false;" class="section-link">Xem tất cả</a>
             </div>
             <div class="activity-card">
               <ul class="activity-list" id="activityList">
@@ -114,8 +114,8 @@
         <!-- Tài liệu mới nhất -->
         <div>
           <div class="section-header">
-            <h2>Tài liệu mới nhất của phòng ban</h2>
-            <a href="#" onclick="switchTab('tabDocuments', null); return false;" class="section-link">Xem tất cả →</a>
+            <h2>Tài liệu tải lên gần đây</h2>
+            <a href="#" onclick="switchTab('tabDocuments', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabDocuments'); return false;" class="section-link">Xem tất cả →</a>
           </div>
           <div class="doc-grid" id="recentDocGrid">
             <div class="doc-card-skeleton"></div>
@@ -465,9 +465,7 @@
 
       </div><!-- kết thúc tabProfile -->
 
-    </div><!-- kết thúc page-body -->
-  </main>
-</div>
+
 
 <!-- ===== MODALS ===== -->
 
@@ -504,8 +502,6 @@
       <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
     </div>
   </div>
-</div>
-
 </div>
 
 <!-- MODAL: Quản lý quyền -->
@@ -559,5 +555,3 @@
 </div>
 
 </div>
-</body>
-</html>

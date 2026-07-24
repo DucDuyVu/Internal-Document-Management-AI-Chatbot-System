@@ -110,14 +110,22 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
         @Override
         @Transactional
         public DocumentPermissionResponse share(Long documentId, Long departmentId, UsersEntity grantedBy) {
+                try {
 
                 // Kiểm tra tài liệu tồn tại
                 DocumentEntity document = documentRepository.findById(documentId)
                                 .orElseThrow(() -> new NotFoundException("Tài liệu không tồn tại !"));
 
-                // Kiểm tra phòng ban muốn chia sẻ tới có tồn tại
-                DepartmentsEntity targetDept = departmentsRepository.findById(departmentId)
-                                .orElseThrow(() -> new NotFoundException("Phòng ban không tồn tại !"));
+                if (departmentId != null && departmentId == 0) {
+                        departmentId = null;
+                }
+
+                // Kiểm tra phòng ban muốn chia sẻ tới có tồn tại (nếu khác null)
+                DepartmentsEntity targetDept = null;
+                if (departmentId != null) {
+                        targetDept = departmentsRepository.findById(departmentId)
+                                        .orElseThrow(() -> new NotFoundException("Phòng ban không tồn tại !"));
+                }
 
                 // Kiểm tra quyền chia sẻ (có Admin với Manager chia sẻ được tài liệu của phòng
                 // ban mình)
@@ -131,8 +139,14 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                         throw new ForbiddenException("Bạn không có quyền chia sẻ tài liệu này !");
                 }
 
-                if (documentPermissionsRepository.existsByPermissionsDocumentId_IdAndPermissionDepartmentId_IdAndRevokedAtIsNull(
-                                documentId, departmentId)) {
+                boolean alreadyShared;
+                if (departmentId == null) {
+                        alreadyShared = documentPermissionsRepository.existsByPermissionsDocumentId_IdAndPermissionDepartmentIdIsNullAndRevokedAtIsNull(documentId);
+                } else {
+                        alreadyShared = documentPermissionsRepository.existsByPermissionsDocumentId_IdAndPermissionDepartmentId_IdAndRevokedAtIsNull(documentId, departmentId);
+                }
+
+                if (alreadyShared) {
                         throw new BadRequestException("Phòng ban này đã được cấp quyền xem tài liệu !");
                 }
 
@@ -151,16 +165,19 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                                 "SHARE_DOCUMENT",
                                 "document",
                                 documentId,
-                                Map.of("sharedWithDepartmentId", departmentId, "sharedWithDepartmentName",
-                                                targetDept.getName()));
+                                Map.of("sharedWithDepartmentId", departmentId != null ? departmentId : Long.valueOf(0), 
+                                       "sharedWithDepartmentName", targetDept != null ? targetDept.getName() : "Tất cả phòng ban"));
                 return new DocumentPermissionResponse(
                                 saved.getId(),
                                 documentId,
                                 document.getFileName(),
-                                targetDept.getId(),
-                                targetDept.getName(),
+                                targetDept != null ? targetDept.getId() : null,
+                                targetDept != null ? targetDept.getName() : null,
                                 grantedBy.getFullName(),
                                 saved.getCreatedAt());
+                } catch (Exception e) {
+                        throw new BadRequestException("DEBUG LỖI: " + e.getMessage() + " | Class: " + e.getClass().getName());
+                }
         }
 
         @Override
@@ -179,11 +196,19 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                         throw new ForbiddenException("Không có quyền thu hồi tài liệu !");
                 }
 
+                if (departmentId != null && departmentId == 0) {
+                        departmentId = null;
+                }
+
                 // Lấy bản ghi phân quyền chưa bị thu hồi
-                DocumentPermissionsEntity permission = documentPermissionsRepository.findByPermissionsDocumentId_IdAndPermissionDepartmentId_IdAndRevokedAtIsNull(
-                                documentId, departmentId)
-                                .orElseThrow(() -> new NotFoundException(
-                                                "Phòng ban chưa được cấp quyền xem tài liệu, hoặc quyền đã bị thu hồi !"));
+                DocumentPermissionsEntity permission;
+                if (departmentId == null) {
+                        permission = documentPermissionsRepository.findByPermissionsDocumentId_IdAndPermissionDepartmentIdIsNullAndRevokedAtIsNull(documentId)
+                                        .orElseThrow(() -> new NotFoundException("Chưa được cấp quyền cho tất cả phòng ban, hoặc quyền đã bị thu hồi !"));
+                } else {
+                        permission = documentPermissionsRepository.findByPermissionsDocumentId_IdAndPermissionDepartmentId_IdAndRevokedAtIsNull(documentId, departmentId)
+                                        .orElseThrow(() -> new NotFoundException("Phòng ban chưa được cấp quyền xem tài liệu, hoặc quyền đã bị thu hồi !"));
+                }
 
                 // Soft Delete: Cập nhật thông tin thu hồi
                 permission.setRevokedAt(LocalDateTime.now());
@@ -191,6 +216,6 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                 documentPermissionsRepository.save(permission);
 
                 activityLogService.log(currentUser.getId(), "REVOKE_PERMISSION", "document", documentId,
-                                Map.of("revokedDepartmentId", departmentId));
+                                Map.of("revokedDepartmentId", departmentId != null ? departmentId : Long.valueOf(0)));
         }
 }

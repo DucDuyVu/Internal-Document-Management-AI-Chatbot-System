@@ -98,6 +98,10 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		loginResponse.setFullName(user.getFullName());
 		loginResponse.setEmail(user.getEmail());
 		loginResponse.setRole(user.getRole().name());
+		if (user.getDepartment() != null) {
+			loginResponse.setDepartmentId(user.getDepartment().getId());
+			loginResponse.setDepartmentName(user.getDepartment().getName());
+		}
 		
 		return loginResponse;
 	}

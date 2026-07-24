@@ -338,7 +338,7 @@ async function loadUsers() {
         const deptFilter = document.getElementById('userDeptFilter')?.value || '';
         const statusFilter = document.getElementById('userStatusFilter')?.value || '';
 
-        let url = `/api/admin/users?page=${AdminState.users.page - 1}&size=${AdminState.users.pageSize}`;
+        let url = `/api/admin/users?page=${AdminState.users.page}&size=${AdminState.users.pageSize}`;
         if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
         if (roleFilter) url += `&role=${encodeURIComponent(roleFilter)}`;
         if (deptFilter) url += `&departmentId=${encodeURIComponent(deptFilter)}`;
@@ -883,7 +883,7 @@ async function loadDepartmentsForSelect(selectId) {
 
         if (!select) return;
 
-        select.innerHTML = '<option value="">-- Chọn phòng ban --</option>';
+        select.innerHTML = '<option value="">-- Tất cả phòng ban --</option>';
 
         departments.forEach(dept => {
             const option = document.createElement('option');
@@ -1313,20 +1313,26 @@ function renderPermissionsTable() {
         return;
     }
 
-    tbody.innerHTML = permissions.map(perm => `
+    tbody.innerHTML = permissions.map(perm => {
+        const deptName = perm.departmentName || 'Tất cả phòng ban';
+        return `
         <tr>
             <td>📄 ${perm.documentTitle || '—'}</td>
-            <td>🏢 ${perm.departmentName || '—'}</td>
+            <td>
+                <div class="flex items-center gap-2">
+                    <span>${deptName}</span>
+                </div>
+            </td>
             <td>👤 ${perm.grantedByName || '—'}</td>
             <td>${typeof formatDate !== 'undefined' ? formatDate(perm.createdAt) : perm.createdAt}</td>
             <td>
                 <span class="status-badge active">Đang chia sẻ</span>
             </td>
             <td>
-                <button class="btn-icon" onclick="revokePermission(${perm.documentId}, ${perm.departmentId})" title="Thu hồi quyền">❌</button>
+                <button class="btn-icon" onclick="revokePermission(${perm.documentId}, ${perm.departmentId || 0})" title="Thu hồi quyền">🗑️</button>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 async function revokePermission(docId, deptId) {
@@ -1377,6 +1383,7 @@ async function openShareDocumentModal() {
         const deptSelect = document.getElementById('shareDeptId');
         if (deptSelect) {
             deptSelect.innerHTML = '<option value="">-- Chọn phòng ban --</option>' + 
+                '<option value="0">-- Tất cả phòng ban --</option>' +
                 depts.map(dept => `<option value="${dept.id}">${dept.name}</option>`).join('');
         }
 
@@ -1398,7 +1405,7 @@ async function submitShareDocument() {
         showToast('Vui lòng chọn tài liệu', 'error');
         return;
     }
-    if (!deptId) {
+    if (deptId === "") {
         showToast('Vui lòng chọn phòng ban', 'error');
         return;
     }

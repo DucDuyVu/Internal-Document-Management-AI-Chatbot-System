@@ -321,13 +321,14 @@ async function login(email, password) {
             saveRefreshToken(data.refreshToken);
         }
 
-        // Tạo user object
         const user = {
             id: data.userId || data.id,
             username: data.username || data.email,
             fullName: data.fullName || data.fullname || data.name || "User",
             email: data.email,
-            role: data.role || "USER"
+            role: data.role || "USER",
+            departmentId: data.departmentId,
+            departmentName: data.departmentName
         };
 
         saveUser(user);

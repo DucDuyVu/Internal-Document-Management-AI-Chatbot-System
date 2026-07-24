@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface DocumentPermissionsRepository extends JpaRepository<DocumentPermissionsEntity, Long> {
     @Query("""
             SELECT p FROM DocumentPermissionsEntity p
-            JOIN FETCH p.permissionDepartmentId
+            LEFT JOIN FETCH p.permissionDepartmentId
             JOIN FETCH p.grantedBy
             WHERE p.permissionsDocumentId.id = :documentId
             AND p.revokedAt IS NULL
@@ -23,10 +23,14 @@ public interface DocumentPermissionsRepository extends JpaRepository<DocumentPer
 
     Optional<DocumentPermissionsEntity> findByPermissionsDocumentId_IdAndPermissionDepartmentId_IdAndRevokedAtIsNull(Long documentId, Long departmentId);
 
+    boolean existsByPermissionsDocumentId_IdAndPermissionDepartmentIdIsNullAndRevokedAtIsNull(Long documentId);
+
+    Optional<DocumentPermissionsEntity> findByPermissionsDocumentId_IdAndPermissionDepartmentIdIsNullAndRevokedAtIsNull(Long documentId);
+
     @Query("""
             SELECT p FROM DocumentPermissionsEntity p
             JOIN FETCH p.permissionsDocumentId
-            JOIN FETCH p.permissionDepartmentId
+            LEFT JOIN FETCH p.permissionDepartmentId
             JOIN FETCH p.grantedBy
             WHERE p.revokedAt IS NULL
             ORDER BY p.createdAt DESC
@@ -36,7 +40,7 @@ public interface DocumentPermissionsRepository extends JpaRepository<DocumentPer
     @Query("""
             SELECT p FROM DocumentPermissionsEntity p
             JOIN FETCH p.permissionsDocumentId d
-            JOIN FETCH p.permissionDepartmentId
+            LEFT JOIN FETCH p.permissionDepartmentId
             JOIN FETCH p.grantedBy
             WHERE p.revokedAt IS NULL
             AND d.departmentId = :departmentId

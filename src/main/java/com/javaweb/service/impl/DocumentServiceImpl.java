@@ -12,6 +12,8 @@ import com.javaweb.repository.DocumentChunkRepository;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.service.DocumentService;
 
+import com.javaweb.repository.DepartmentsRepository;
+import com.javaweb.entity.DepartmentsEntity;
 import groovyjarjarantlr4.v4.parse.ANTLRParser.ruleEntry_return;
 
 import org.springframework.data.domain.Page;
@@ -53,13 +55,16 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingService documentProcessingService;
+    private final DepartmentsRepository departmentsRepository;
 
     public DocumentServiceImpl(DocumentRepository documentRepository,
             DocumentChunkRepository documentChunkRepository,
-            DocumentProcessingService documentProcessingService) {
+            DocumentProcessingService documentProcessingService,
+            DepartmentsRepository departmentsRepository) {
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
+        this.departmentsRepository = departmentsRepository;
     }
 
     /**
@@ -153,6 +158,13 @@ public class DocumentServiceImpl implements DocumentService {
      * fileName được dùng thay cho title vì entity không có cột title.
      */
     private DocumentResponse toResponse(DocumentEntity document, int chunkCount) {
+        String departmentName = null;
+        if (document.getDepartmentId() != null) {
+            departmentName = departmentsRepository.findById(Long.valueOf(document.getDepartmentId()))
+                    .map(DepartmentsEntity::getName)
+                    .orElse(null);
+        }
+
         return new DocumentResponse(
                 document.getId(),
                 document.getFileName(),
@@ -161,7 +173,9 @@ public class DocumentServiceImpl implements DocumentService {
                 chunkCount,
                 document.getErrorMessage(),
                 document.getCreatedAt(),
-                document.getUpdatedAt());
+                document.getUpdatedAt(),
+                document.getDepartmentId(),
+                departmentName);
     }
 
     @Override

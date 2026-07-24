@@ -73,7 +73,7 @@
       </div>
       <div class="topbar-right">
         <span class="role-badge user" id="topRoleBadge">Nhân viên</span>
-        <div class="user-pill" onclick="switchTab('tabProfile', null); if(typeof loadTabData === 'function') loadTabData('tabProfile');" style="cursor:pointer;">
+        <div class="user-pill" onclick="switchTab('tabProfile', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabProfile');" style="cursor:pointer;">
           <div class="user-avatar" id="userAvatar">U</div>
           <span class="user-name" id="fullName">Đang tải...</span>
         </div>
@@ -110,9 +110,9 @@
   <span id="toastMsg">Thao tác thành công!</span>
 </div>
 
-<script src="/js/common.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/user/dashboard.js"></script>
+<script src="/js/common.js?v=2"></script>
+<script src="/js/auth.js?v=2"></script>
+<script src="/js/user/dashboard.js?v=2"></script>
 
 <!-- JS riêng của từng trang -->
 <th:block layout:fragment="custom-js"></th:block>

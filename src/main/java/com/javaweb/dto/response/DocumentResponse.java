@@ -2,6 +2,9 @@ package com.javaweb.dto.response;
 
 import com.javaweb.entity.enums.DocumentStatus;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 /**
@@ -14,6 +17,8 @@ import java.time.LocalDateTime;
  * Được gọi bởi: DocumentServiceImpl (tạo ra) -> DocumentController (trả về
  * client).
  */
+@Getter
+@Setter
 public class DocumentResponse {
 
     private Long id;
@@ -24,6 +29,8 @@ public class DocumentResponse {
     private String errorMessage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer departmentId;
+    private String departmentName;
 
     public DocumentResponse() {
     }
@@ -36,7 +43,8 @@ public class DocumentResponse {
      */
     public DocumentResponse(Long id, String title, String fileName, DocumentStatus status,
             Integer chunkCount, String errorMessage,
-            LocalDateTime createdAt, LocalDateTime updatedAt) {
+            LocalDateTime createdAt, LocalDateTime updatedAt,
+            Integer departmentId, String departmentName) {
         this.id = id;
         this.title = title;
         this.fileName = fileName;
@@ -45,6 +53,8 @@ public class DocumentResponse {
         this.errorMessage = errorMessage;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.departmentId = departmentId;
+        this.departmentName = departmentName;
     }
 
     public Long getId() {
@@ -109,6 +119,22 @@ public class DocumentResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Integer getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(Integer departmentId) {
+        this.departmentId = departmentId;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
     }
 
     /*

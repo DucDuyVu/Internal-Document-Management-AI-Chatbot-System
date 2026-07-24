@@ -23,4 +23,8 @@ public class LoginResponse {
 	
 	private String refreshToken;
 	
+	private Long departmentId;
+	
+	private String departmentName;
+	
 }
