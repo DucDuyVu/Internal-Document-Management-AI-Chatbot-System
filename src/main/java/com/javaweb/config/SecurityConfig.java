@@ -77,6 +77,10 @@ public class SecurityConfig {
 								"/api/search/**")
 						.hasAnyRole("USER", "MANAGER", "ADMIN")
 
+						// 6. API MANAGER & ADMIN
+						.requestMatchers("/api/departments/**")
+						.hasAnyRole("MANAGER", "ADMIN")
+
 						// 5. Còn lại yêu cầu đăng nhập
 						.anyRequest().authenticated())
 

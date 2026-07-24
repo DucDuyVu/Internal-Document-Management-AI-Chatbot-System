@@ -37,4 +37,11 @@ import lombok.Setter;
 		@ManyToOne(fetch = FetchType.LAZY)
 		@JoinColumn(name = "granted_by")
 		private UsersEntity grantedBy;
+		
+		@Column(name = "revoked_at")
+		private LocalDateTime revokedAt;
+
+		@ManyToOne(fetch = FetchType.LAZY)
+		@JoinColumn(name = "revoked_by")
+		private UsersEntity revokedBy;
 }

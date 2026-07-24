@@ -338,7 +338,7 @@ async function loadUsers() {
         const deptFilter = document.getElementById('userDeptFilter')?.value || '';
         const statusFilter = document.getElementById('userStatusFilter')?.value || '';
 
-        let url = `/api/admin/users?page=${AdminState.users.page}&size=${AdminState.users.pageSize}`;
+        let url = `/api/admin/users?page=${AdminState.users.page - 1}&size=${AdminState.users.pageSize}`;
         if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
         if (roleFilter) url += `&role=${encodeURIComponent(roleFilter)}`;
         if (deptFilter) url += `&departmentId=${encodeURIComponent(deptFilter)}`;
@@ -907,7 +907,7 @@ async function loadDocuments() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/admin/documents?page=${AdminState.documents.page}&size=${AdminState.documents.pageSize}`);
+        const response = await apiRequest(`/api/admin/documents?page=${AdminState.documents.page - 1}&size=${AdminState.documents.pageSize}`);
 
         AdminState.documents.data = response.content || response;
         AdminState.documents.total = response.totalElements || response.length;
@@ -1218,17 +1218,10 @@ async function uploadDocument() {
     if (progressBar) progressBar.style.width = '0%';
 
     try {
-        const response = await apiRequest('/api/admin/documents/upload', {
+        const result = await apiRequest('/api/documents/upload', {
             method: 'POST',
             body: formData
         });
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Upload thất bại');
-        }
-
-        const result = await response.json();
 
         // Update progress
         if (statusText) statusText.textContent = 'Đã tải lên thành công! Đang xử lý...';
@@ -1261,7 +1254,7 @@ async function loadRecentUploads() {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const response = await apiRequest('/api/admin/documents?page=1&size=10');
+        const response = await apiRequest('/api/admin/documents?page=0&size=10');
         const docs = response.content || response;
         const tbody = document.getElementById('recentUploadBody');
 
@@ -1301,7 +1294,7 @@ async function loadPermissions() {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const response = await apiRequest('/api/admin/permissions');
+        const response = await apiRequest('/api/documents/permissions');
         AdminState.permissions.data = response.content || response;
         renderPermissionsTable();
     } catch (error) {
@@ -1322,7 +1315,7 @@ function renderPermissionsTable() {
 
     tbody.innerHTML = permissions.map(perm => `
         <tr>
-            <td>📄 ${perm.documentName || '—'}</td>
+            <td>📄 ${perm.documentTitle || '—'}</td>
             <td>🏢 ${perm.departmentName || '—'}</td>
             <td>👤 ${perm.grantedByName || '—'}</td>
             <td>${typeof formatDate !== 'undefined' ? formatDate(perm.createdAt) : perm.createdAt}</td>
@@ -1330,13 +1323,13 @@ function renderPermissionsTable() {
                 <span class="status-badge active">Đang chia sẻ</span>
             </td>
             <td>
-                <button class="btn-icon" onclick="revokePermission(${perm.id})" title="Thu hồi quyền">❌</button>
+                <button class="btn-icon" onclick="revokePermission(${perm.documentId}, ${perm.departmentId})" title="Thu hồi quyền">❌</button>
             </td>
         </tr>
     `).join('');
 }
 
-async function revokePermission(permId) {
+async function revokePermission(docId, deptId) {
     showConfirmDialog(
         '❌ Xác nhận thu hồi quyền',
         'Bạn có chắc chắn muốn thu hồi quyền truy cập này?',
@@ -1346,7 +1339,7 @@ async function revokePermission(permId) {
                     throw new Error('apiRequest() không tồn tại');
                 }
 
-                await apiRequest(`/api/admin/permissions/${permId}`, {
+                await apiRequest(`/api/documents/${docId}/permissions/${deptId}`, {
                     method: 'DELETE'
                 });
 
@@ -1366,6 +1359,65 @@ async function revokePermission(permId) {
     );
 }
 
+// Mở modal chia sẻ tài liệu
+async function openShareDocumentModal() {
+    try {
+        // Lấy danh sách tài liệu
+        const docsResponse = await apiRequest('/api/admin/documents?size=100');
+        const docs = docsResponse.content || docsResponse || [];
+        const docSelect = document.getElementById('shareDocId');
+        if (docSelect) {
+            docSelect.innerHTML = '<option value="">-- Chọn tài liệu --</option>' + 
+                docs.map(doc => `<option value="${doc.id}">${doc.fileName}</option>`).join('');
+        }
+
+        // Lấy danh sách phòng ban
+        const deptsResponse = await apiRequest('/api/admin/departments');
+        const depts = deptsResponse.content || deptsResponse || [];
+        const deptSelect = document.getElementById('shareDeptId');
+        if (deptSelect) {
+            deptSelect.innerHTML = '<option value="">-- Chọn phòng ban --</option>' + 
+                depts.map(dept => `<option value="${dept.id}">${dept.name}</option>`).join('');
+        }
+
+        openModal('shareDocModal');
+    } catch (error) {
+        console.error('Error loading data for share modal:', error);
+        if (typeof showToast !== 'undefined') {
+            showToast('Không thể tải dữ liệu để chia sẻ', 'error');
+        }
+    }
+}
+
+// Thực hiện chia sẻ tài liệu
+async function submitShareDocument() {
+    const docId = document.getElementById('shareDocId').value;
+    const deptId = document.getElementById('shareDeptId').value;
+
+    if (!docId) {
+        showToast('Vui lòng chọn tài liệu', 'error');
+        return;
+    }
+    if (!deptId) {
+        showToast('Vui lòng chọn phòng ban', 'error');
+        return;
+    }
+
+    try {
+        await apiRequest(`/api/documents/${docId}/permissions`, {
+            method: 'POST',
+            body: JSON.stringify({ departmentId: parseInt(deptId) })
+        });
+        
+        showToast('Chia sẻ tài liệu thành công!', 'success');
+        closeModal('shareDocModal');
+        loadPermissions();
+    } catch (error) {
+        console.error('Error sharing document:', error);
+        showToast(error.message || 'Lỗi khi chia sẻ tài liệu', 'error');
+    }
+}
+
 // =============================================
 // CHAT SESSION MANAGEMENT
 // =============================================
@@ -1376,7 +1428,7 @@ async function loadChatSessions() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/admin/chat-sessions?page=${AdminState.chatSessions.page}&size=${AdminState.chatSessions.pageSize}`);
+        const response = await apiRequest(`/api/admin/chat-sessions?page=${AdminState.chatSessions.page - 1}&size=${AdminState.chatSessions.pageSize}`);
 
         AdminState.chatSessions.data = response.content || response;
         AdminState.chatSessions.total = response.totalElements || response.length;
@@ -1463,7 +1515,7 @@ async function loadAuditLogs() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/admin/audit-logs?page=${AdminState.logs.page}&size=${AdminState.logs.pageSize}`);
+        const response = await apiRequest(`/api/admin/audit-logs?page=${AdminState.logs.page - 1}&size=${AdminState.logs.pageSize}`);
 
         AdminState.logs.data = response.content || response;
         AdminState.logs.total = response.totalElements || response.length;
@@ -1646,7 +1698,7 @@ async function loadProfileActivities() {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const activities = await apiRequest('/api/admin/audit-logs?page=1&size=20');
+        const activities = await apiRequest('/api/admin/audit-logs?page=0&size=20');
         const logs = activities.content || activities;
         const list = document.getElementById('profileActivityList');
 

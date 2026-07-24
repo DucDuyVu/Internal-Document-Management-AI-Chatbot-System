@@ -865,7 +865,7 @@ img {
 }
 
 .status-badge.active,
-.status-badge.COMPLETED {
+.status-badge.completed {
   background: var(--success-bg);
   color: #065f46;
 }
@@ -876,17 +876,17 @@ img {
   color: var(--text-secondary);
 }
 
-.status-badge.PENDING {
+.status-badge.pending {
   background: var(--warning-bg);
   color: #92400e;
 }
 
-.status-badge.PROCESSING {
+.status-badge.processing {
   background: var(--info-bg);
   color: #1e40af;
 }
 
-.status-badge.FAILED {
+.status-badge.failed {
   background: var(--danger-bg);
   color: #991b1b;
 }
@@ -985,15 +985,15 @@ img {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: none;
 }
 
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   transform: translateY(-2px);
 }
 
@@ -2836,3 +2836,19 @@ select.form-input {
 @keyframes button-spin {
   to { transform: rotate(360deg); }
 }
+/* ===== DOCUMENT PERMISSIONS CSS ===== */
+.share-section {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+#permissionListBody td {
+  vertical-align: middle;
+}
+#permissionListBody .btn-icon:hover {
+  background: #fee2e2;
+}
+
+.role-badge.manager { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.settings-role-badge.manager { background: rgba(255, 255, 255, 0.2); color: #fff; }

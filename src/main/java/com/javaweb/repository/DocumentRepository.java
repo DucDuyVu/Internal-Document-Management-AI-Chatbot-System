@@ -23,6 +23,16 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
            "ORDER BY d.createdAt DESC")
     List<DocumentEntity> findVisibleToDepartment(@Param("departmentId") Integer departmentId);
 
+    @Query("SELECT DISTINCT d FROM DocumentEntity d " +
+           "LEFT JOIN DocumentPermissionsEntity p ON p.permissionsDocumentId = d AND p.revokedAt IS NULL " +
+           "WHERE d.deletedAt IS NULL " +
+           "AND (d.departmentId = :departmentId OR d.departmentId IS NULL OR p.permissionDepartmentId.id = :departmentIdLong) " +
+           "ORDER BY d.createdAt DESC")
+    org.springframework.data.domain.Page<DocumentEntity> findVisibleToDepartmentWithSharing(
+            @Param("departmentId") Integer departmentId,
+            @Param("departmentIdLong") Long departmentIdLong,
+            org.springframework.data.domain.Pageable pageable);
+
     /**
      * Admin xem toàn bộ (kể cả tài liệu riêng của mọi phòng ban), chưa xoá mềm.
      */

@@ -39,4 +39,5 @@ public interface UsersRepository extends JpaRepository<UsersEntity, Long> {
 			@Param("departmentId") Long departmentId,
 			@Param("isActive") Boolean isActive,
 			Pageable pageable);
+	Optional<UsersEntity> findByUserName(String userName);
 }
