@@ -1,11 +1,16 @@
 package com.javaweb.service.impl;
 
+import com.javaweb.dto.request.CreateUserRequest;
+import com.javaweb.dto.request.UpdateUserRequest;
 import com.javaweb.dto.response.AdminUserResponse;
+import com.javaweb.entity.DepartmentsEntity;
 import com.javaweb.enums.UserRole;
+import com.javaweb.repository.DepartmentsRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.data.domain.Sort;
 import com.javaweb.dto.request.ChangePasswordRequest;
 import com.javaweb.dto.request.UpdateProfileRequest;
 import com.javaweb.dto.response.ChangePasswordResponse;
@@ -34,6 +39,9 @@ public class UsersServiceImpl implements UsersService {
 
 	@Autowired
 	UserSessionsRepository userSessionsRepository;
+
+	@Autowired
+	DepartmentsRepository departmentsRepository;
 
 	@Autowired
 	PasswordEncoder passwordEncoder;
@@ -184,11 +192,12 @@ public class UsersServiceImpl implements UsersService {
 		return response;
 	}
 
+	//Xử lý lấy tất cả user
 	@Override
 	public Page<AdminUserResponse> getAllUsers(int page,
 			int size, String search, String role, Long departmentId, String status) {
-		// Phân trang (FE đánh trang từ 1, Spring Data JPA đánh trang từ 0)
-		Pageable pageable = PageRequest.of(page - 1, size);
+		// Phân trang và Sắp xếp: User mới nhất (id lớn nhất) lên đầu danh sách
+		Pageable pageable = PageRequest.of(page - 1, size, Sort.by("id").descending());
 
 		// Xử lý vai trò
 		UserRole enumRole = null;
@@ -223,5 +232,110 @@ public class UsersServiceImpl implements UsersService {
 			}
 			return response;
 		});
+	}
+
+
+	// Tạo user (admin tạo)
+	@Transactional
+	@Override
+	public AdminUserResponse createUser(CreateUserRequest request) {
+
+		// Check email tồn tại chưa
+		if (usersRepository.existsByEmail(request.getEmail())) {
+			throw new BadRequestException("Email đã tồn tại !");
+		}
+
+		if (usersRepository.existsByUserName(request.getUserName())) {
+			throw new BadRequestException("Username đã tồn tại !");
+		}
+
+		UsersEntity user = new UsersEntity();
+		user.setFullName(request.getFullName());
+		user.setUserName(request.getUserName());
+		user.setEmail(request.getEmail());
+		user.setPhone(request.getPhone());
+		user.setPassword(passwordEncoder.encode(request.getPassword())); // mã hóa password
+
+		if (request.getRole() != null) {
+			user.setRole(UserRole.valueOf(request.getRole().toUpperCase()));
+		}
+
+		if (request.getDepartmentId() != null) {
+			DepartmentsEntity depart = departmentsRepository.findById(request.getDepartmentId())
+					.orElseThrow(() -> new RuntimeException("Phòng ban không tồn tại !"));
+			user.setDepartment(depart);
+		}
+
+		usersRepository.save(user); // Save dữ liệu ở DB
+
+
+		// Trả dữ liệu ra client
+		AdminUserResponse response = new AdminUserResponse();
+
+		response.setId(user.getId());
+		response.setFullName(user.getFullName());
+		response.setUsername(user.getUserName());
+		response.setEmail(user.getEmail());
+		response.setRole(user.getRole().name());
+		response.setActive(user.isActive());
+		if (user.getDepartment() != null) {
+			response.setDepartmentName(user.getDepartment().getName());
+		}
+		return response;
+	}
+
+
+	// update user (admin update)
+	@Transactional
+	@Override
+	public AdminUserResponse updateUser(Long userId, UpdateUserRequest request) {
+		UsersEntity user = usersRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+		// Cập nhật thông tin
+		if (request.getFullName() != null) {
+			user.setFullName(request.getFullName());
+		}
+
+		if (request.getPhone() != null) {
+			user.setPhone(request.getPhone());
+		}
+
+		if (request.getRole() != null) {
+			user.setRole(UserRole.valueOf(request.getRole()));
+		}
+
+		if (request.getDepartmentId() != null) {
+			DepartmentsEntity depart = departmentsRepository.findById(request.getDepartmentId())
+					.orElseThrow(() -> new RuntimeException("Phòng ban không tồn tại !"));
+			user.setDepartment(depart);
+		}
+
+		usersRepository.save(user); // Lưu dưới DB
+
+		// Trả về client
+		AdminUserResponse response = new AdminUserResponse();
+		response.setFullName(user.getFullName());
+		response.setUsername(user.getUserName());
+		response.setEmail(user.getEmail());
+		response.setRole(user.getRole().name());
+		response.setActive(user.isActive());
+		if (user.getDepartment() != null) {
+			response.setDepartmentName(user.getDepartment().getName());
+		}
+		return response;
+	}
+
+
+	@Override
+	public void softDeleteUser(Long userId) {
+		UsersEntity user = usersRepository.findById(userId)
+		.orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng !"));
+		// Cập nhật tg xóa
+		user.setDeletedAt(LocalDateTime.now());
+		// Khóa tài khoản
+		user.setActive(false);
+
+		usersRepository.save(user); // lưu xuống DB
 	}
 }

@@ -28,7 +28,7 @@ public interface UsersRepository extends JpaRepository<UsersEntity, Long> {
 	// Tìm xem còn users hoạt động thuộc phòng ban không
 	boolean existsByDepartmentIdAndIsActiveTrue(Long id);
 
-	@Query("SELECT u FROM UsersEntity u WHERE " +
+	@Query("SELECT u FROM UsersEntity u WHERE u.deletedAt IS NULL AND " +
 			"(:#{#role == null} = true OR u.role = :role) AND " +
 			"(:#{#departmentId == null} = true OR u.department.id = :departmentId) AND " +
 			"(:#{#isActive == null} = true OR u.isActive = :isActive) AND " +
