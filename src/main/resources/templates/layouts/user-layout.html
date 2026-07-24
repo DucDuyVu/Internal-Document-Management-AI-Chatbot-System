@@ -1,149 +1,167 @@
-<!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<!doctype html>
+<html
+  lang="vi"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">IDMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/dashboard.css" />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title layout:title-pattern="$layout_title - $content_title">IDMS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-  <link rel="stylesheet" href="/css/dashboard.css">
-  <link rel="icon" type="image/png" href="/images/favicon.png">
-  
-  <!-- CSS riêng của từng trang -->
-  <th:block layout:fragment="custom-css"></th:block>
-</head>
+    <!-- CSS riêng của từng trang -->
+    <th:block layout:fragment="custom-css"></th:block>
+  </head>
 
-<body>
-<div class="layout" id="appLayout">
+  <body>
+    <div class="layout" id="appLayout">
+      <!-- ==================== SIDEBAR ==================== -->
+      <aside class="sidebar" id="sidebar">
+        <a href="/" class="sidebar-logo">
+          <div class="sidebar-logo-icon">📁</div>
+          <span class="sidebar-logo-name">IDMS <em>AI</em></span>
+        </a>
 
-  <!-- ==================== SIDEBAR ==================== -->
-  <aside class="sidebar" id="sidebar">
-    <a href="/" class="sidebar-logo">
-      <div class="sidebar-logo-icon">📁</div>
-      <span class="sidebar-logo-name">IDMS <em>AI</em></span>
-    </a>
+        <p class="nav-section-label">Menu chính</p>
+        <ul class="sidebar-nav" id="sidebarNav">
+          <li class="active" data-tab="tabHome">
+            <span class="nav-icon">🏠</span>
+            <span>Trang chủ</span>
+          </li>
+          <li data-tab="tabDocuments">
+            <span class="nav-icon">📁</span>
+            <span>Tài liệu phòng ban</span>
+          </li>
+          <li data-tab="tabChat">
+            <span class="nav-icon">💬</span>
+            <span>AI Chatbot</span>
+          </li>
+          <li data-tab="tabSearch">
+            <span class="nav-icon">🔍</span>
+            <span>Tìm kiếm tài liệu</span>
+          </li>
+        </ul>
 
+        <div class="sidebar-divider"></div>
 
-    <p class="nav-section-label">Menu chính</p>
-    <ul class="sidebar-nav" id="sidebarNav">
-      <li class="active" data-tab="tabHome">
-        <span class="nav-icon">🏠</span>
-        <span>Trang chủ</span>
-      </li>
-      <li data-tab="tabDocuments">
-        <span class="nav-icon">📁</span>
-        <span>Tài liệu phòng ban</span>
-      </li>
-      <li data-tab="tabChat">
-        <span class="nav-icon">💬</span>
-        <span>AI Chatbot</span>
-      </li>
-      <li data-tab="tabSearch">
-        <span class="nav-icon">🔍</span>
-        <span>Tìm kiếm tài liệu</span>
-      </li>
-    </ul>
+        <p class="nav-section-label">Tài khoản</p>
+        <ul class="sidebar-nav">
+          <li data-tab="tabProfile">
+            <span class="nav-icon">👤</span>
+            <span>Hồ sơ cá nhân</span>
+          </li>
+        </ul>
+      </aside>
 
-    <div class="sidebar-divider"></div>
+      <!-- Overlay for mobile -->
+      <div
+        class="sidebar-overlay"
+        id="sidebarOverlay"
+        onclick="toggleSidebar()"
+      ></div>
 
-    <p class="nav-section-label">Tài khoản</p>
-    <ul class="sidebar-nav">
-      <li data-tab="tabProfile">
-        <span class="nav-icon">👤</span>
-        <span>Hồ sơ cá nhân</span>
-      </li>
-    </ul>
+      <!-- ==================== MAIN ==================== -->
+      <main class="main">
+        <!-- Thanh trên cùng -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+            <span class="page-title" id="pageTitle" layout:fragment="page-title"
+              >🏠 Trang chủ</span
+            >
+          </div>
+          <div class="topbar-right">
+            <span class="role-badge user">Nhân viên</span>
+            <div
+              class="user-pill"
+              onclick="
+                switchTab('tabProfile', null);
+                if (typeof loadTabData === 'function')
+                  loadTabData('tabProfile');
+              "
+              style="cursor: pointer"
+            >
+              <div class="user-avatar" id="userAvatar">U</div>
+              <span class="user-name" id="fullName">Đang tải...</span>
+            </div>
+            <button class="btn-logout" id="logoutBtnTop">🚪 Đăng xuất</button>
+          </div>
+        </header>
 
-  </aside>
+        <!-- Nội dung chính -->
+        <div class="page-body" layout:fragment="content"></div>
+      </main>
+    </div>
 
-  <!-- Overlay for mobile -->
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-  <!-- ==================== MAIN ==================== -->
-  <main class="main">
-
-    <!-- Thanh trên cùng -->
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
-        <span class="page-title" id="pageTitle" layout:fragment="page-title">🏠 Trang chủ</span>
-      </div>
-      <div class="topbar-right">
-        <span class="role-badge user">Nhân viên</span>
-        <div class="user-pill" onclick="switchTab('tabProfile', null); if(typeof loadTabData === 'function') loadTabData('tabProfile');" style="cursor:pointer;">
-          <div class="user-avatar" id="userAvatar">U</div>
-          <span class="user-name" id="fullName">Đang tải...</span>
+    <!-- MODAL: Xác nhận -->
+    <div class="modal-overlay" id="confirmModal">
+      <div class="modal" style="max-width: 360px">
+        <div class="modal-header">
+          <h3 id="confirmTitle">Xác nhận</h3>
+          <button class="modal-close" onclick="closeModal('confirmModal')">
+            ✕
+          </button>
         </div>
-        <button class="btn-logout" id="logoutBtnTop">🚪 Đăng xuất</button>
+        <p
+          id="confirmMsg"
+          style="font-size: 0.875rem; color: #6b7280; line-height: 1.6"
+        ></p>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('confirmModal')">
+            Hủy
+          </button>
+          <button id="confirmActionBtn" class="btn-danger-sm">Xác nhận</button>
+        </div>
       </div>
-    </header>
-
-    <!-- Nội dung chính -->
-    <div class="page-body" layout:fragment="content">
-      
     </div>
 
-  </main>
-</div>
-
-<!-- MODAL: Xác nhận -->
-<div class="modal-overlay" id="confirmModal">
-  <div class="modal" style="max-width:360px;">
-    <div class="modal-header">
-      <h3 id="confirmTitle">Xác nhận</h3>
-      <button class="modal-close" onclick="closeModal('confirmModal')">✕</button>
+    <!-- TOAST thông báo -->
+    <div class="toast" id="toast">
+      <span id="toastIcon">✅</span>
+      <span id="toastMsg">Thao tác thành công!</span>
     </div>
-    <p id="confirmMsg" style="font-size:0.875rem;color:#6b7280;line-height:1.6;"></p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('confirmModal')">Hủy</button>
-      <button id="confirmActionBtn" class="btn-danger-sm">Xác nhận</button>
-    </div>
-  </div>
-</div>
 
-<!-- TOAST thông báo -->
-<div class="toast" id="toast">
-  <span id="toastIcon">✅</span>
-  <span id="toastMsg">Thao tác thành công!</span>
-</div>
+    <script src="/js/common.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/user/dashboard.js"></script>
 
-<script src="/js/common.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/user/dashboard.js"></script>
+    <!-- JS riêng của từng trang -->
+    <th:block layout:fragment="custom-js"></th:block>
 
-<!-- JS riêng của từng trang -->
-<th:block layout:fragment="custom-js"></th:block>
+    <script>
+      (function () {
+        try {
+          const token = localStorage.getItem("accessToken");
+          if (!token) {
+            window.location.href = "/login";
+            return;
+          }
 
-<script>
-  (function() {
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
+          const userStr = localStorage.getItem("user");
+          if (!userStr) {
+            window.location.href = "/login";
+            return;
+          }
 
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        window.location.href = '/login';
-        return;
-      }
+          const user = JSON.parse(userStr);
 
-      const user = JSON.parse(userStr);
-
-      if (user.role === 'ADMIN') {
-        window.location.href = '/admin/dashboard';
-        return;
-      }
-    } catch (e) {
-      console.error('Auth check error:', e);
-      window.location.href = '/login';
-    }
-  })();
-</script>
-
-</body>
+          if (user.role === "ADMIN") {
+            window.location.href = "/admin/dashboard";
+            return;
+          }
+        } catch (e) {
+          console.error("Auth check error:", e);
+          window.location.href = "/login";
+        }
+      })();
+    </script>
+  </body>
 </html>

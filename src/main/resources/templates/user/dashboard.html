@@ -5,6 +5,8 @@
   <th:block layout:fragment="custom-css">
   <!-- Styles moved to /css/dashboard.css -->
   </th:block>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </head>
 
 <body>
@@ -152,6 +154,7 @@
             <option value="name">Theo tên</option>
             <option value="size">Theo kích thước</option>
           </select>
+          <button class="btn btn-primary" onclick="openUploadModal()">+ Tải lên</button>
           <div class="view-toggle">
             <button class="view-btn active" id="btnGridView" onclick="setDocView('grid')"
                     title="Xem dạng lưới">⊞</button>
@@ -465,47 +468,81 @@
 
       </div><!-- kết thúc tabProfile -->
 
-    </div><!-- kết thúc page-body -->
+      <!-- ===== MODALS ===== -->
+
+      <!-- MODAL: Xem chi tiết tài liệu -->
+      <div class="modal-overlay" id="docViewerModal">
+        <div class="modal modal-lg">
+          <div class="modal-header">
+            <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
+            <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
+          </div>
+          <div id="docViewerContent" class="modal-body-scroll"></div>
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
+            <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
+            <button class="btn-primary-sm bg-sky" onclick="askAIAboutDoc()" id="btnAskAI">💬 Hỏi AI về tài liệu này</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: Đổi tên hội thoại -->
+      <div class="modal-overlay" id="renameChatModal">
+        <div class="modal max-w-sm">
+          <div class="modal-header">
+            <h3>✏️ Đổi tên hội thoại</h3>
+            <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
+          </div>
+          <div class="form-group">
+            <label for="newChatTitle">Tên mới</label>
+            <input type="text" id="newChatTitle" class="form-input" placeholder="Nhập tên hội thoại...">
+          </div>
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
+            <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: Upload tài liệu -->
+      <div class="modal-overlay" id="uploadDocModal">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>📤 Tải lên tài liệu</h3>
+            <button class="modal-close" onclick="closeModal('uploadDocModal')">✕</button>
+          </div>
+
+          <div class="upload-area" id="uploadDropArea" onclick="document.getElementById('uploadFileInput').click()">
+            <div class="upload-hint-icon">📁</div>
+            <p class="upload-hint-text">Kéo thả file vào đây hoặc <strong>bấm để chọn file</strong></p>
+            <p class="upload-hint-subtext">Chỉ hỗ trợ PDF, tối đa 20MB</p>
+            <input type="file" id="uploadFileInput" accept=".pdf" style="display:none;">
+          </div>
+
+          <div id="uploadFileSelectedBox" class="file-selected-box" style="display:none;">
+            <div>
+              <div class="file-selected-name" id="uploadFileName">—</div>
+              <div class="file-selected-size" id="uploadFileSize">—</div>
+            </div>
+            <button class="btn-icon-danger" onclick="clearSelectedUploadFile()">✕</button>
+          </div>
+
+          <div id="uploadProgressWrap" style="display:none; margin-top:12px;">
+            <div class="upload-progress-text" id="uploadProgressText">Đang tải lên...</div>
+            <div class="upload-progress-bar">
+              <div class="upload-progress-fill" id="uploadProgressFill"></div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('uploadDocModal')">Hủy</button>
+            <button class="btn-primary-sm" id="uploadSubmitBtn" onclick="submitUploadDocument()">Tải lên</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- kết thúc content fragment -->
   </main>
-</div>
-
-<!-- ===== MODALS ===== -->
-
-<!-- MODAL: Xem chi tiết tài liệu -->
-<div class="modal-overlay" id="docViewerModal">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
-      <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
-    </div>
-    <div id="docViewerContent" class="modal-body-scroll"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
-      <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
-      <button class="btn-primary-sm bg-sky" onclick="askAIAboutDoc()" id="btnAskAI">💬 Hỏi AI về
-        tài liệu này</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Đổi tên hội thoại -->
-<div class="modal-overlay" id="renameChatModal">
-  <div class="modal max-w-sm">
-    <div class="modal-header">
-      <h3>✏️ Đổi tên hội thoại</h3>
-      <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
-    </div>
-    <div class="form-group">
-      <label for="newChatTitle">Tên mới</label>
-      <input type="text" id="newChatTitle" class="form-input" placeholder="Nhập tên hội thoại...">
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
-      <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
-    </div>
-  </div>
-</div>
-
 </div>
 </body>
 </html>

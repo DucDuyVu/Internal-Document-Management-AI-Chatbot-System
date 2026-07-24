@@ -135,6 +135,147 @@ function setupUserEventListeners() {
       });
     }
   });
+
+  setupUploadListeners();
+}
+
+let selectedUploadFile = null;
+
+function openUploadModal() {
+  selectedUploadFile = null;
+  const selectedBox = document.getElementById("uploadFileSelectedBox");
+  const progressWrap = document.getElementById("uploadProgressWrap");
+  const fileInput = document.getElementById("uploadFileInput");
+
+  if (selectedBox) selectedBox.style.display = "none";
+  if (progressWrap) progressWrap.style.display = "none";
+  if (fileInput) fileInput.value = "";
+
+  if (typeof openModal !== "undefined") {
+    openModal("uploadDocModal");
+  } else {
+    document.getElementById("uploadDocModal")?.classList.add("active");
+  }
+}
+
+function clearSelectedUploadFile() {
+  selectedUploadFile = null;
+  const fileInput = document.getElementById("uploadFileInput");
+  const selectedBox = document.getElementById("uploadFileSelectedBox");
+  if (fileInput) fileInput.value = "";
+  if (selectedBox) selectedBox.style.display = "none";
+}
+
+function handleUploadFileSelected(file) {
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith(".pdf")) {
+    if (typeof showToast !== "undefined")
+      showToast("Chỉ hỗ trợ file PDF", "warning");
+    return;
+  }
+  if (file.size > 20 * 1024 * 1024) {
+    if (typeof showToast !== "undefined")
+      showToast("File vượt quá 20MB", "warning");
+    return;
+  }
+
+  selectedUploadFile = file;
+  const nameEl = document.getElementById("uploadFileName");
+  const sizeEl = document.getElementById("uploadFileSize");
+  const selectedBox = document.getElementById("uploadFileSelectedBox");
+
+  if (nameEl) nameEl.textContent = file.name;
+  if (sizeEl)
+    sizeEl.textContent =
+      typeof formatFileSize !== "undefined"
+        ? formatFileSize(file.size)
+        : file.size + " bytes";
+  if (selectedBox) selectedBox.style.display = "flex";
+}
+
+async function submitUploadDocument() {
+  if (!selectedUploadFile) {
+    if (typeof showToast !== "undefined")
+      showToast("Vui lòng chọn file trước", "warning");
+    return;
+  }
+
+  const submitBtn = document.getElementById("uploadSubmitBtn");
+  const progressWrap = document.getElementById("uploadProgressWrap");
+  const progressFill = document.getElementById("uploadProgressFill");
+  const progressText = document.getElementById("uploadProgressText");
+
+  if (submitBtn) submitBtn.disabled = true;
+  if (progressWrap) progressWrap.style.display = "block";
+  if (progressFill) progressFill.style.width = "30%";
+  if (progressText) progressText.textContent = "Đang tải lên...";
+
+  try {
+    const formData = new FormData();
+    formData.append("file", selectedUploadFile);
+
+    const token =
+      typeof getAccessToken !== "undefined"
+        ? getAccessToken()
+        : localStorage.getItem("accessToken");
+
+    const response = await fetch("/api/documents/upload", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("Upload thất bại, mã lỗi: " + response.status);
+    }
+
+    if (progressFill) progressFill.style.width = "100%";
+    if (progressText)
+      progressText.textContent = "Tải lên thành công, đang xử lý...";
+
+    if (typeof showToast !== "undefined")
+      showToast("Tải lên thành công! Đang xử lý tài liệu.", "success");
+
+    setTimeout(() => {
+      if (typeof closeModal !== "undefined") closeModal("uploadDocModal");
+      if (typeof loadUserDocuments !== "undefined") loadUserDocuments();
+    }, 1000);
+  } catch (error) {
+    console.error("Upload error:", error);
+    if (typeof showToast !== "undefined")
+      showToast(error.message || "Không thể tải lên tài liệu", "error");
+    if (progressWrap) progressWrap.style.display = "none";
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+function setupUploadListeners() {
+  const fileInput = document.getElementById("uploadFileInput");
+  const dropArea = document.getElementById("uploadDropArea");
+
+  if (fileInput) {
+    fileInput.addEventListener("change", (e) => {
+      handleUploadFileSelected(e.target.files[0]);
+    });
+  }
+
+  if (dropArea) {
+    dropArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = "var(--primary)";
+    });
+    dropArea.addEventListener("dragleave", () => {
+      dropArea.style.borderColor = "";
+    });
+    dropArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = "";
+      if (e.dataTransfer.files.length > 0) {
+        handleUploadFileSelected(e.dataTransfer.files[0]);
+      }
+    });
+  }
 }
 
 function loadUserTabData(tabId) {
@@ -439,7 +580,7 @@ async function viewUserDocument(docId) {
       throw new Error("apiRequest() không tồn tại");
     }
 
-    const doc = await apiRequest(`/api/user/documents/${docId}`);
+    const doc = await apiRequest(`/api/documents/${docId}`);
 
     const titleEl = document.getElementById("docViewerTitle");
     const contentEl = document.getElementById("docViewerContent");
@@ -521,7 +662,7 @@ function renderChatSessionList() {
         <div class="chat-session-item ${session.id === UserState.chat.currentSessionId ? "active" : ""}"
              onclick="openChatSession(${session.id})">
             <div class="chat-session-title">${session.title || "Cuộc hội thoại mới"}</div>
-            <div class="chat-session-meta">${session.messageCount || 0} tin nhắn · ${typeof formatDate !== "undefined" ? formatDate(session.updatedAt) : session.updatedAt}</div>
+            <div class="chat-session-meta">${typeof formatDate !== "undefined" ? formatDate(session.updatedAt) : session.updatedAt}</div>
         </div>
     `,
     )
@@ -550,6 +691,40 @@ function createNewChat() {
   }
 }
 
+// Cache tên tài liệu để tránh gọi API trùng lặp khi nhiều chunk cùng 1 document
+const docNameCache = {};
+
+async function fetchDocName(documentId) {
+  if (docNameCache[documentId]) return docNameCache[documentId];
+  try {
+    const doc = await apiRequest(`/api/documents/${documentId}`);
+    docNameCache[documentId] =
+      doc.fileName || doc.title || `Tài liệu #${documentId}`;
+  } catch (e) {
+    docNameCache[documentId] = `Tài liệu #${documentId}`;
+  }
+  return docNameCache[documentId];
+}
+
+// Chuyển sources thô {documentId, chunkId, distance} -> refs có tên file để hiển thị
+async function mapSourcesToRefs(sources) {
+  if (!sources || sources.length === 0) return [];
+  const seen = new Set();
+  const refs = [];
+  for (const s of sources) {
+    if (seen.has(s.documentId)) continue;
+    seen.add(s.documentId);
+    const name = await fetchDocName(s.documentId);
+    refs.push({
+      documentId: s.documentId,
+      documentName: name,
+      pageNumber: null,
+      excerpt: null,
+    });
+  }
+  return refs;
+}
+
 async function openChatSession(sessionId) {
   try {
     if (typeof apiRequest === "undefined") {
@@ -560,9 +735,21 @@ async function openChatSession(sessionId) {
     const messages = await apiRequest(
       `/api/chat/sessions/${sessionId}/messages`,
     );
+    const loadedMessages = messages || [];
 
     UserState.chat.currentSessionId = sessionId;
-    UserState.chat.messages = messages || [];
+
+    const mapped = [];
+    for (const m of loadedMessages) {
+      const refs = await mapSourcesToRefs(m.sources || m.fileRefs);
+      mapped.push({
+        role: m.role,
+        content: m.content,
+        createdAt: m.createdAt,
+        fileRefs: refs,
+      });
+    }
+    UserState.chat.messages = mapped;
 
     // Lấy title từ session đã có sẵn trong UserState.chat.sessions (đỡ gọi thêm API)
     const session = UserState.chat.sessions.find((s) => s.id === sessionId);
@@ -700,12 +887,14 @@ async function sendChatMessage() {
 
     removeLoadingMessage(loadingMsg);
 
+    const fileRefs = await mapSourcesToRefs(response.sources);
+
     // Response thật: { answer, sources, distance } — không có "content"/"fileRefs"
     const aiMessage = {
       role: "ASSISTANT",
       content: response.answer,
+      fileRefs: fileRefs,
       createdAt: new Date().toISOString(),
-      // sources tạm bỏ qua hiển thị — trả nợ kỹ thuật sau như bạn nói
     };
 
     UserState.chat.messages.push(aiMessage);
@@ -765,14 +954,14 @@ async function renameChatSession() {
     showToast("Tính năng đổi tên đang được phát triển", "warning");
   }
   // TODO: backend chưa có endpoint PUT /api/chat/sessions/{id} để đổi tên — cần bổ sung sau
-}
 
-const input = document.getElementById("newChatTitle");
-if (input) input.value = "";
+  const input = document.getElementById("newChatTitle");
+  if (input) input.value = "";
 
-if (typeof openModal !== "undefined") {
-  openModal("renameChatModal");
-  if (input) input.focus();
+  if (typeof openModal !== "undefined") {
+    openModal("renameChatModal");
+    if (input) input.focus();
+  }
 }
 
 async function submitRenameChat() {
@@ -1390,6 +1579,9 @@ window.checkPassStrength = checkPassStrength;
 window.updateProfile = updateProfile;
 window.changePassword = changePassword;
 window.filterUserDocuments = filterUserDocuments;
+window.openUploadModal = openUploadModal;
+window.clearSelectedUploadFile = clearSelectedUploadFile;
+window.submitUploadDocument = submitUploadDocument;
 
 // ===== DOWNLOAD FUNCTION =====
 async function downloadDocument(docId) {
@@ -1465,18 +1657,3 @@ function changePage(page) {
   UserState.documents.page = page;
   loadUserDocuments();
 }
-
-// ===== Initialize =====
-document.addEventListener("DOMContentLoaded", function () {
-  // Kiểm tra đăng nhập
-  if (typeof isLoggedIn === "undefined" || !isLoggedIn()) {
-    window.location.href = "/login";
-    return;
-  }
-
-  const user = typeof getUser !== "undefined" ? getUser() : null;
-  if (user && user.role !== "ADMIN") {
-    initUserDashboard();
-    loadHomeData();
-  }
-});
