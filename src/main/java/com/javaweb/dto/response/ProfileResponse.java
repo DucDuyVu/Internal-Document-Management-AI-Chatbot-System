@@ -24,4 +24,14 @@ public class ProfileResponse {
 		private String avatarUrl;
 
 		private String departmentName;
+
+		private LocalDateTime createdAt;
+		
+		private LocalDateTime lastLogin;
+		
+		private Long documentCount;
+		
+		private Integer chatSessionCount;
+		
+		private Integer activityCount;
 }

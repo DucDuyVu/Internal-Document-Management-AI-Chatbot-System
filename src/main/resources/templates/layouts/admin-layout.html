@@ -10,7 +10,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
   <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="icon" type="image/png" href="/images/favicon.png">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <!-- CSS riêng của từng trang -->
   <th:block layout:fragment="custom-css"></th:block>
@@ -23,43 +26,50 @@
   <!-- ==================== SIDEBAR ==================== -->
   <aside class="sidebar" id="sidebar">
     <a href="/" class="sidebar-logo">
-      <div class="sidebar-logo-icon">📁</div>
+      <div class="sidebar-logo-icon"><i class="fa-solid fa-folder-tree"></i></div>
       <span class="sidebar-logo-name">IDMS <em>AI</em></span>
     </a>
 
 
-    <p class="nav-section-label">Quản trị hệ thống</p>
     <ul class="sidebar-nav" id="sidebarNav">
       <li class="active" data-tab="tabOverview">
-        <span class="nav-icon">📊</span>
-        <span>Tổng quan</span>
+        <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
+        <span>Dashboard</span>
       </li>
+    </ul>
+
+    <p class="nav-section-label" style="margin-top: 16px;">Quản lý</p>
+    <ul class="sidebar-nav">
       <li data-tab="tabUsers">
-        <span class="nav-icon">👥</span>
+        <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
         <span>Người dùng</span>
       </li>
       <li data-tab="tabDepartments">
-        <span class="nav-icon">🏢</span>
+        <span class="nav-icon"><i class="fa-solid fa-building"></i></span>
         <span>Phòng ban</span>
       </li>
       <li data-tab="tabDocuments">
-        <span class="nav-icon">📁</span>
+        <span class="nav-icon"><i class="fa-solid fa-folder-open"></i></span>
         <span>Tài liệu</span>
       </li>
       <li data-tab="tabPermissions">
-        <span class="nav-icon">🔐</span>
+        <span class="nav-icon"><i class="fa-solid fa-key"></i></span>
         <span>Phân quyền</span>
       </li>
+    </ul>
+
+    <p class="nav-section-label" style="margin-top: 16px;">Hệ thống & AI</p>
+    <ul class="sidebar-nav">
       <li data-tab="tabUpload">
-        <span class="nav-icon">📤</span>
+        <span class="nav-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
         <span>Upload PDF</span>
       </li>
       <li data-tab="tabChat">
-        <span class="nav-icon">💬</span>
+        <span class="nav-icon"><i class="fa-solid fa-comment-dots"></i></span>
         <span>AI Chat Log</span>
       </li>
       <li data-tab="tabLogs">
-        <span class="nav-icon">📋</span>
+        <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span>
         <span>Audit Log</span>
       </li>
     </ul>
@@ -69,8 +79,12 @@
     <p class="nav-section-label">Tài khoản</p>
     <ul class="sidebar-nav">
       <li data-tab="tabProfile">
-        <span class="nav-icon">👤</span>
+        <span class="nav-icon"><i class="fa-solid fa-user"></i></span>
         <span>Hồ sơ cá nhân</span>
+      </li>
+      <li id="sidebarLogoutBtn" onclick="if(typeof logout !== 'undefined') logout();" style="cursor:pointer;">
+        <span class="nav-icon"><i class="fa-solid fa-right-from-bracket text-danger"></i></span>
+        <span class="text-danger">Đăng xuất</span>
       </li>
     </ul>
 
@@ -84,17 +98,51 @@
 
     <!-- Topbar -->
     <header class="topbar">
-      <div class="topbar-left">
+      <div class="topbar-left" style="display:flex; align-items:center; gap:16px;">
         <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
-        <span class="page-title" id="pageTitle" layout:fragment="page-title">📊 Tổng quan hệ thống</span>
+        <!-- Search Bar -->
+        <div class="topbar-search" style="position:relative; display:flex; align-items:center;">
+           <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; color:var(--primary-dark);"></i>
+           <input id="globalSearchInput" type="text" placeholder="Tìm kiếm tài liệu, người dùng..." autocomplete="off" style="background:#ffffff; border:none; color:var(--primary-dark); padding:8px 40px 8px 36px; border-radius:var(--radius-sm); outline:none; width:300px; font-family:inherit; font-weight:500;">
+           <div style="position:absolute; right:8px; display:flex; align-items:center;">
+               <span style="font-size:0.7rem; font-weight:700; color:var(--text-muted); background:var(--bg-gray-100); padding:2px 6px; border-radius:4px; border:1px solid var(--border-color);">⌘K</span>
+           </div>
+           
+           <!-- Global Search Dropdown -->
+           <div id="globalSearchDropdown" class="global-search-dropdown" style="display:none; position:absolute; top:42px; left:0; width:450px; background:white; border-radius:8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); border: 1px solid var(--border-color); z-index:200; overflow:hidden;">
+              <div id="globalSearchResults"></div>
+           </div>
+        </div>
       </div>
-      <div class="topbar-right">
+      <div class="topbar-right" style="display:flex; align-items:center; gap: 20px;">
+        <!-- Notification Bell -->
+        <div class="notification-bell" id="notificationBell" style="position:relative; cursor:pointer;">
+          <span style="font-size: 1.25rem;"><i class="fa-regular fa-bell" style="color: #ffffff;"></i></span>
+          <span id="notificationBadge" style="display:none; position:absolute; top:-5px; right:-8px; background:#ef4444; color:white; border-radius:50%; padding: 2px 5px; font-size: 0.65rem; font-weight:bold; min-width: 16px; text-align: center;">0</span>
+          
+          <!-- Dropdown -->
+          <div id="notificationDropdown" style="display:none; position:absolute; top:35px; right:-10px; width:320px; background:white; border-radius:8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index:100; border: 1px solid #e2e8f0; overflow:hidden; text-align:left; cursor:default;">
+             <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-weight:600; background:#f8fafc; color:#1e293b;">Thông báo của bạn</div>
+             <div id="notificationList" style="max-height: 300px; overflow-y: auto;">
+                <div style="padding: 16px; text-align:center; color:#64748b; font-size:0.875rem;">Không có thông báo mới</div>
+             </div>
+          </div>
+        </div>
+        
+        <!-- Settings -->
+        <div style="cursor:pointer; color:#fff; font-size:1.25rem;">
+           <i class="fa-solid fa-gear"></i>
+        </div>
+
+        <!-- Darkmode Toggle -->
+        <div style="cursor:pointer; color:#fff; font-size:1.25rem;">
+           <i class="fa-regular fa-moon"></i>
+        </div>
+        
         <span class="role-badge admin" id="topRoleBadge">Quản trị viên</span>
         <div class="user-pill" onclick="switchTab('tabProfile', null); if(typeof loadTabData === 'function') loadTabData('tabProfile');" style="cursor:pointer;">
           <div class="user-avatar" id="userAvatar">A</div>
-          <span class="user-name" id="fullName">Đang tải...</span>
         </div>
-        <button class="btn-logout" id="logoutBtnTop">🚪 Đăng xuất</button>
       </div>
     </header>
 
@@ -129,6 +177,20 @@
   <span id="toastMsg">Thao tác thành công!</span>
 </div>
 
+<!-- MODAL: Notification -->
+<div class="modal-overlay" id="notificationModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3 id="notificationTitle">Thông báo</h3>
+      <button class="modal-close" onclick="closeModal('notificationModal')">✕</button>
+    </div>
+    <div id="notificationContent" style="font-size:0.875rem;color:#333;line-height:1.6;white-space:pre-wrap;padding: 16px 0;"></div>
+    <div class="modal-actions">
+      <button id="notificationOkBtn" class="btn-primary" onclick="closeModal('notificationModal')">Đã hiểu</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/common.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/admin/dashboard.js"></script>
@@ -155,6 +217,21 @@
               window.location.href = '/user/dashboard';
               return;
           }
+
+          // Cập nhật Profile mới nhất từ Database
+          fetch('/api/users/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => { if(res.ok) return res.json(); })
+          .then(freshUser => {
+             if(freshUser) {
+                 localStorage.setItem('user', JSON.stringify(freshUser));
+                 if(typeof updateUserUI !== 'undefined') updateUserUI(freshUser);
+             }
+          }).catch(e => console.error(e));
+
+
+
       } catch (e) {
           window.location.href = '/login';
       }

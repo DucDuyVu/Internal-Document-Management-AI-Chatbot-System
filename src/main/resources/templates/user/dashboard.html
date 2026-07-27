@@ -14,85 +14,83 @@
       <div id="tabHome">
 
         <!-- Banner chào mừng -->
-        <div class="welcome-banner">
-          <div class="welcome-text">
-            <h1>Xin chào, <span id="welcomeName">bạn</span>! 👋</h1>
+        <div class="welcome-banner compact">
+          <div>
+            <h1>Xin chào, <span id="welcomeName">bạn</span>!</h1>
             <div class="welcome-meta">
-              <span>📧 <strong id="wEmail">—</strong></span>
-              <span>🏢 <strong id="wDept">—</strong></span>
-              <span>🎖️ <strong id="wRole">—</strong></span>
+              <span id="wDeptWrap" style="display:none;"><i class="fa-solid fa-building"></i> <strong id="wDept">—</strong></span>
+              <span id="wRoleWrap" style="display:none;"><i class="fa-solid fa-medal"></i> <strong id="wRole">—</strong></span>
+              <span id="wLastLoginWrap" style="display:none;"><i class="fa-regular fa-clock"></i> Đăng nhập lần cuối <strong id="wLastLogin">—</strong></span>
             </div>
           </div>
-          <div class="welcome-icon">📄</div>
+        </div>
+
+        <!-- Thao tác nhanh (Đưa lên đầu) -->
+        <div style="margin-top: 24px;">
+          <div class="section-header">
+            <h2>Thao tác nhanh</h2>
+          </div>
+          <div class="quick-grid">
+            <div class="quick-card" onclick="switchTab('tabChat', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabChat');">
+              <div class="quick-card-icon"><i class="fa-solid fa-robot"></i></div>
+              <span>Hỏi AI ngay</span>
+            </div>
+            <div class="quick-card" onclick="switchTab('tabDocuments', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabDocuments');">
+              <div class="quick-card-icon"><i class="fa-solid fa-folder-open"></i></div>
+              <span>Tài liệu của tôi</span>
+            </div>
+            <div class="quick-card" onclick="switchTab('tabSearch', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabSearch');">
+              <div class="quick-card-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+              <span>Tìm kiếm</span>
+            </div>
+          </div>
         </div>
 
         <!-- Thẻ thống kê -->
-        <div>
+        <div style="margin-top: 24px;">
           <div class="section-header">
             <h2>Tổng quan của bạn</h2>
             <span class="section-sub">Cập nhật theo thời gian thực</span>
           </div>
           <div class="stat-grid">
             <div class="stat-card">
-              <div class="stat-icon indigo">📄</div>
+              <div class="stat-icon purple"><i class="fa-solid fa-file-lines"></i></div>
               <div>
                 <div class="stat-label">Tài liệu phòng ban</div>
-                <div class="stat-value" id="statDocCount">—</div>
+                <div class="stat-value skeleton-loader" id="statDocCount">—</div>
                 <div class="stat-change">Có thể truy cập</div>
               </div>
             </div>
             <div class="stat-card">
-              <div class="stat-icon sky">💬</div>
+              <div class="stat-icon purple"><i class="fa-solid fa-comments"></i></div>
               <div>
                 <div class="stat-label">Phiên Chat AI</div>
-                <div class="stat-value" id="statChatCount">—</div>
+                <div class="stat-value skeleton-loader" id="statChatCount">—</div>
                 <div class="stat-change">Tổng hội thoại</div>
               </div>
             </div>
             <div class="stat-card">
-              <div class="stat-icon green">✅</div>
+              <div class="stat-icon purple"><i class="fa-solid fa-eye"></i></div>
               <div>
                 <div class="stat-label">Tài liệu đã xem</div>
-                <div class="stat-value" id="statViewCount">—</div>
+                <div class="stat-value skeleton-loader" id="statViewCount">—</div>
                 <div class="stat-change">Tổng lượt xem</div>
               </div>
             </div>
             <div class="stat-card">
-              <div class="stat-icon amber">🔍</div>
+              <div class="stat-icon purple"><i class="fa-solid fa-magnifying-glass"></i></div>
               <div>
                 <div class="stat-label">Lượt tìm kiếm</div>
-                <div class="stat-value" id="statSearchCount">—</div>
+                <div class="stat-value skeleton-loader" id="statSearchCount">—</div>
                 <div class="stat-change">Tổng số lần</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Hai cột: Thao tác nhanh + Hoạt động gần đây -->
-        <div class="two-col">
-          <div>
-            <div class="section-header">
-              <h2>Thao tác nhanh</h2>
-            </div>
-            <div class="quick-grid">
-              <div class="quick-card" onclick="switchTab('tabChat', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabChat');">
-                <div class="quick-card-icon">🤖</div>
-                <span>Hỏi AI ngay</span>
-              </div>
-              <div class="quick-card" onclick="switchTab('tabDocuments', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabDocuments');">
-                <div class="quick-card-icon">📂</div>
-                <span>Tài liệu của tôi</span>
-              </div>
-              <div class="quick-card" onclick="switchTab('tabSearch', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabSearch');">
-                <div class="quick-card-icon">🔍</div>
-                <span>Tìm kiếm</span>
-              </div>
-              <div class="quick-card" onclick="switchTab('tabProfile', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabProfile');">
-                <div class="quick-card-icon">👤</div>
-                <span>Hồ sơ cá nhân</span>
-              </div>
-            </div>
-          </div>
+        <!-- Hai cột: Hoạt động gần đây + Tài liệu mới nhất -->
+        <div class="two-col" style="margin-top: 24px;">
+          <!-- Hoạt động gần đây -->
           <div>
             <div class="section-header">
               <h2>Hoạt động gần đây</h2>
@@ -103,24 +101,24 @@
                 <li class="activity-item">
                   <div class="activity-dot indigo"></div>
                   <div class="activity-info">
-                    <p>Đang tải hoạt động...</p><span>—</span>
+                    <p class="skeleton-loader">Đang tải hoạt động...</p><span></span>
                   </div>
                 </li>
               </ul>
             </div>
           </div>
-        </div>
-
-        <!-- Tài liệu mới nhất -->
-        <div>
-          <div class="section-header">
-            <h2>Tài liệu tải lên gần đây</h2>
-            <a href="#" onclick="switchTab('tabDocuments', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabDocuments'); return false;" class="section-link">Xem tất cả →</a>
-          </div>
-          <div class="doc-grid" id="recentDocGrid">
-            <div class="doc-card-skeleton"></div>
-            <div class="doc-card-skeleton"></div>
-            <div class="doc-card-skeleton"></div>
+          
+          <!-- Tài liệu mới nhất -->
+          <div>
+            <div class="section-header">
+              <h2>Tài liệu tải lên gần đây</h2>
+              <a href="#" onclick="switchTab('tabDocuments', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabDocuments'); return false;" class="section-link">Xem tất cả →</a>
+            </div>
+            <div class="doc-grid" id="recentDocGrid">
+              <div class="doc-card-skeleton"></div>
+              <div class="doc-card-skeleton"></div>
+              <div class="doc-card-skeleton"></div>
+            </div>
           </div>
         </div>
 
@@ -333,31 +331,42 @@
                 <div class="profile-info-list">
                   <div class="profile-info-row">
                     <div class="profile-info-item">
+                      <span class="profile-info-label">Tên đăng nhập</span>
+                      <span class="profile-info-value" id="viewUsername">—</span>
+                    </div>
+                    <div class="profile-info-item">
                       <span class="profile-info-label">Họ và tên</span>
                       <span class="profile-info-value" id="viewFullName">—</span>
                     </div>
+                  </div>
+                  <div class="profile-info-row">
                     <div class="profile-info-item">
                       <span class="profile-info-label">Email</span>
                       <span class="profile-info-value" id="viewEmail">—</span>
                     </div>
-                  </div>
-                  <div class="profile-info-row">
                     <div class="profile-info-item">
                       <span class="profile-info-label">Số điện thoại</span>
                       <span class="profile-info-value" id="viewPhone">—</span>
                     </div>
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Phòng ban</span>
-                      <span class="profile-info-value" id="viewDept">—</span>
-                    </div>
                   </div>
                   <div class="profile-info-row">
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Phòng ban</span>
+                      <span class="profile-info-value" id="viewDept" style="cursor: pointer; color: var(--primary-color); text-decoration: underline;" onclick="switchTab('tabDepartmentDocs', this); if(typeof loadDepartmentDocs === 'function') loadDepartmentDocs();">—</span>
+                    </div>
                     <div class="profile-info-item">
                       <span class="profile-info-label">Vai trò</span>
                       <span class="profile-info-value" id="viewRole">—</span>
                     </div>
+                  </div>
+                  <div class="profile-info-row">
                     <div class="profile-info-item">
-                      <!-- Empty for alignment -->
+                      <span class="profile-info-label">Ngày tạo tài khoản</span>
+                      <span class="profile-info-value" id="viewCreatedAt">—</span>
+                    </div>
+                    <div class="profile-info-item">
+                      <span class="profile-info-label">Đăng nhập lần cuối</span>
+                      <span class="profile-info-value" id="viewLastLogin">—</span>
                     </div>
                   </div>
                 </div>
@@ -403,8 +412,20 @@
                 </div>
                 <div class="form-row">
                   <div class="form-group" style="width: 100%;">
-                    <label>Đường dẫn Ảnh đại diện (Avatar URL)</label>
-                    <input type="file" id="editAvatarUrl" class="form-input" accept="image/*">
+                    <label>Ảnh đại diện</label>
+                    <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+                      <div id="avatarPreviewContainer" style="width: 80px; height: 80px; border-radius: 50%; background: #f1f5f9; border: 2px solid #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img id="avatarPreviewImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <span id="avatarPreviewInitials" style="font-size: 24px; font-weight: bold; color: #64748b;">?</span>
+                      </div>
+                      <div>
+                        <label for="editAvatarUrl" class="btn btn-outline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.875rem; padding: 8px 16px;">
+                          <i class="fa-solid fa-camera"></i> Đổi ảnh đại diện
+                        </label>
+                        <input type="file" id="editAvatarUrl" class="form-input" accept="image/jpeg, image/png, image/webp" style="display: none;" onchange="previewAvatar(event)">
+                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">Định dạng: JPG, PNG, WEBP. Tối đa 5MB.</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div class="form-actions" style="margin-top: 32px;">

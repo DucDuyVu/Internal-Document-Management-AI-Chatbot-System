@@ -12,6 +12,7 @@ import com.javaweb.dto.response.ChangePasswordResponse;
 import com.javaweb.dto.response.LockUserResponse;
 import com.javaweb.dto.response.ProfileResponse;
 import com.javaweb.dto.response.UnlockResponse;
+import com.javaweb.dto.response.user.UserProfileDetailsDto;
 import com.javaweb.entity.UsersEntity;
 
 public interface UsersService {
@@ -33,5 +34,9 @@ public interface UsersService {
 
 	AdminUserResponse updateUser(Long userId, UpdateUserRequest request);
 
+	AdminUserResponse getUserById(Long userId);
+
 	void softDeleteUser(Long userId);
+
+	UserProfileDetailsDto getUserProfileDetails(Long targetUserId, UsersEntity currentUser);
 }

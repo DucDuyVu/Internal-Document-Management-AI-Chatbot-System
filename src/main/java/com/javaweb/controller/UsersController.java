@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,12 +27,13 @@ import com.javaweb.dto.request.ChangePasswordRequest;
 import com.javaweb.dto.request.UpdateProfileRequest;
 import com.javaweb.dto.response.ChangePasswordResponse;
 import com.javaweb.dto.response.ProfileResponse;
+import com.javaweb.dto.response.user.UserProfileDetailsDto;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.security.CustomUserDetails;
 import com.javaweb.service.UsersService;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping({"/api/users", "/api/user"})
 public class UsersController {
 	@Autowired
 	private UsersService usersService;
@@ -69,6 +71,10 @@ public class UsersController {
 			if (file.isEmpty()) {
 				throw new RuntimeException("File rỗng");
 			}
+			
+			if (file.getSize() > 5 * 1024 * 1024) {
+				throw new RuntimeException("Kích thước ảnh tối đa là 5MB");
+			}
 
 			Path uploadPath = Paths.get("uploads/avatars");
 			if (!Files.exists(uploadPath)) {
@@ -79,7 +85,11 @@ public class UsersController {
 			String originalFilename = file.getOriginalFilename();
 			String extension = "";
 			if (originalFilename != null && originalFilename.contains(".")) {
-				extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+				extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+			}
+			
+			if (!extension.equals(".jpg") && !extension.equals(".jpeg") && !extension.equals(".png") && !extension.equals(".webp")) {
+				throw new RuntimeException("Chỉ hỗ trợ định dạng ảnh JPG, PNG hoặc WEBP");
 			}
 
 			String uniqueName = UUID.randomUUID().toString() + extension;
@@ -94,5 +104,14 @@ public class UsersController {
 		} catch (IOException e) {
 			throw new RuntimeException("Lỗi khi lưu file: " + e.getMessage());
 		}
+	}
+
+	@GetMapping("/{id}/profile-details")
+	public ResponseEntity<UserProfileDetailsDto> getUserProfileDetails(
+			@PathVariable("id") Long id,
+			Authentication authentication) {
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+		UserProfileDetailsDto profile = usersService.getUserProfileDetails(id, userDetails.getUser());
+		return ResponseEntity.ok(profile);
 	}
 }

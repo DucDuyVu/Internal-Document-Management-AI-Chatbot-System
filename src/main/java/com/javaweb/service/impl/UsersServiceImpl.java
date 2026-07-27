@@ -17,19 +17,31 @@ import com.javaweb.dto.response.ChangePasswordResponse;
 import com.javaweb.dto.response.LockUserResponse;
 import com.javaweb.dto.response.ProfileResponse;
 import com.javaweb.dto.response.UnlockResponse;
+import com.javaweb.dto.response.user.ActivityInfo;
+import com.javaweb.dto.response.user.DocumentInfo;
+import com.javaweb.dto.response.user.UserProfileDetailsDto;
+import com.javaweb.entity.ActivityLogsEntity;
+import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.UserSessionsEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.exception.BadRequestException;
 import com.javaweb.repository.UserSessionsRepository;
 import com.javaweb.repository.UsersRepository;
+import com.javaweb.repository.DocumentRepository;
+import com.javaweb.repository.ChatSessionsRepository;
+import com.javaweb.repository.ActivityLogsRepository;
 import com.javaweb.service.UsersService;
+import com.javaweb.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UsersServiceImpl implements UsersService {
@@ -45,6 +57,18 @@ public class UsersServiceImpl implements UsersService {
 
 	@Autowired
 	PasswordEncoder passwordEncoder;
+
+	@Autowired
+	NotificationService notificationService;
+	
+	@Autowired
+	private DocumentRepository documentRepository;
+	
+	@Autowired
+	private ChatSessionsRepository chatSessionsRepository;
+	
+	@Autowired
+	private ActivityLogsRepository activityLogsRepository;
 
 	// lấy thông tin người dùng
 	@Override
@@ -63,6 +87,15 @@ public class UsersServiceImpl implements UsersService {
 		if (user.getDepartment() != null) {
 			profileResponse.setDepartmentName(user.getDepartment().getName());
 		}
+
+		profileResponse.setCreatedAt(user.getCreatedAt());
+		
+		userSessionsRepository.findFirstByUserIdOrderByCreatedAtDesc(user)
+				.ifPresent(session -> profileResponse.setLastLogin(session.getCreatedAt()));
+				
+		profileResponse.setDocumentCount(documentRepository.countByUploadedByAndDeletedAtIsNull(user.getId()));
+		profileResponse.setChatSessionCount(chatSessionsRepository.countByUserChatId_IdAndDeletedAtIsNull(user.getId()));
+		profileResponse.setActivityCount(activityLogsRepository.countByUsersEntityId_Id(user.getId()));
 
 		return profileResponse;
 	}
@@ -89,6 +122,9 @@ public class UsersServiceImpl implements UsersService {
 		user.setUpdatedAt(LocalDateTime.now());
 
 		UsersEntity updateUser = usersRepository.save(user); // save thông tin update
+		
+		notificationService.notifyAdmins("Cập nhật thông tin", 
+				"Người dùng " + updateUser.getUserName() + " (" + updateUser.getFullName() + ") vừa cập nhật thông tin hồ sơ cá nhân.");
 
 		ProfileResponse profileResponse = new ProfileResponse();
 		profileResponse.setFullName(updateUser.getFullName());
@@ -98,6 +134,14 @@ public class UsersServiceImpl implements UsersService {
 		profileResponse.setEmail(updateUser.getEmail());
 		profileResponse.setRole(updateUser.getRole().name());
 		profileResponse.setAvatarUrl(updateUser.getAvatarURL());
+		profileResponse.setCreatedAt(updateUser.getCreatedAt());
+
+		userSessionsRepository.findFirstByUserIdOrderByCreatedAtDesc(updateUser)
+				.ifPresent(session -> profileResponse.setLastLogin(session.getCreatedAt()));
+				
+		profileResponse.setDocumentCount(documentRepository.countByUploadedByAndDeletedAtIsNull(updateUser.getId()));
+		profileResponse.setChatSessionCount(chatSessionsRepository.countByUserChatId_IdAndDeletedAtIsNull(updateUser.getId()));
+		profileResponse.setActivityCount(activityLogsRepository.countByUsersEntityId_Id(updateUser.getId()));
 
 		return profileResponse; // trả về client
 	}
@@ -192,7 +236,7 @@ public class UsersServiceImpl implements UsersService {
 		return response;
 	}
 
-	//Xử lý lấy tất cả user
+	// Xử lý lấy tất cả user
 	@Override
 	public Page<AdminUserResponse> getAllUsers(int page,
 			int size, String search, String role, Long departmentId, String status) {
@@ -234,7 +278,6 @@ public class UsersServiceImpl implements UsersService {
 		});
 	}
 
-
 	// Tạo user (admin tạo)
 	@Transactional
 	@Override
@@ -268,7 +311,6 @@ public class UsersServiceImpl implements UsersService {
 
 		usersRepository.save(user); // Save dữ liệu ở DB
 
-
 		// Trả dữ liệu ra client
 		AdminUserResponse response = new AdminUserResponse();
 
@@ -284,7 +326,6 @@ public class UsersServiceImpl implements UsersService {
 		return response;
 	}
 
-
 	// update user (admin update)
 	@Transactional
 	@Override
@@ -292,26 +333,50 @@ public class UsersServiceImpl implements UsersService {
 		UsersEntity user = usersRepository.findById(userId)
 				.orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
+		StringBuilder changes = new StringBuilder();
+
 		// Cập nhật thông tin
-		if (request.getFullName() != null) {
+		if (request.getFullName() != null && !request.getFullName().equals(user.getFullName())) {
+			changes.append("- Họ tên: ").append(request.getFullName()).append("\n");
 			user.setFullName(request.getFullName());
 		}
 
-		if (request.getPhone() != null) {
+		if (request.getPhone() != null && !request.getPhone().equals(user.getPhone())) {
+			changes.append("- Số điện thoại: ").append(request.getPhone()).append("\n");
 			user.setPhone(request.getPhone());
 		}
 
-		if (request.getRole() != null) {
+		if (request.getRole() != null && !request.getRole().equals(user.getRole().name())) {
+			changes.append("- Vai trò: ").append(request.getRole()).append("\n");
 			user.setRole(UserRole.valueOf(request.getRole()));
 		}
 
 		if (request.getDepartmentId() != null) {
-			DepartmentsEntity depart = departmentsRepository.findById(request.getDepartmentId())
-					.orElseThrow(() -> new RuntimeException("Phòng ban không tồn tại !"));
-			user.setDepartment(depart);
+			if (user.getDepartment() == null || !request.getDepartmentId().equals(user.getDepartment().getId())) {
+				DepartmentsEntity depart = departmentsRepository.findById(request.getDepartmentId())
+						.orElseThrow(() -> new RuntimeException("Phòng ban không tồn tại !"));
+				changes.append("- Phòng ban: ").append(depart.getName()).append("\n");
+				user.setDepartment(depart);
+			}
 		}
 
 		usersRepository.save(user); // Lưu dưới DB
+
+        String actorRole = "Quản trị viên"; // Mặc định
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getPrincipal() instanceof com.javaweb.security.CustomUserDetails) {
+                com.javaweb.security.CustomUserDetails userDetails = (com.javaweb.security.CustomUserDetails) auth.getPrincipal();
+                if (userDetails.getUser().getRole() == com.javaweb.enums.UserRole.MANAGER) {
+                    actorRole = "Quản lý";
+                }
+            }
+        } catch (Exception e) {}
+
+		if (changes.length() > 0) {
+			String message = actorRole + " đã cập nhật thông tin tài khoản của bạn:\n" + changes.toString();
+			notificationService.createNotification(user, "Cập nhật thông tin tài khoản", message);
+		}
 
 		// Trả về client
 		AdminUserResponse response = new AdminUserResponse();
@@ -326,16 +391,101 @@ public class UsersServiceImpl implements UsersService {
 		return response;
 	}
 
-
+	// xóa mềm (admin delete)
+	@Transactional
 	@Override
 	public void softDeleteUser(Long userId) {
 		UsersEntity user = usersRepository.findById(userId)
-		.orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng !"));
-		// Cập nhật tg xóa
-		user.setDeletedAt(LocalDateTime.now());
-		// Khóa tài khoản
-		user.setActive(false);
+				.orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-		usersRepository.save(user); // lưu xuống DB
+		user.setDeletedAt(LocalDateTime.now());
+		user.setActive(false);
+		usersRepository.save(user);
+	}
+
+	@Override
+	public AdminUserResponse getUserById(Long userId) {
+		UsersEntity user = usersRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+		AdminUserResponse response = new AdminUserResponse();
+		response.setId(user.getId());
+		response.setFullName(user.getFullName());
+		response.setUsername(user.getUserName());
+		response.setEmail(user.getEmail());
+		response.setRole(user.getRole().name());
+		response.setActive(user.isActive());
+		if (user.getDepartment() != null) {
+			response.setDepartmentName(user.getDepartment().getName());
+		}
+		return response;
+	}
+
+	@Override
+	public UserProfileDetailsDto getUserProfileDetails(Long targetUserId, UsersEntity currentUser) {
+		UsersEntity targetUser = usersRepository.findById(targetUserId)
+				.orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+		// Format date
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+		String joinedDate = targetUser.getCreatedAt() != null ? targetUser.getCreatedAt().format(formatter) : "Không xác định";
+
+		String departmentName = targetUser.getDepartment() != null ? targetUser.getDepartment().getName() : "Chưa xếp phòng";
+		String managerName = "Không có";
+
+		// Permissions logic (Mocked based on Role for now since no detailed permission table)
+		List<String> permissions = new ArrayList<>();
+		permissions.add("Xem tài liệu");
+		if (targetUser.getRole() == UserRole.ADMIN) {
+			permissions.add("Toàn quyền hệ thống");
+		} else if (targetUser.getRole() == UserRole.MANAGER) {
+			permissions.add("Quản lý phòng ban");
+			permissions.add("Upload PDF/Word");
+		} else {
+			permissions.add("Upload PDF");
+		}
+
+		// Uploaded documents (Top 3)
+		List<DocumentEntity> docEntities = documentRepository.findByUploadedByAndDeletedAtIsNullOrderByCreatedAtDesc(
+				targetUserId, PageRequest.of(0, 3));
+		List<DocumentInfo> docs = docEntities.stream().map(d -> {
+			String timeAgo = d.getCreatedAt() != null ? d.getCreatedAt().format(formatter) : "Gần đây";
+			return DocumentInfo.builder()
+					.id(d.getId())
+					.fileName(d.getFileName())
+					.timeAgo(timeAgo)
+					.build();
+		}).collect(Collectors.toList());
+
+		// Recent activities (Top 10)
+		List<ActivityLogsEntity> activityEntities = activityLogsRepository.findByUsersEntityId_IdOrderByCreatedAtDesc(
+				targetUserId, PageRequest.of(0, 10));
+		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+		List<ActivityInfo> activities = activityEntities.stream().map(a -> {
+			String time = a.getCreatedAt() != null ? a.getCreatedAt().format(timeFormatter) : "00:00";
+			String date = a.getCreatedAt() != null ? a.getCreatedAt().format(formatter) : "Hôm nay";
+			return ActivityInfo.builder()
+					.time(time)
+					.date(date)
+					.action(a.getAction())
+					.build();
+		}).collect(Collectors.toList());
+
+		boolean canEdit = currentUser.getRole() == UserRole.ADMIN;
+
+		return UserProfileDetailsDto.builder()
+				.id(targetUser.getId())
+				.fullName(targetUser.getFullName())
+				.avatarUrl(targetUser.getAvatarURL())
+				.role(targetUser.getRole() == UserRole.ADMIN ? "Quản trị viên" : targetUser.getRole() == UserRole.MANAGER ? "Quản lý" : "Nhân viên")
+				.isActive(targetUser.isActive())
+				.email(targetUser.getEmail())
+				.departmentName(departmentName)
+				.joinedDate(joinedDate)
+				.managerName(managerName)
+				.canEdit(canEdit)
+				.permissions(permissions)
+				.uploadedDocuments(docs)
+				.recentActivities(activities)
+				.build();
 	}
 }

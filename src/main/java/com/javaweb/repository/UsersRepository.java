@@ -5,6 +5,7 @@ import com.javaweb.entity.UsersEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,4 +41,6 @@ public interface UsersRepository extends JpaRepository<UsersEntity, Long> {
 			@Param("isActive") Boolean isActive,
 			Pageable pageable);
 	Optional<UsersEntity> findByUserName(String userName);
+	List<UsersEntity> findByRole(UserRole role);
+	List<UsersEntity> findByDepartmentId(Long departmentId);
 }

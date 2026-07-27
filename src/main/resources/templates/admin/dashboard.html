@@ -12,134 +12,217 @@
     <!-- ===== TAB: TỔNG QUAN ===== -->
     <div id="tabOverview">
 
-      <!-- Welcome Banner -->
-      <div class="welcome-banner">
-        <div class="welcome-text">
-          <h1>Xin chào, <span id="welcomeName">Admin</span>! 🛡️</h1>
-          <div class="welcome-meta">
-            <span>📧 <strong id="adminEmail">—</strong></span>
-            <span>🎖️ <strong>Quản trị viên hệ thống</strong></span>
+      <!-- Welcome Header (New Design) -->
+      <div class="dashboard-header">
+        <div class="header-info">
+          <h1>👋 Xin chào, <span id="welcomeName">Admin</span></h1>
+          <p class="text-secondary" style="font-size:0.9rem; margin-top:4px;">Hôm nay: <strong id="currentDate"></strong> - <span id="currentDay"></span></p>
+          <div class="notification-summary" style="margin-top:12px; font-size:0.9rem;">
+            Bạn có <strong id="newNotiCount" style="color:var(--primary);">2</strong> thông báo mới. 
+            Có <strong id="pendingDocCount" style="color:var(--warning);">3</strong> tài liệu cần xử lý.
           </div>
         </div>
-        <div class="welcome-icon">🛡️</div>
-      </div>
-
-      <!-- Stat Cards -->
-      <div>
-        <div class="section-header">
-          <h2>📊 Thống kê hệ thống</h2>
-        </div>
-        <div class="stat-grid">
-          <div class="stat-card">
-            <div class="stat-icon purple">👥</div>
-            <div>
-              <div class="stat-label">Tổng người dùng</div>
-              <div class="stat-value" id="statTotalUsers">—</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon indigo">🏢</div>
-            <div>
-              <div class="stat-label">Phòng ban</div>
-              <div class="stat-value" id="statTotalDepts">—</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon sky">📄</div>
-            <div>
-              <div class="stat-label">Tổng tài liệu</div>
-              <div class="stat-value" id="statTotalDocs">—</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">✅</div>
-            <div>
-              <div class="stat-label">Hoàn thành</div>
-              <div class="stat-value" id="statCompletedDocs">—</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon amber">🔒</div>
-            <div>
-              <div class="stat-label">TK bị khoá</div>
-              <div class="stat-value" id="statLockedUsers">—</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon red">❌</div>
-            <div>
-              <div class="stat-label">Tài liệu lỗi</div>
-              <div class="stat-value" id="statFailedDocs">—</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon indigo">💬</div>
-            <div>
-              <div class="stat-label">Phiên Chat AI</div>
-              <div class="stat-value" id="statTotalChats">—</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon sky">🪙</div>
-            <div>
-              <div class="stat-label">Token AI</div>
-              <div class="stat-value" id="statTotalTokens">—</div>
-            </div>
-          </div>
+        <div class="header-action">
+          <button class="btn-primary" onclick="switchTab('tabUpload')" style="padding:10px 20px; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Upload tài liệu
+          </button>
         </div>
       </div>
 
-      <!-- Quick Actions + Activity -->
-      <div class="two-col">
-        <div>
+      <!-- KPI Cards (6 columns) -->
+      <div style="margin-top: 24px;">
+        <div class="kpi-grid">
+          <div class="kpi-card blue">
+            <div class="kpi-top">
+              <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Người dùng</span>
+                <span class="kpi-value skeleton-loader" id="statTotalUsers">—</span>
+              </div>
+            </div>
+            <div class="kpi-trend up"><i class="fa-solid fa-arrow-up"></i> +5 tháng này</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-top">
+              <div class="kpi-icon"><i class="fa-solid fa-file-lines"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Tài liệu</span>
+                <span class="kpi-value skeleton-loader" id="statTotalDocs">—</span>
+              </div>
+            </div>
+            <div class="kpi-trend up"><i class="fa-solid fa-arrow-up"></i> +12 hôm nay</div>
+          </div>
+          <div class="kpi-card orange">
+            <div class="kpi-top">
+              <div class="kpi-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Upload Today</span>
+                <span class="kpi-value skeleton-loader" id="statUploadToday">12</span>
+              </div>
+            </div>
+            <div class="kpi-trend neutral"><i class="fa-solid fa-minus"></i> Bình thường</div>
+          </div>
+          <div class="kpi-card purple">
+            <div class="kpi-top">
+              <div class="kpi-icon"><i class="fa-solid fa-robot"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">AI Request</span>
+                <span class="kpi-value skeleton-loader" id="statTotalChats">—</span>
+              </div>
+            </div>
+            <div class="kpi-trend up"><i class="fa-solid fa-arrow-up"></i> +18%</div>
+          </div>
+          <div class="kpi-card red" id="kpiErrorCard">
+            <div class="kpi-top">
+              <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Lỗi</span>
+                <span class="kpi-value skeleton-loader" id="statFailedDocs">—</span>
+              </div>
+            </div>
+            <div class="kpi-trend down"><i class="fa-solid fa-triangle-exclamation"></i> Cần xử lý</div>
+          </div>
+          <div class="kpi-card cyan">
+            <div class="kpi-top">
+              <div class="kpi-icon"><i class="fa-solid fa-globe"></i></div>
+              <div class="kpi-info">
+                <span class="kpi-label">Online</span>
+                <span class="kpi-value skeleton-loader" id="statOnline">8</span>
+              </div>
+            </div>
+            <div class="kpi-trend up"><i class="fa-solid fa-arrow-up"></i> Ổn định</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart & Timeline (Phase 2) -->
+      <div class="two-col" style="margin-top: 24px;">
+        <div class="chart-section">
           <div class="section-header">
-            <h2>⚡ Thao tác nhanh</h2>
+            <h2>📈 Biểu đồ hoạt động</h2>
           </div>
-          <div class="quick-grid">
-            <div class="quick-card" onclick="switchTab('tabUsers')">
-              <div class="quick-card-icon">👥</div><span>Người dùng</span>
-            </div>
-            <div class="quick-card" onclick="switchTab('tabDepartments')">
-              <div class="quick-card-icon">🏢</div><span>Phòng ban</span>
-            </div>
-            <div class="quick-card" onclick="switchTab('tabDocuments')">
-              <div class="quick-card-icon">📁</div><span>Tài liệu</span>
-            </div>
-            <div class="quick-card" onclick="switchTab('tabPermissions')">
-              <div class="quick-card-icon">🔐</div><span>Phân quyền</span>
-            </div>
-            <div class="quick-card" onclick="switchTab('tabUpload')">
-              <div class="quick-card-icon">📤</div><span>Upload PDF</span>
-            </div>
-            <div class="quick-card" onclick="switchTab('tabLogs')">
-              <div class="quick-card-icon">📋</div><span>Audit Log</span>
-            </div>
+          <div class="kpi-card" style="padding: 24px; min-height: 480px; justify-content: space-between;">
+             <div style="height: 200px;">
+                 <canvas id="uploadChart"></canvas>
+             </div>
+             <div style="height: 200px;">
+                 <canvas id="aiChart"></canvas>
+             </div>
           </div>
         </div>
-        <div>
+        
+        <div class="timeline-section">
           <div class="section-header">
-            <h2>🕐 Hoạt động gần đây</h2>
+            <h2>⏱️ Timeline hoạt động</h2>
           </div>
-          <div class="activity-card">
-            <ul class="activity-list" id="recentActivityList">
-              <li class="activity-item">
-                <div class="activity-dot indigo"></div>
-                <div class="activity-info">
-                  <p>Đang tải...</p><span>—</span>
-                </div>
-              </li>
-            </ul>
+          <div class="kpi-card" style="padding: 24px; min-height: 480px; max-height: 480px; overflow-y: auto;">
+            <div class="timeline">
+              <!-- Hardcoded Mocks for now as requested -->
+              <div class="timeline-item">
+                 <div class="tl-dot bg-primary"></div>
+                 <div class="tl-content">
+                    <div class="tl-time">09:45</div>
+                    <p><strong>Nguyễn Văn A</strong> đã upload <em>HopDong.pdf</em></p>
+                 </div>
+              </div>
+              <div class="timeline-item">
+                 <div class="tl-dot bg-warning"></div>
+                 <div class="tl-content">
+                    <div class="tl-time">09:42</div>
+                    <p><strong>Admin</strong> cấp quyền cho <em>Phòng Kế toán</em></p>
+                 </div>
+              </div>
+              <div class="timeline-item">
+                 <div class="tl-dot bg-success"></div>
+                 <div class="tl-content">
+                    <div class="tl-time">09:30</div>
+                    <p><strong>AI</strong> index thành công <em>20 tài liệu</em></p>
+                 </div>
+              </div>
+              <div class="timeline-item">
+                 <div class="tl-dot bg-primary"></div>
+                 <div class="tl-content">
+                    <div class="tl-time">08:15</div>
+                    <p><strong>Trần Thị B</strong> đăng nhập hệ thống</p>
+                 </div>
+              </div>
+              <div class="timeline-item">
+                 <div class="tl-dot bg-danger"></div>
+                 <div class="tl-content">
+                    <div class="tl-time">Hôm qua</div>
+                    <p><strong>Hệ thống</strong> cảnh báo lỗi SMTP</p>
+                 </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Department Stats -->
-      <div>
-        <div class="section-header">
-          <h2>📋 Thống kê theo phòng ban</h2>
+      <!-- Phase 3: Actions, Tasks, Status -->
+      <div class="three-col" style="margin-top: 24px;">
+        <!-- Quick Actions -->
+        <div>
+          <div class="section-header"><h2>⚡ Thao tác nhanh</h2></div>
+          <div class="kpi-card" style="padding: 16px; gap: 8px;">
+            <button class="btn-primary" style="width: 100%; justify-content: flex-start; margin-bottom: 8px; padding: 12px; font-size: 0.95rem; display: flex; align-items: center;" onclick="switchTab('tabUpload')">
+               <i class="fa-solid fa-cloud-arrow-up" style="margin-right: 12px;"></i> Upload PDF
+            </button>
+            <button style="width: 100%; justify-content: flex-start; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); text-align: left; padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; display: flex; align-items: center;" onclick="switchTab('tabUsers')">
+               <i class="fa-solid fa-user-plus" style="margin-right: 12px; color: var(--info); width: 20px;"></i> Thêm User
+            </button>
+            <button style="width: 100%; justify-content: flex-start; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); text-align: left; padding: 10px 12px; border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; display: flex; align-items: center;" onclick="switchTab('tabDepartments')">
+               <i class="fa-solid fa-building" style="margin-right: 12px; color: var(--success); width: 20px;"></i> Tạo phòng ban
+            </button>
+            <button style="width: 100%; justify-content: flex-start; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); text-align: left; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center;" onclick="switchTab('tabPermissions')">
+               <i class="fa-solid fa-key" style="margin-right: 12px; color: var(--warning); width: 20px;"></i> Phân quyền
+            </button>
+          </div>
         </div>
-        <div class="activity-card" id="deptStatsList">
-          <p class="empty-state text-muted text-center p-4">Đang tải thống kê...</p>
+
+        <!-- System Status -->
+        <div>
+          <div class="section-header"><h2>🟢 System Status</h2></div>
+          <div class="kpi-card" style="padding: 16px; gap: 0;">
+             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                <span><i class="fa-solid fa-robot text-primary" style="width: 24px;"></i> AI Server</span>
+                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> Running</span>
+             </div>
+             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                <span><i class="fa-solid fa-database text-info" style="width: 24px;"></i> PostgreSQL</span>
+                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> Healthy</span>
+             </div>
+             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                <span><i class="fa-solid fa-hard-drive text-warning" style="width: 24px;"></i> Storage</span>
+                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> 75%</span>
+             </div>
+             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
+                <span><i class="fa-solid fa-envelope text-danger" style="width: 24px;"></i> SMTP</span>
+                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> Connected</span>
+             </div>
+             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0;">
+                <span><i class="fa-solid fa-memory text-secondary" style="width: 24px;"></i> Redis</span>
+                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> Connected</span>
+             </div>
+          </div>
+        </div>
+
+        <!-- To-do List -->
+        <div>
+          <div class="section-header"><h2>📋 Việc cần làm</h2></div>
+          <div class="kpi-card" style="padding: 16px; gap: 0;">
+             <div style="display:flex; align-items:center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
+                <div class="kpi-icon" style="background:var(--danger-bg); color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div style="font-size: 0.9rem;"><strong class="text-danger">2</strong> tài liệu lỗi</div>
+             </div>
+             <div style="display:flex; align-items:center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
+                <div class="kpi-icon" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-file-shield"></i></div>
+                <div style="font-size: 0.9rem;"><strong class="text-warning">4</strong> tài liệu chưa phân quyền</div>
+             </div>
+             <div style="display:flex; align-items:center; gap: 12px; padding: 12px 0;">
+                <div class="kpi-icon" style="background:var(--info-bg); color:var(--info);"><i class="fa-solid fa-user-lock"></i></div>
+                <div style="font-size: 0.9rem;"><strong class="text-info">1</strong> tài khoản bị khóa</div>
+             </div>
+          </div>
         </div>
       </div>
 
@@ -478,31 +561,42 @@
               <div class="profile-info-list">
                 <div class="profile-info-row">
                   <div class="profile-info-item">
+                    <span class="profile-info-label">Tên đăng nhập</span>
+                    <span class="profile-info-value" id="viewUsername">—</span>
+                  </div>
+                  <div class="profile-info-item">
                     <span class="profile-info-label">Họ và tên</span>
                     <span class="profile-info-value" id="viewFullName">—</span>
                   </div>
+                </div>
+                <div class="profile-info-row">
                   <div class="profile-info-item">
                     <span class="profile-info-label">Email</span>
                     <span class="profile-info-value" id="viewEmail">—</span>
                   </div>
-                </div>
-                <div class="profile-info-row">
                   <div class="profile-info-item">
                     <span class="profile-info-label">Số điện thoại</span>
                     <span class="profile-info-value" id="viewPhone">—</span>
                   </div>
+                </div>
+                <div class="profile-info-row">
                   <div class="profile-info-item">
                     <span class="profile-info-label">Phòng ban</span>
                     <span class="profile-info-value" id="viewDept">—</span>
                   </div>
-                </div>
-                <div class="profile-info-row">
                   <div class="profile-info-item">
                     <span class="profile-info-label">Vai trò</span>
                     <span class="profile-info-value" id="viewRole">—</span>
                   </div>
+                </div>
+                <div class="profile-info-row">
                   <div class="profile-info-item">
-                    <!-- Empty for alignment -->
+                    <span class="profile-info-label">Ngày tạo tài khoản</span>
+                    <span class="profile-info-value" id="viewCreatedAt">—</span>
+                  </div>
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Đăng nhập lần cuối</span>
+                    <span class="profile-info-value" id="viewLastLogin">—</span>
                   </div>
                 </div>
               </div>
@@ -548,8 +642,20 @@
               </div>
               <div class="form-row">
                 <div class="form-group" style="width: 100%;">
-                  <label>Đường dẫn Ảnh đại diện (Avatar URL)</label>
-                  <input type="file" id="editAvatarUrl" class="form-input" accept="image/*">
+                  <label>Ảnh đại diện</label>
+                  <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+                    <div id="avatarPreviewContainer" style="width: 80px; height: 80px; border-radius: 50%; background: #f1f5f9; border: 2px solid #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                      <img id="avatarPreviewImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                      <span id="avatarPreviewInitials" style="font-size: 24px; font-weight: bold; color: #64748b;">?</span>
+                    </div>
+                    <div>
+                      <label for="editAvatarUrl" class="btn btn-outline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.875rem; padding: 8px 16px;">
+                        <i class="fa-solid fa-camera"></i> Đổi ảnh đại diện
+                      </label>
+                      <input type="file" id="editAvatarUrl" class="form-input" accept="image/jpeg, image/png, image/webp" style="display: none;" onchange="previewAvatar(event)">
+                      <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">Định dạng: JPG, PNG, WEBP. Tối đa 5MB.</div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="form-actions" style="margin-top: 32px;">

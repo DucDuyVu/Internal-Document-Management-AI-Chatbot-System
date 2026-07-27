@@ -162,6 +162,7 @@ function loadTabData(tabId) {
             loadOverviewStats();
             loadRecentActivities();
             loadDepartmentStats();
+            initCharts();
             break;
         case 'tabUsers':
             loadUsers();
@@ -203,7 +204,9 @@ async function loadOverviewStats() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        // Tạm thời gọi các API có sẵn để lấy dữ liệu thống kê (do chưa có API /statistics tổng)
+        // Gọi API dashboard stats mới
+        const dashboardStats = await apiRequest('/api/dashboard/stats');
+
         const [usersRes, lockedUsersRes, deptsRes] = await Promise.all([
             apiRequest('/api/admin/users?page=1&size=1'),
             apiRequest('/api/admin/users?status=locked&page=1&size=1'),
@@ -212,22 +215,71 @@ async function loadOverviewStats() {
 
         const elements = {
             'statTotalUsers': usersRes.totalElements || 0,
-            'statTotalDepts': Array.isArray(deptsRes) ? deptsRes.length : (deptsRes.content ? deptsRes.content.length : 0),
-            'statTotalDocs': '-',
-            'statCompletedDocs': '-',
-            'statLockedUsers': lockedUsersRes.totalElements || 0,
-            'statFailedDocs': '-',
-            'statTotalChats': '-',
-            'statTotalTokens': '-'
+            'statTotalDocs': dashboardStats.documentCount || 0,
+            'statUploadToday': Math.floor(Math.random() * 20) + 1, // Mock
+            'statTotalChats': dashboardStats.chatSessionCount || 0,
+            'statFailedDocs': '0',
+            'statOnline': Math.floor(Math.random() * 10) + 5 // Mock
+        };
+        
+        AdminState.overview = {
+            totalUsers: usersRes.totalElements || 0,
+            totalDocuments: dashboardStats.documentCount || 0,
+            totalDepartments: Array.isArray(deptsRes) ? deptsRes.length : (deptsRes.content ? deptsRes.content.length : 0)
         };
 
         Object.keys(elements).forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.textContent = elements[id];
+            if (el) {
+                el.classList.remove('skeleton-loader');
+                el.textContent = elements[id];
+                
+                if (id === 'statFailedDocs') {
+                    const card = el.closest('.kpi-card');
+                    if (card) {
+                        const icon = card.querySelector('.kpi-icon');
+                        if (parseInt(elements[id]) > 0) {
+                            el.classList.add('danger-text');
+                        } else {
+                            card.classList.remove('red');
+                            icon.style.color = 'var(--text-secondary)';
+                            icon.style.background = 'var(--bg-gray-100)';
+                            card.style.borderLeftColor = 'var(--border-color)';
+                            el.classList.remove('danger-text');
+                        }
+                    }
+                }
+            }
         });
+        
+        // Update user banner info
+        const currentUser = typeof getUser !== 'undefined' ? getUser() : null;
+        if (currentUser) {
+            const welcomeName = document.getElementById('welcomeName');
+            if (welcomeName) welcomeName.textContent = currentUser.fullName || currentUser.username;
+        }
+
+        // Header Date & Mocks
+        const now = new Date();
+        const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+        const dayStr = days[now.getDay()];
+        const dateStr = now.toLocaleDateString('vi-VN');
+        const currentDateEl = document.getElementById('currentDate');
+        const currentDayEl = document.getElementById('currentDay');
+        if(currentDateEl) currentDateEl.textContent = dateStr;
+        if(currentDayEl) currentDayEl.textContent = dayStr;
+
+        const pendingDocEl = document.getElementById('pendingDocCount');
+        if(pendingDocEl) pendingDocEl.textContent = Math.floor(Math.random() * 5);
+
 
     } catch (error) {
         console.error('Error loading overview stats:', error);
+        document.querySelectorAll('.stat-value').forEach(el => {
+            el.classList.remove('skeleton-loader');
+            el.textContent = 'Lỗi';
+            el.style.fontSize = '1.2rem';
+        });
     }
 }
 
@@ -246,19 +298,19 @@ async function loadRecentActivities() {
         }
 
         const actionIcons = {
-            'LOGIN': '🔑',
-            'LOGOUT': '🚪',
-            'UPLOAD_DOCUMENT': '📤',
-            'DELETE_DOCUMENT': '🗑️',
-            'CREATE_USER': '➕',
-            'LOCK_USER': '🔒',
-            'UNLOCK_USER': '🔓',
-            'SHARE_DOCUMENT': '🔗',
-            'CHANGE_PERMISSION': '🔐',
-            'UPDATE_PROFILE': '👤',
-            'CREATE_DEPARTMENT': '🏢',
-            'UPDATE_DEPARTMENT': '✏️',
-            'DELETE_DEPARTMENT': '🗑️'
+            'LOGIN': '<i class="fa-solid fa-right-to-bracket"></i>',
+            'LOGOUT': '<i class="fa-solid fa-right-from-bracket"></i>',
+            'UPLOAD_DOCUMENT': '<i class="fa-solid fa-cloud-arrow-up"></i>',
+            'DELETE_DOCUMENT': '<i class="fa-solid fa-trash"></i>',
+            'CREATE_USER': '<i class="fa-solid fa-user-plus"></i>',
+            'LOCK_USER': '<i class="fa-solid fa-user-lock"></i>',
+            'UNLOCK_USER': '<i class="fa-solid fa-unlock-keyhole"></i>',
+            'SHARE_DOCUMENT': '<i class="fa-solid fa-share-nodes"></i>',
+            'CHANGE_PERMISSION': '<i class="fa-solid fa-key"></i>',
+            'UPDATE_PROFILE': '<i class="fa-solid fa-id-card"></i>',
+            'CREATE_DEPARTMENT': '<i class="fa-solid fa-building"></i>',
+            'UPDATE_DEPARTMENT': '<i class="fa-solid fa-pen-to-square"></i>',
+            'DELETE_DEPARTMENT': '<i class="fa-solid fa-trash"></i>'
         };
 
         const actionColors = {
@@ -281,7 +333,7 @@ async function loadRecentActivities() {
             <li class="activity-item">
                 <div class="activity-dot ${actionColors[log.action] || 'indigo'}"></div>
                 <div class="activity-info">
-                    <p>${actionIcons[log.action] || '📋'} ${getActionLabel(log.action)} - ${log.userName || 'Hệ thống'}</p>
+                    <p>${actionIcons[log.action] || '<i class="fa-solid fa-clipboard-list"></i>'} ${getActionLabel(log.action)} - ${log.userName || 'Hệ thống'}</p>
                     <span>${typeof formatDate !== 'undefined' ? formatDate(log.createdAt) : log.createdAt}</span>
                 </div>
             </li>
@@ -309,11 +361,11 @@ async function loadDepartmentStats() {
         container.innerHTML = response.map(dept => `
             <div class="dept-item" style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-weight:600;font-size:0.85rem;">🏢 ${dept.name}</span>
+                    <span style="font-weight:600;font-size:0.85rem;"><i class="fa-solid fa-building"></i> ${dept.name}</span>
                     <span style="font-size:0.8rem;color:#6b7280;">${dept.documentCount || 0} tài liệu</span>
                 </div>
                 <div style="font-size:0.75rem;color:#9ca3af;margin-top:4px;">
-                    👥 ${dept.userCount || 0} người dùng | 💬 ${dept.chatCount || 0} phiên chat
+                    <i class="fa-solid fa-users"></i> ${dept.userCount || 0} người dùng | <i class="fa-solid fa-comments"></i> ${dept.chatCount || 0} phiên chat
                 </div>
             </div>
         `).join('');
@@ -935,12 +987,12 @@ function renderDocumentTable() {
     }
 
     tbody.innerHTML = docs.map((doc, index) => `
-        <tr>
+        <tr style="cursor:pointer;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
             <td>${(AdminState.documents.page - 1) * AdminState.documents.pageSize + index + 1}</td>
-            <td>
+            <td onclick="openDocumentDetail(${doc.id})" title="Click để xem chi tiết">
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span style="font-size:1.3rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</span>
-                    <span style="font-weight:500;">${doc.fileName || '—'}</span>
+                    <span style="font-weight:500;color:#4f46e5;text-decoration:underline;text-decoration-color:transparent;" onmouseover="this.style.textDecorationColor='#4f46e5'" onmouseout="this.style.textDecorationColor='transparent'">${doc.fileName || '—'}</span>
                 </div>
             </td>
             <td>${doc.departmentName || '—'}</td>
@@ -953,10 +1005,10 @@ function renderDocumentTable() {
             <td>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</td>
             <td>
                 <div style="display:flex;gap:6px;">
-                    <button class="btn-icon" onclick="viewDocument(${doc.id})" title="Xem">👁️</button>
-                    <button class="btn-icon" onclick="downloadDocument(${doc.id})" title="Tải xuống">⬇️</button>
-                    ${doc.status === 'FAILED' ? `<button class="btn-icon" onclick="retryDocument(${doc.id})" title="Thử lại">🔄</button>` : ''}
-                    <button class="btn-icon" onclick="deleteDocument(${doc.id}, '${doc.fileName}')" title="Xoá">🗑️</button>
+                    <button class="btn-icon" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết" style="font-size:1rem;">👁️</button>
+                    <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id})" title="Tải xuống" style="font-size:1rem;">⬇️</button>
+                    ${doc.status === 'FAILED' ? `<button class="btn-icon" onclick="event.stopPropagation(); retryDocument(${doc.id})" title="Thử lại" style="font-size:1rem;">🔄</button>` : ''}
+                    <button class="btn-icon" onclick="event.stopPropagation(); deleteDocument(${doc.id}, '${doc.fileName}')" title="Xoá" style="font-size:1rem;">🗑️</button>
                 </div>
             </td>
         </tr>
@@ -1636,13 +1688,47 @@ async function loadAdminProfile() {
         const viewPhone = document.getElementById('viewPhone');
         const viewDept = document.getElementById('viewDept');
         const viewRole = document.getElementById('viewRole');
+        const viewCreatedAt = document.getElementById('viewCreatedAt');
+        const viewLastLogin = document.getElementById('viewLastLogin');
 
         if (viewFullName) viewFullName.textContent = response.fullName || '—';
-        if (viewUsername) viewUsername.textContent = response.username || '—';
+        if (viewUsername) viewUsername.textContent = response.username || response.userName || '—';
         if (viewEmail) viewEmail.textContent = response.email || '—';
         if (viewPhone) viewPhone.textContent = response.phone || '—';
-        if (viewDept) viewDept.textContent = response.departmentName || '—';
+        if (viewDept) {
+            viewDept.textContent = response.departmentName || 'Toàn hệ thống';
+        }
+        
+        const avatarEl = document.getElementById('profileAvatar');
+        if (avatarEl) {
+            if (response.avatarUrl) {
+                avatarEl.innerHTML = `<img src="${response.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else if (typeof generateDefaultAvatar !== 'undefined') {
+                avatarEl.innerHTML = `<img src="${generateDefaultAvatar(response.fullName)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                avatarEl.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
+            }
+        }
+        
+        // Cập nhật avatar trên Topbar
+        const topbarAvatar = document.getElementById('userAvatar');
+        if (topbarAvatar) {
+            if (response.avatarUrl) {
+                topbarAvatar.innerHTML = `<img src="${response.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                topbarAvatar.style.background = 'transparent';
+                topbarAvatar.style.color = 'transparent';
+            } else if (typeof generateDefaultAvatar !== 'undefined') {
+                topbarAvatar.innerHTML = `<img src="${generateDefaultAvatar(response.fullName)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                topbarAvatar.style.background = 'transparent';
+                topbarAvatar.style.color = 'transparent';
+            } else {
+                topbarAvatar.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
+            }
+        }
+        
         if (viewRole) viewRole.textContent = 'Quản trị viên';
+        if (viewCreatedAt) viewCreatedAt.textContent = response.createdAt ? (typeof formatDate !== 'undefined' ? formatDate(response.createdAt) : response.createdAt) : '—';
+        if (viewLastLogin) viewLastLogin.textContent = response.lastLogin ? (typeof formatDate !== 'undefined' ? formatDate(response.lastLogin) : response.lastLogin) : '—';
 
         // Update form inputs
         const fields = {
@@ -1658,17 +1744,9 @@ async function loadAdminProfile() {
         // Update profile card
         const nameEl = document.getElementById('profileName');
         const deptEl = document.getElementById('profileDept');
-        const avatarEl = document.getElementById('profileAvatar');
 
         if (nameEl) nameEl.textContent = response.fullName;
         if (deptEl) deptEl.textContent = response.departmentName || '—';
-        if (avatarEl) {
-            if (response.avatarUrl) {
-                avatarEl.innerHTML = `<img src="${response.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-            } else {
-                avatarEl.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
-            }
-        }
 
         // Update sidebar user card
         const sidebarName = document.getElementById('sidebarName');
@@ -1680,6 +1758,8 @@ async function loadAdminProfile() {
         if (sidebarAvatar) {
             if (response.avatarUrl) {
                 sidebarAvatar.innerHTML = `<img src="${response.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else if (typeof generateDefaultAvatar !== 'undefined') {
+                sidebarAvatar.innerHTML = `<img src="${generateDefaultAvatar(response.fullName)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
             } else {
                 sidebarAvatar.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
             }
@@ -1715,6 +1795,41 @@ async function loadProfileActivities() {
             list.innerHTML = '<li class="activity-empty">Chưa có hoạt động nào</li>';
             return;
         }
+
+        // Handle hash change for navigation
+        window.addEventListener('hashchange', () => {
+            const page = window.location.hash.substring(1) || 'dashboard';
+            changeAdminPage(page);
+        });
+
+        // Khởi tạo
+        document.addEventListener('DOMContentLoaded', () => {
+            // Determine initial page from hash or default to dashboard
+            const initialPage = window.location.hash.substring(1) || 'dashboard';
+            changeAdminPage(initialPage);
+            
+            // Update active state of sidebar links
+            const currentLink = document.querySelector(`.sidebar-menu a[href="#${initialPage}"]`);
+            if (currentLink) {
+                document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+                currentLink.parentElement.classList.add('active');
+            }
+
+            // Check query params for edit trigger
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('edit');
+            if (editId) {
+                // change page to users first
+                changeAdminPage('users');
+                // small timeout to allow UI setup
+                setTimeout(() => {
+                    editUser(editId);
+                    // remove query param without reload
+                    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.hash;
+                    window.history.pushState({path:newUrl},'',newUrl);
+                }, 500);
+            }
+        });
 
         list.innerHTML = logs.map(log => `
             <li class="activity-item-v2">
@@ -1879,7 +1994,7 @@ async function updateProfile() {
         if (avatarUrl) payload.avatarUrl = avatarUrl;
 
         await apiRequest('/api/users/profile', {
-            method: 'PUT',
+            method: 'PATCH',
             body: JSON.stringify(payload)
         });
 
@@ -2029,20 +2144,26 @@ window.changePassword = changePassword;
 
 // ===== STUB FUNCTIONS (to be implemented) =====
 async function editUser(userId) {
-    const user = AdminState.users.data.find(u => u.id === userId);
+    let user = AdminState.users.data.find(u => u.id == userId);
+    
+    // Nếu không tìm thấy trong state hiện tại, gọi API lấy chi tiết
     if (!user) {
-        if (typeof showToast !== 'undefined') showToast('Không tìm thấy dữ liệu người dùng', 'error');
-        return;
+        try {
+            user = await apiRequest(`/api/admin/users/${userId}`);
+        } catch (error) {
+            console.error(error);
+            if (typeof showToast !== 'undefined') showToast('Không tìm thấy dữ liệu người dùng', 'error');
+            return;
+        }
     }
     
     document.getElementById('editUserId').value = user.id;
     document.getElementById('modalEditFullName').value = user.fullName || '';
-    document.getElementById('modalEditPhone').value = ''; // API chưa trả về phone nên để trống
+    document.getElementById('modalEditPhone').value = user.phone || ''; // Cập nhật phone
     
     // Gán role
     const roleSelect = document.getElementById('editRole');
     if (roleSelect) roleSelect.value = user.role || 'USER';
-
 
     if (typeof openModal !== 'undefined') openModal('editUserModal');
 }

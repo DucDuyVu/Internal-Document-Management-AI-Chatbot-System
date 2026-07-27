@@ -57,6 +57,12 @@ public class AdminUserController {
 		return usersService.createUser(request);
 	}
 
+	// Lấy thông tin user (để edit)
+	@GetMapping("/{userId}")
+	public AdminUserResponse getUser(@PathVariable Long userId) {
+		return usersService.getUserById(userId);
+	}
+
 	// Chỉnh sửa thông tin user
 	@PutMapping("/{userId}")
 	public AdminUserResponse updateUser(@PathVariable Long userId, @RequestBody UpdateUserRequest request) {

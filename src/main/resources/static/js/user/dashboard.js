@@ -3,6 +3,22 @@
    Chức năng: Documents, AI Chatbot, Search, Profile
    ============================================= */
 
+// ===== FILE TYPE STYLE HELPER (đồng bộ màu với Admin) =====
+function getDocStyle(type) {
+    if (typeof getDocFileStyle !== 'undefined') return getDocFileStyle(type);
+    // Fallback inline nếu common.js chưa load
+    if (!type) return { color: '#6b7280', bg: '#f9fafb', icon: 'fa-file' };
+    const t = type.toLowerCase();
+    if (t === 'pdf') return { color: '#dc2626', bg: '#fef2f2', icon: 'fa-file-pdf' };
+    if (t === 'doc' || t === 'docx') return { color: '#2563eb', bg: '#eff6ff', icon: 'fa-file-word' };
+    if (t === 'xls' || t === 'xlsx') return { color: '#16a34a', bg: '#f0fdf4', icon: 'fa-file-excel' };
+    if (t === 'ppt' || t === 'pptx') return { color: '#ea580c', bg: '#fff7ed', icon: 'fa-file-powerpoint' };
+    if (['png','jpg','jpeg','gif','webp','svg'].includes(t)) return { color: '#7c3aed', bg: '#f5f3ff', icon: 'fa-file-image' };
+    if (t === 'txt') return { color: '#374151', bg: '#f9fafb', icon: 'fa-file-lines' };
+    if (t === 'zip' || t === 'rar') return { color: '#b45309', bg: '#fffbeb', icon: 'fa-file-zipper' };
+    return { color: '#4f46e5', bg: '#eef2ff', icon: 'fa-file' };
+}
+
 // ===== KIỂM TRA DEPENDENCIES =====
 if (typeof API_BASE === 'undefined') {
     console.error('common.js chưa được tải!');
@@ -161,105 +177,119 @@ function loadUserTabData(tabId) {
 
 async function loadHomeData() {
     try {
-        // Sử dụng apiRequest từ auth.js
         if (typeof apiRequest === 'undefined') {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const stats = await apiRequest('/api/user/statistics');
+        const data = await apiRequest('/api/dashboard/stats');
 
-        document.getElementById('statDocCount').textContent = stats.documentCount || 0;
-        document.getElementById('statChatCount').textContent = stats.chatSessionCount || 0;
-        document.getElementById('statViewCount').textContent = stats.viewCount || 0;
-        document.getElementById('statSearchCount').textContent = stats.searchCount || 0;
+        // Bỏ skeleton loaders
+        document.querySelectorAll('.stat-value').forEach(el => el.classList.remove('skeleton-loader'));
+        
+        document.getElementById('statDocCount').textContent = data.documentCount || 0;
+        document.getElementById('statChatCount').textContent = data.chatSessionCount || 0;
+        document.getElementById('statViewCount').textContent = data.viewCount || 0;
+        document.getElementById('statSearchCount').textContent = data.searchCount || 0;
 
-        // Load recent activities
-        loadUserActivities();
+        // Render activities
+        const list = document.getElementById('activityList');
+        if (list) {
+            if (!data.recentActivities || data.recentActivities.length === 0) {
+                list.innerHTML = '<li class="activity-item"><div class="activity-dot indigo"></div><div class="activity-info"><p>Chưa có hoạt động nào</p><span>—</span></div></li>';
+            } else {
+                const actionIcons = {
+                    'LOGIN': '<i class="fa-solid fa-right-to-bracket"></i>',
+                    'VIEW_DOCUMENT': '<i class="fa-solid fa-eye"></i>',
+                    'DOWNLOAD_DOCUMENT': '<i class="fa-solid fa-download"></i>',
+                    'CHAT_QUERY': '<i class="fa-solid fa-comment-dots"></i>',
+                    'SEARCH': '<i class="fa-solid fa-magnifying-glass"></i>'
+                };
+                const actionColors = {
+                    'LOGIN': 'indigo',
+                    'VIEW_DOCUMENT': 'green',
+                    'DOWNLOAD_DOCUMENT': 'sky',
+                    'CHAT_QUERY': 'indigo',
+                    'SEARCH': 'amber'
+                };
+                list.innerHTML = data.recentActivities.map(activity => `
+                    <li class="activity-item">
+                        <div class="activity-dot ${actionColors[activity.action] || 'indigo'}"></div>
+                        <div class="activity-info">
+                            <p>${actionIcons[activity.action] || '<i class="fa-solid fa-clipboard-list"></i>'} ${typeof getActionLabel !== 'undefined' ? getActionLabel(activity.action) : activity.action}</p>
+                            <span>${typeof formatDate !== 'undefined' ? formatDate(activity.createdAt) : activity.createdAt}</span>
+                        </div>
+                    </li>
+                `).join('');
+            }
+        }
 
-        // Load recent documents
-        loadRecentDocuments();
+        // Render documents
+        const grid = document.getElementById('recentDocGrid');
+        if (grid) {
+            if (!data.recentDocuments || data.recentDocuments.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><i class="fa-regular fa-folder-open empty-icon"></i><p>Chưa có tài liệu nào</p></div>';
+            } else {
+                grid.innerHTML = data.recentDocuments.map(doc => {
+                    const style = getDocStyle(doc.fileType);
+                    return `
+                    <div class="doc-card" onclick="openDocumentDetail(${doc.id})" style="cursor:pointer;">
+                        <div class="doc-card-icon" style="background:${style.bg};border-radius:12px;display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin-bottom:12px;">
+                            <i class="fa-solid ${style.icon}" style="font-size:1.4rem;color:${style.color};"></i>
+                        </div>
+                        <h4 style="font-size:0.875rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px;" title="${doc.fileName}">${doc.fileName}</h4>
+                        <div class="doc-card-meta">
+                            <div>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
+                            <div>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
+                        </div>
+                        ${doc.departmentName ? `<div class="doc-card-meta" style="margin-top:4px;"><i class="fa-solid fa-building" style="color:#9ca3af;"></i> ${doc.departmentName}</div>` : ''}
+                        <div style="margin-top:8px;">
+                            <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+        }
+        
+        // Update user banner info
+        const currentUser = typeof getUser !== 'undefined' ? getUser() : null;
+        if (currentUser) {
+            document.getElementById('welcomeName').textContent = currentUser.fullName || currentUser.username;
+            if (currentUser.departmentName) {
+                document.getElementById('wDept').textContent = currentUser.departmentName;
+                document.getElementById('wDeptWrap').style.display = 'inline';
+            }
+            if (currentUser.role) {
+                const roleLabels = { 'USER': 'Nhân viên', 'MANAGER': 'Trưởng phòng', 'ADMIN': 'Quản trị viên' };
+                document.getElementById('wRole').textContent = roleLabels[currentUser.role] || currentUser.role;
+                document.getElementById('wRoleWrap').style.display = 'inline';
+            }
+        }
+        
+        if (data.lastLoginTime) {
+            const lastLoginEl = document.getElementById('wLastLogin');
+            if (lastLoginEl) lastLoginEl.textContent = typeof formatDate !== 'undefined' ? formatDate(data.lastLoginTime) : data.lastLoginTime;
+            const wLastLoginWrap = document.getElementById('wLastLoginWrap');
+            if(wLastLoginWrap) wLastLoginWrap.style.display = 'inline';
+        }
 
     } catch (error) {
         console.error('Error loading home data:', error);
+        
+        document.querySelectorAll('.stat-value').forEach(el => {
+            el.classList.remove('skeleton-loader');
+            el.textContent = 'Lỗi';
+            el.style.fontSize = '1.2rem';
+        });
+        
+        const list = document.getElementById('activityList');
+        if(list) list.innerHTML = '<li class="activity-item"><div class="activity-dot red"></div><div class="activity-info"><p>Không tải được</p><span>—</span></div></li>';
+        
+        const grid = document.getElementById('recentDocGrid');
+        if(grid) grid.innerHTML = '<div class="empty-state"><span>⚠️</span><p>Không tải được dữ liệu</p></div>';
+
         if (typeof showToast !== 'undefined') {
             showToast('Không thể tải dữ liệu trang chủ', 'error');
         }
-    }
-}
-
-async function loadUserActivities() {
-    try {
-        if (typeof apiRequest === 'undefined') return;
-
-        const activities = await apiRequest('/api/user/activities?limit=8');
-        const list = document.getElementById('activityList');
-
-        if (!list) return;
-
-        if (!activities || activities.length === 0) {
-            list.innerHTML = '<li class="activity-item"><div class="activity-dot indigo"></div><div class="activity-info"><p>Chưa có hoạt động nào</p><span>—</span></div></li>';
-            return;
-        }
-
-        const actionIcons = {
-            'LOGIN': '🔑',
-            'VIEW_DOCUMENT': '👁️',
-            'DOWNLOAD_DOCUMENT': '⬇️',
-            'CHAT_QUERY': '💬',
-            'SEARCH': '🔍'
-        };
-
-        const actionColors = {
-            'LOGIN': 'indigo',
-            'VIEW_DOCUMENT': 'green',
-            'DOWNLOAD_DOCUMENT': 'sky',
-            'CHAT_QUERY': 'indigo',
-            'SEARCH': 'amber'
-        };
-
-        list.innerHTML = activities.map(activity => `
-            <li class="activity-item">
-                <div class="activity-dot ${actionColors[activity.action] || 'indigo'}"></div>
-                <div class="activity-info">
-                    <p>${actionIcons[activity.action] || '📋'} ${getActionLabel(activity.action)}</p>
-                    <span>${typeof formatDate !== 'undefined' ? formatDate(activity.createdAt) : activity.createdAt}</span>
-                </div>
-            </li>
-        `).join('');
-
-    } catch (error) {
-        console.error('Error loading activities:', error);
-    }
-}
-
-async function loadRecentDocuments() {
-    try {
-        if (typeof apiRequest === 'undefined') return;
-
-        const docs = await apiRequest('/api/documents?page=0&size=6&sort=newest');
-        const grid = document.getElementById('recentDocGrid');
-
-        if (!grid) return;
-
-        if (!docs || docs.length === 0) {
-            grid.innerHTML = '<div class="empty-state"><span>📁</span><p>Chưa có tài liệu nào</p></div>';
-            return;
-        }
-
-        grid.innerHTML = docs.map(doc => `
-            <div class="doc-card" onclick="viewUserDocument(${doc.id})">
-                <div class="doc-card-icon">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</div>
-                <h4>${doc.fileName}</h4>
-                <div class="doc-card-meta">
-                    <div>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
-                    <div>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
-                </div>
-                ${doc.departmentName ? `<div class="doc-card-meta" style="margin-top:4px;">🏢 ${doc.departmentName}</div>` : ''}
-            </div>
-        `).join('');
-
-    } catch (error) {
-        console.error('Error loading recent documents:', error);
     }
 }
 
@@ -305,26 +335,38 @@ function renderUserDocuments() {
         if (!docs || docs.length === 0) {
             gridView.innerHTML = '<div class="empty-state"><span>📄</span><p>Không tìm thấy tài liệu</p></div>';
         } else {
-            gridView.innerHTML = docs.map(doc => `
+        gridView.innerHTML = docs.map(doc => {
+                const style = getDocStyle(doc.fileType);
+                return `
                 <div class="doc-card">
-                    <div onclick="viewUserDocument(${doc.id})" style="cursor:pointer">
-                        <div class="doc-card-icon">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</div>
-                        <h4>${doc.fileName}</h4>
-                        <div class="doc-card-meta">
-                            <div>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
-                            <div>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
+                    <div onclick="openDocumentDetail(${doc.id})" style="cursor:pointer">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                            <div style="width:44px;height:44px;border-radius:10px;background:${style.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fa-solid ${style.icon}" style="font-size:1.3rem;color:${style.color};"></i>
+                            </div>
+                            <div style="min-width:0;">
+                                <div style="font-size:0.8rem;font-weight:700;color:${style.color};background:${style.bg};display:inline-block;padding:2px 7px;border-radius:4px;letter-spacing:0.5px;">${(doc.fileType || 'FILE').toUpperCase()}</div>
+                            </div>
                         </div>
-                        <div class="doc-card-meta" style="margin-top:4px;">
+                        <h4 style="font-size:0.875rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px;" title="${doc.fileName}">${doc.fileName}</h4>
+                        <div class="doc-card-meta">
+                            <div><i class="fa-solid fa-weight-hanging" style="color:#9ca3af;margin-right:4px;"></i>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
+                            <div><i class="fa-regular fa-calendar" style="color:#9ca3af;margin-right:4px;"></i>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
+                        </div>
+                        <div class="doc-card-meta" style="margin-top:6px;">
                             <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
                         </div>
                     </div>
                     ${canManagePerms(doc) ? `
-                    <div style="margin-top: 12px; border-top: 1px solid #e2e8f0; padding-top: 8px; text-align: center;">
-                        <button class="btn-primary-sm" style="width: 100%; background: #64748b;" onclick="openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')">🛡️ Quản lý Quyền</button>
-                    </div>
-                    ` : ''}
-                </div>
-            `).join('');
+                    <div style="margin-top:12px;border-top:1px solid #f3f4f6;padding-top:10px;">
+                        <button style="width:100%;background:none;border:1px solid #e5e7eb;border-radius:6px;padding:6px 12px;font-size:0.8rem;color:#6b7280;cursor:pointer;font-weight:600;transition:all 0.2s;" onclick="event.stopPropagation();openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')"
+                            onmouseover="this.style.background='#f9fafb';this.style.borderColor='#4f46e5';this.style.color='#4f46e5'"
+                            onmouseout="this.style.background='none';this.style.borderColor='#e5e7eb';this.style.color='#6b7280'">
+                            <i class="fa-solid fa-shield-halved"></i> Quản lý Quyền
+                        </button>
+                    </div>` : ''}
+                </div>`;
+            }).join('');
         }
     }
 
@@ -335,10 +377,10 @@ function renderUserDocuments() {
             listBody.innerHTML = '<tr><td colspan="6" class="empty-state"><span>📄</span>Không tìm thấy tài liệu</td></tr>';
         } else {
             listBody.innerHTML = docs.map(doc => `
-                <tr>
-                    <td>
+                <tr style="cursor:pointer;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
+                    <td onclick="openDocumentDetail(${doc.id})" title="Click để xem chi tiết">
                         <span style="font-size:1.1rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</span>
-                        <span style="font-weight:500;">${doc.fileName}</span>
+                        <span style="font-weight:500;color:#4f46e5;">${doc.fileName}</span>
                     </td>
                     <td>${doc.fileType?.toUpperCase()}</td>
                     <td>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</td>
@@ -347,9 +389,9 @@ function renderUserDocuments() {
                         <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
                     </td>
                     <td>
-                        <button class="btn-icon" onclick="viewUserDocument(${doc.id})" title="Xem">👁️</button>
-                        <button class="btn-icon" onclick="downloadDocument(${doc.id})" title="Tải xuống">⬇️</button>
-                        ${canManagePerms(doc) ? `<button class="btn-icon" onclick="openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')" title="Quản lý Quyền" style="color: #64748b;">🛡️</button>` : ''}
+                        <button class="btn-icon" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết">👁️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id})" title="Tải xuống">⬇️</button>
+                        ${canManagePerms(doc) ? `<button class="btn-icon" onclick="event.stopPropagation(); openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')" title="Quản lý Quyền" style="color: #64748b;">🛡️</button>` : ''}
                     </td>
                 </tr>
             `).join('');
@@ -973,8 +1015,26 @@ async function loadUserProfile() {
         if (avatarEl) {
             if (profile.avatarUrl) {
                 avatarEl.innerHTML = `<img src="${profile.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else if (typeof generateDefaultAvatar !== 'undefined') {
+                avatarEl.innerHTML = `<img src="${generateDefaultAvatar(profile.fullName)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
             } else {
                 avatarEl.textContent = (profile.fullName || 'U').charAt(0).toUpperCase();
+            }
+        }
+        
+        // Cập nhật avatar trên Topbar
+        const topbarAvatar = document.getElementById('userAvatar');
+        if (topbarAvatar) {
+            if (profile.avatarUrl) {
+                topbarAvatar.innerHTML = `<img src="${profile.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                topbarAvatar.style.background = 'transparent';
+                topbarAvatar.style.color = 'transparent';
+            } else if (typeof generateDefaultAvatar !== 'undefined') {
+                topbarAvatar.innerHTML = `<img src="${generateDefaultAvatar(profile.fullName)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                topbarAvatar.style.background = 'transparent';
+                topbarAvatar.style.color = 'transparent';
+            } else {
+                topbarAvatar.textContent = (profile.fullName || 'U').charAt(0).toUpperCase();
             }
         }
 
@@ -991,16 +1051,20 @@ async function loadUserProfile() {
         const viewPhone = document.getElementById('viewPhone');
         const viewDept = document.getElementById('viewDept');
         const viewRole = document.getElementById('viewRole');
+        const viewCreatedAt = document.getElementById('viewCreatedAt');
+        const viewLastLogin = document.getElementById('viewLastLogin');
 
         if (viewFullName) viewFullName.textContent = profile.fullName || '—';
         if (viewUsername) viewUsername.textContent = profile.username || profile.userName || '—';
         if (viewEmail) viewEmail.textContent = profile.email || '—';
         if (viewPhone) viewPhone.textContent = profile.phone || '—';
-        if (viewDept) viewDept.textContent = profile.departmentName || '—';
+        if (viewDept) viewDept.textContent = profile.departmentName || 'Toàn hệ thống';
         if (viewRole) {
             const roles = { ADMIN: 'Quản trị viên', MANAGER: 'Quản lý', USER: 'Nhân viên' };
             viewRole.textContent = roles[profile.role] || profile.role || '—';
         }
+        if (viewCreatedAt) viewCreatedAt.textContent = profile.createdAt ? (typeof formatDate !== 'undefined' ? formatDate(profile.createdAt) : profile.createdAt) : '—';
+        if (viewLastLogin) viewLastLogin.textContent = profile.lastLogin ? (typeof formatDate !== 'undefined' ? formatDate(profile.lastLogin) : profile.lastLogin) : '—';
 
         // Update form
         const fullNameInput = document.getElementById('editFullName');
