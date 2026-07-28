@@ -232,7 +232,7 @@ function switchTab(tabId, menuItem = null) {
     // Known tab IDs across both User and Admin dashboards
     const knownTabs = ['tabHome', 'tabDocuments', 'tabChat', 'tabSearch', 'tabProfile', 
                        'tabOverview', 'tabUsers', 'tabDepartments', 'tabPermissions', 
-                       'tabUpload', 'tabLogs'];
+                       'tabUpload', 'tabLogs', 'tabManager', 'tabEmployees', 'tabReports', 'tabSettings'];
 
     // Hide all known tabs
     knownTabs.forEach(id => {
@@ -286,6 +286,8 @@ function updateUserUI(user) {
     // Update Topbar
     const topName = document.getElementById("fullName");
     if (topName) topName.textContent = displayName;
+    const topUserFullName = document.getElementById("userFullName");
+    if (topUserFullName) topUserFullName.textContent = displayName;
 
     const topAvatar = document.getElementById("userAvatar");
     if (topAvatar) {
@@ -312,13 +314,13 @@ function updateUserUI(user) {
     const sideDept = document.getElementById("sidebarDept");
     const topRoleBadge = document.getElementById("topRoleBadge");
     
-    if (user.role === 'ADMIN') {
+    if (user.role === 'ADMIN' || user.role === 'Quản trị viên' || user.role === 'ROLE_ADMIN') {
         if (sideDept) sideDept.textContent = 'Quản trị viên';
         if (topRoleBadge) {
             topRoleBadge.textContent = 'Quản trị viên';
             topRoleBadge.className = 'role-badge admin';
         }
-    } else if (user.role === 'MANAGER') {
+    } else if (user.role === 'MANAGER' || user.role === 'Quản lý' || user.role === 'Trưởng phòng' || user.role === 'ROLE_MANAGER') {
         if (sideDept) sideDept.textContent = 'Quản lý';
         if (topRoleBadge) {
             topRoleBadge.textContent = 'QUẢN LÝ';
@@ -1128,3 +1130,99 @@ async function markNotificationAsRead(id) {
 
 // Khởi tạo Notifications
 document.addEventListener('DOMContentLoaded', initNotifications);
+
+// ==========================================
+// Theme (Dark Mode) & Dropdown UI Logic
+// ==========================================
+
+function toggleDropdown(event, dropdownId) {
+    if (event) {
+        event.stopPropagation();
+    }
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    // Close all other dropdowns
+    document.querySelectorAll('.dropdown-menu').forEach(el => {
+        if (el.id !== dropdownId) {
+            el.style.display = 'none';
+        }
+    });
+
+    // Toggle current
+    if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+    } else {
+        dropdown.style.display = 'block';
+    }
+}
+
+// Đóng dropdown khi click ra ngoài
+document.addEventListener('click', function(event) {
+    document.querySelectorAll('.dropdown-menu').forEach(el => {
+        el.style.display = 'none';
+    });
+});
+
+function setTheme(mode) {
+    localStorage.setItem('idms_theme', mode);
+    applyTheme(mode);
+}
+
+function applyTheme(mode) {
+    const isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
+    if (isDark) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+
+    // Update Toggle Switches
+    const adminToggle = document.getElementById('checkboxThemeToggleAdmin');
+    if (adminToggle) adminToggle.checked = isDark;
+    
+    const managerToggle = document.getElementById('checkboxThemeToggleManager');
+    if (managerToggle) managerToggle.checked = isDark;
+    
+    const userToggle = document.getElementById('checkboxThemeToggleUser');
+    if (userToggle) userToggle.checked = isDark;
+
+    // Update settings theme select if it exists
+    const themeSelect = document.getElementById('settingsThemeSelect');
+    if (themeSelect) {
+        themeSelect.value = mode;
+    }
+}
+
+// Lắng nghe thay đổi hệ thống
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    const theme = localStorage.getItem('idms_theme') || 'system';
+    if (theme === 'system') {
+        applyTheme('system');
+    }
+});
+
+// Khởi tạo theme khi load DOM
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('idms_theme') || 'system';
+    applyTheme(savedTheme);
+});
+
+// Chuyển đổi tab trong màn hình Cài đặt
+function switchSettingsTab(tabId, btn) {
+    if (!btn) return;
+    const settingsContainer = btn.closest('.settings-layout');
+    if (!settingsContainer) return;
+
+    // Reset buttons
+    settingsContainer.querySelectorAll('.settings-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Reset contents
+    settingsContainer.querySelectorAll('.settings-card').forEach(c => c.classList.remove('active'));
+    const target = document.getElementById(tabId);
+    if (target) {
+        target.classList.add('active');
+    }
+}

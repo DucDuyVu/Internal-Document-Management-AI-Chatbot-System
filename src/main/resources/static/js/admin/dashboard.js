@@ -1354,64 +1354,57 @@ async function loadPermissions() {
     }
 }
 
+function buildPermissionRow(perm) {
+    const deptName   = escapeHtml(perm.departmentName  || 'Tất cả phòng ban');
+    const docTitle   = escapeHtml(perm.documentTitle   || '—');
+    const grantor    = escapeHtml(perm.grantedByName   || '—');
+    const grantedAt  = typeof formatDate !== 'undefined' ? formatDate(perm.createdAt) : perm.createdAt;
+    // departmentId null (tất cả phòng ban) → truyền 0 cho backend
+    const deptId     = perm.departmentId ?? 0;
+
+    return `
+        <tr>
+            <td>📄 ${docTitle}</td>
+            <td>${deptName}</td>
+            <td>👤 ${grantor}</td>
+            <td>${grantedAt}</td>
+            <td><span class="status-badge active">Đang chia sẻ</span></td>
+            <td>
+                <button class="btn-icon"
+                        onclick="revokePermission(${perm.documentId}, ${deptId})"
+                        title="Thu hồi quyền"
+                        style="color:#ef4444;">
+                    🗑️
+                </button>
+            </td>
+        </tr>`;
+}
+
 function renderPermissionsTable() {
     const tbody = document.getElementById('permTableBody');
     if (!tbody) return;
 
     const permissions = AdminState.permissions.data;
-
     if (!permissions || permissions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span>🔐</span>Chưa có phân quyền nào</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span>🔐</span> Chưa có phân quyền nào</td></tr>';
         return;
     }
 
-    tbody.innerHTML = permissions.map(perm => {
-        const deptName = perm.departmentName || 'Tất cả phòng ban';
-        return `
-        <tr>
-            <td>📄 ${perm.documentTitle || '—'}</td>
-            <td>
-                <div class="flex items-center gap-2">
-                    <span>${deptName}</span>
-                </div>
-            </td>
-            <td>👤 ${perm.grantedByName || '—'}</td>
-            <td>${typeof formatDate !== 'undefined' ? formatDate(perm.createdAt) : perm.createdAt}</td>
-            <td>
-                <span class="status-badge active">Đang chia sẻ</span>
-            </td>
-            <td>
-                <button class="btn-icon" onclick="revokePermission(${perm.documentId}, ${perm.departmentId || 0})" title="Thu hồi quyền">🗑️</button>
-            </td>
-        </tr>
-    `}).join('');
+    tbody.innerHTML = permissions.map(buildPermissionRow).join('');
 }
 
 async function revokePermission(docId, deptId) {
     showConfirmDialog(
         '❌ Xác nhận thu hồi quyền',
-        'Bạn có chắc chắn muốn thu hồi quyền truy cập này?',
+        'Bạn có chắc chắn muốn thu hồi quyền truy cập này? Hành động này không thể hoàn tác.',
         async () => {
             try {
-                if (typeof apiRequest === 'undefined') {
-                    throw new Error('apiRequest() không tồn tại');
-                }
-
-                await apiRequest(`/api/documents/${docId}/permissions/${deptId}`, {
-                    method: 'DELETE'
-                });
-
-                if (typeof showToast !== 'undefined') {
-                    showToast('Thu hồi quyền thành công!', 'success');
-                }
-
-                loadPermissions();
-
+                await apiRequest(`/api/documents/${docId}/permissions/${deptId}`, { method: 'DELETE' });
+                showToast('Thu hồi quyền thành công!', 'success');
+                await loadPermissions();
             } catch (error) {
-                console.error('Error revoking permission:', error);
-                if (typeof showToast !== 'undefined') {
-                    showToast(error.message || 'Không thể thu hồi quyền', 'error');
-                }
+                console.error('[Permission] Lỗi thu hồi:', error);
+                showToast(error.message || 'Không thể thu hồi quyền', 'error');
             }
         }
     );

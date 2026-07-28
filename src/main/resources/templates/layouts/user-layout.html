@@ -15,6 +15,17 @@
   
   <!-- CSS riêng của từng trang -->
   <th:block layout:fragment="custom-css"></th:block>
+
+  <!-- Prevent FOUC for Dark Mode -->
+  <script>
+    (function() {
+      try {
+        const theme = localStorage.getItem('idms_theme') || 'system';
+        const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
 <body>
@@ -42,11 +53,9 @@
         <span class="nav-icon"><i class="fa-solid fa-comment-dots"></i></span>
         <span>AI Chatbot</span>
       </li>
-      <li data-tab="tabSearch">
-        <span class="nav-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-        <span>Tìm kiếm tài liệu</span>
-      </li>
     </ul>
+
+    
 
     <div class="sidebar-divider"></div>
 
@@ -83,7 +92,7 @@
            </div>
            
            <!-- Global Search Dropdown -->
-           <div id="globalSearchDropdown" class="global-search-dropdown" style="display:none; position:absolute; top:42px; left:0; width:450px; background:white; border-radius:8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); border: 1px solid var(--border-color); z-index:200; overflow:hidden;">
+           <div id="globalSearchDropdown" class="global-search-dropdown" style="display:none; position:absolute; top:42px; left:0; width:450px; background:white; border-radius:8px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); border: 1px solid var(--border-color); z-index:200; max-height:420px; overflow-y:auto; overflow-x:hidden;">
               <div id="globalSearchResults"></div>
            </div>
         </div>
@@ -100,21 +109,31 @@
              <div id="notificationList" style="max-height: 300px; overflow-y: auto;">
                 <div style="padding: 16px; text-align:center; color:#64748b; font-size:0.875rem;">Không có thông báo mới</div>
              </div>
+             <div style="padding: 10px; text-align: center; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+                <a href="#" style="color: #4f46e5; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Xem tất cả</a>
+             </div>
           </div>
         </div>
         
         <!-- Settings -->
-        <div style="cursor:pointer; color:#fff; font-size:1.25rem;">
-           <i class="fa-solid fa-gear"></i>
+        <div style="cursor:pointer; color:#fff; font-size:1.25rem;" onclick="if(typeof switchTab === 'function') switchTab('tabSettings');">
+          <i class="fa-solid fa-gear"></i>
         </div>
 
-        <!-- Darkmode Toggle -->
-        <div style="cursor:pointer; color:#fff; font-size:1.25rem;">
-           <i class="fa-regular fa-moon"></i>
+        <!-- Darkmode Toggle Switch -->
+        <div style="display:flex; align-items:center;">
+          <label class="theme-switch" for="checkboxThemeToggleUser">
+            <input type="checkbox" id="checkboxThemeToggleUser" onchange="setTheme(this.checked ? 'dark' : 'light')" />
+            <div class="slider round">
+              <i class="fa-solid fa-moon icon-moon"></i>
+              <i class="fa-solid fa-sun icon-sun"></i>
+            </div>
+          </label>
         </div>
         
         <span class="role-badge user" id="topRoleBadge">Nhân viên</span>
-        <div class="user-pill" onclick="document.querySelector('[data-tab=\'tabProfile\']').click();" style="cursor:pointer;">
+        <div class="user-pill" onclick="document.querySelector('[data-tab=\'tabProfile\']').click();" style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+          <span id="userFullName" style="color:white; font-size:0.875rem; font-weight:500;"></span>
           <div class="user-avatar" id="userAvatar">U</div>
         </div>
       </div>
@@ -163,9 +182,9 @@
   </div>
 </div>
 
-<script src="/js/common.js?v=2"></script>
-<script src="/js/auth.js?v=2"></script>
-<script src="/js/user/dashboard.js?v=2"></script>
+<script src="/js/common.js?v=3"></script>
+<script src="/js/auth.js?v=3"></script>
+<script src="/js/user/dashboard.js?v=3"></script>
 
 <!-- JS riêng của từng trang -->
 <th:block layout:fragment="custom-js"></th:block>

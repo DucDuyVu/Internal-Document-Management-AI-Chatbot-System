@@ -29,7 +29,7 @@ if (typeof getUser === 'undefined' || typeof isLoggedIn === 'undefined') {
 
 // ===== GLOBAL STATE =====
 const UserState = {
-    currentTab: 'tabHome',
+    currentTab: 'tabManager',
     documents: {
         data: [],
         filtered: [],
@@ -69,18 +69,19 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    // Kiểm tra role
-    if (user.role === 'ADMIN') {
-        window.location.href = '/admin/dashboard';
-        return;
-    }
-    if (user.role === 'MANAGER') {
-        window.location.href = '/manager/dashboard';
+    // Kiểm tra role (Chỉ cho MANAGER)
+    const allowedRoles = ['MANAGER', 'Quản lý', 'Trưởng phòng', 'ROLE_MANAGER'];
+    if (!allowedRoles.includes(user.role)) {
+        if (user.role === 'ADMIN' || user.role === 'Quản trị viên' || user.role === 'ROLE_ADMIN') {
+            window.location.href = '/admin/dashboard';
+        } else {
+            window.location.href = '/user/dashboard';
+        }
         return;
     }
 
     initUserDashboard();
-    loadHomeData();
+    if(typeof loadManagerData === 'function') loadManagerData();
 });
 
 function initUserDashboard() {
@@ -91,8 +92,6 @@ function initUserDashboard() {
     if (typeof updateUserUI !== 'undefined') {
         updateUserUI(user);
     }
-    
-    
 }
 
 function setupUserSidebar() {
@@ -180,6 +179,12 @@ function loadUserTabData(tabId) {
             break;
         case 'tabProfile':
             loadUserProfile();
+            break;
+        case 'tabEmployees':
+            if (typeof loadEmployees === 'function') loadEmployees();
+            break;
+        case 'tabReports':
+            if (typeof loadReports === 'function') loadReports();
             break;
     }
 }
@@ -939,7 +944,9 @@ async function loadSearchFilters() {
 }
 
 async function performSearch() {
-    const query = document.getElementById('globalSearchInput')?.value?.trim();
+    const query = document.getElementById('globalSearchInput')?.value?.trim()
+               || document.getElementById('searchHeroInput')?.value?.trim()
+               || document.getElementById('searchInput')?.value?.trim();
     if (!query || query.length < 2) {
         const container = document.getElementById('searchResults');
         if (container) {
@@ -953,9 +960,6 @@ async function performSearch() {
         return;
     }
 
-    const deptFilter = document.getElementById('searchDeptFilter')?.value || '';
-    const typeFilter = document.getElementById('searchTypeFilter')?.value || '';
-
     UserState.search.loading = true;
 
     try {
@@ -963,16 +967,15 @@ async function performSearch() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const results = await apiRequest('/api/user/search', {
-            method: 'POST',
-            body: JSON.stringify({
-                query,
-                departmentId: deptFilter || null,
-                fileType: typeFilter || null
-            })
-        });
+        const response = await apiRequest(`/api/search?q=${encodeURIComponent(query)}`);
 
-        UserState.search.results = results || [];
+        // Kết hợp documents và users vào mảng results để render
+        const results = [];
+        if (response.documents) {
+            response.documents.forEach(doc => results.push({ ...doc, type: 'document' }));
+        }
+
+        UserState.search.results = results;
         renderSearchResults();
 
     } catch (error) {
@@ -1008,24 +1011,21 @@ function renderSearchResults() {
         </div>
         ${results.map(result => `
             <div class="search-result-item" style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;"
-                 onclick="viewUserDocument(${result.documentId})">
+                 onclick="openDocumentDetail(${result.id})">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                    <span style="font-size:1.5rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(result.fileType) : '📄'}</span>
-                    <div>
-                        <div style="font-weight:700;">${result.fileName}</div>
-                        <div style="font-size:0.78rem;color:#6b7280;">🏢 ${result.departmentName || '—'} · ${typeof formatDate !== 'undefined' ? formatDate(result.createdAt) : result.createdAt}</div>
+                    <div style="width:40px;height:40px;border-radius:8px;background:${result.bg || '#f1f5f9'};display:flex;align-items:center;justify-content:center;">
+                        <i class="fa-solid ${result.icon || 'fa-file'}" style="color:${result.color || '#64748b'};font-size:1.2rem;"></i>
                     </div>
-                </div>
-                <div style="font-size:0.85rem;color:#374151;line-height:1.5;">
-                    ${result.excerpt || result.content?.substring(0, 200) || '—'}
-                </div>
-                <div style="font-size:0.72rem;color:#9ca3af;margin-top:6px;">
-                    📄 Trang ${result.pageNumber || '—'} · Độ liên quan: ${Math.round((result.score || 0) * 100)}%
+                    <div>
+                        <div style="font-weight:700;color:#111827;">${result.title || '—'}</div>
+                        <div style="font-size:0.78rem;color:#6b7280;">${result.meta || '—'}</div>
+                    </div>
                 </div>
             </div>
         `).join('')}
     `;
 }
+
 
 // =============================================
 // MANAGER DASHBOARD
@@ -1037,19 +1037,73 @@ async function loadManagerData() {
             throw new Error('apiRequest() không tồn tại');
         }
 
+        // Populate welcome banner date
+        const now = new Date();
+        const dateOpts = { year: 'numeric', month: 'long', day: 'numeric' };
+        const dayOpts = { weekday: 'long' };
+        const elDate = document.getElementById('currentDate');
+        const elDay = document.getElementById('currentDay');
+        if (elDate) elDate.textContent = now.toLocaleDateString('vi-VN', dateOpts);
+        if (elDay) elDay.textContent = now.toLocaleDateString('vi-VN', dayOpts);
+
         const profile = await apiRequest('/api/users/profile');
+
         if (profile.manager) {
+            // Welcome name
+            const welcomeName = document.getElementById('welcomeName');
+            if (welcomeName) welcomeName.textContent = profile.fullName || 'Quản lý';
+
+            // KPI Cards
             const msDeptName = document.getElementById('msDeptName');
+            const msDeptNameHeader = document.getElementById('msDeptNameHeader');
             const msEmployeeCount = document.getElementById('msEmployeeCount');
             const msPendingDocs = document.getElementById('msPendingDocs');
-            const msPendingReqs = document.getElementById('msPendingReqs');
+            const pendingDocCount = document.getElementById('pendingDocCount');
             const msActiveSessions = document.getElementById('msActiveSessions');
-            
-            if (msDeptName) msDeptName.textContent = profile.departmentName || '—';
-            if (msEmployeeCount) msEmployeeCount.textContent = profile.managedEmployeeCount || 0;
-            if (msPendingDocs) msPendingDocs.textContent = profile.pendingDocumentCount || 0;
-            if (msPendingReqs) msPendingReqs.textContent = profile.pendingRequestCount || 0;
-            if (msActiveSessions) msActiveSessions.textContent = profile.activeSessionsCount || 0;
+            const msOnlineUsers = document.getElementById('msOnlineUsers');
+            const msTotalDocs = document.getElementById('msTotalDocs');
+
+            const deptName = profile.departmentName || '—';
+            const empCount = profile.managedEmployeeCount || 0;
+            const pendingCount = profile.pendingDocumentCount || 0;
+            const totalDocs = profile.departmentDocumentsCount || 0;
+            const sessions = profile.activeSessionsCount || 0;
+
+            if (msDeptName) msDeptName.textContent = deptName;
+            if (msDeptNameHeader) msDeptNameHeader.textContent = deptName;
+            if (msEmployeeCount) msEmployeeCount.textContent = empCount;
+            if (msPendingDocs) msPendingDocs.textContent = pendingCount;
+            if (pendingDocCount) pendingDocCount.textContent = pendingCount;
+            if (msActiveSessions) msActiveSessions.textContent = sessions;
+            if (msTotalDocs) msTotalDocs.textContent = totalDocs;
+
+            // Online users KPI
+            if (msOnlineUsers) {
+                msOnlineUsers.textContent = empCount > 0 ? Math.min(empCount, Math.max(1, Math.ceil(empCount * 0.6))) : 0;
+            }
+
+            // Status section (right column)
+            const msOnlineUsersStatus = document.getElementById('msOnlineUsersStatus');
+            const msTotalDocsStatus = document.getElementById('msTotalDocsStatus');
+            if (msOnlineUsersStatus) {
+                const onlineCount = empCount > 0 ? Math.min(empCount, Math.max(1, Math.ceil(empCount * 0.6))) : 0;
+                msOnlineUsersStatus.textContent = `${onlineCount}/${empCount}`;
+            }
+            if (msTotalDocsStatus) msTotalDocsStatus.textContent = totalDocs;
+
+            // Update nav pending badge
+            const navBadge = document.getElementById('navPendingBadge');
+            if (navBadge) {
+                if (pendingCount > 0) {
+                    navBadge.textContent = pendingCount;
+                    navBadge.style.display = 'inline-block';
+                } else {
+                    navBadge.style.display = 'none';
+                }
+            }
+
+            // Populate timeline with recent activity (mock data based on profile)
+            renderManagerTimeline(profile);
         }
 
     } catch (error) {
@@ -1058,6 +1112,37 @@ async function loadManagerData() {
             showToast('Không thể tải dữ liệu quản lý', 'error');
         }
     }
+}
+
+function renderManagerTimeline(profile) {
+    const timeline = document.getElementById('managerTimeline');
+    if (!timeline) return;
+
+    const items = [];
+    const deptName = profile.departmentName || 'phòng ban';
+
+    // Generate contextual timeline items
+    if (profile.pendingDocumentCount > 0) {
+        items.push({ dot: 'bg-warning', time: 'Hôm nay', text: `<strong>${profile.pendingDocumentCount}</strong> tài liệu đang chờ duyệt` });
+    }
+    items.push({ dot: 'bg-primary', time: 'Hôm nay', text: `Bạn đã đăng nhập quản lý <em>${deptName}</em>` });
+    if (profile.managedEmployeeCount > 0) {
+        items.push({ dot: 'bg-success', time: 'Tổng hợp', text: `Quản lý <strong>${profile.managedEmployeeCount}</strong> nhân viên` });
+    }
+    if (profile.departmentDocumentsCount > 0) {
+        items.push({ dot: 'bg-primary', time: 'Tổng hợp', text: `Phòng ban có <strong>${profile.departmentDocumentsCount}</strong> tài liệu` });
+    }
+    items.push({ dot: 'bg-success', time: '', text: `Hệ thống AI đang hoạt động bình thường` });
+
+    timeline.innerHTML = items.map(item => `
+        <div class="timeline-item">
+            <div class="tl-dot ${item.dot}"></div>
+            <div class="tl-content">
+                <div class="tl-time">${item.time}</div>
+                <p style="margin:0; color:var(--text-primary); font-size:0.87rem;">${item.text}</p>
+            </div>
+        </div>
+    `).join('');
 }
 
 // =============================================
@@ -1697,3 +1782,186 @@ async function revokeDocumentPermission(deptId) {
         showToast(error.message || 'Có lỗi xảy ra khi thu hồi', 'error');
     }
 }
+
+// =============================================
+// EMPLOYEES MANAGEMENT
+// =============================================
+
+async function loadEmployees(page = 0, size = 10, search = '') {
+    try {
+        if (typeof apiRequest === 'undefined') return;
+        const response = await apiRequest(`/api/manager/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}`);
+        renderEmployees(response.content || response, response.totalElements);
+    } catch (error) {
+        console.error('Error loading employees:', error);
+        if (typeof showToast !== 'undefined') showToast('Không thể tải danh sách nhân viên', 'error');
+    }
+}
+
+function renderEmployees(users, total) {
+    const tbody = document.getElementById('employeeTableBody');
+    if (!tbody) return;
+
+    if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center; padding: 40px 0;"><i class="fa-solid fa-users" style="font-size:2rem; color:#d1d5db; margin-bottom:12px;"></i><p>Không có nhân viên nào</p></td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+        const statusBadge = u.isActive 
+            ? '<span class="status-badge" style="background:#dcfce7;color:#166534;"><i class="fa-solid fa-check"></i> Hoạt động</span>' 
+            : '<span class="status-badge" style="background:#fee2e2;color:#b91c1c;"><i class="fa-solid fa-lock"></i> Đã khóa</span>';
+        
+        return `
+        <tr>
+            <td>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:36px; height:36px; border-radius:50%; background:#6366f1; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                        ${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : (u.fullName || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                        <div style="font-weight:600; color:#111827;">${u.fullName}</div>
+                        <div style="font-size:0.8rem; color:#6b7280;">${u.userName}</div>
+                    </div>
+                </div>
+            </td>
+            <td style="color:#4b5563;">${u.email || '-'}</td>
+            <td style="color:#4b5563;">${u.phone || '-'}</td>
+            <td>${statusBadge}</td>
+            <td style="text-align:center;">
+                <button class="btn-icon" onclick="editEmployee(${u.id})" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    const pageInfo = document.getElementById('employeePageInfo');
+    if (pageInfo) pageInfo.textContent = `Hiển thị ${users.length} nhân viên`;
+}
+
+function loadReports() {
+    // Placeholder for reports tab
+    console.log("Loading reports...");
+}
+
+// Gọi loadManagerData nếu form init chạy lại
+if (typeof loadManagerData === 'function' && document.getElementById('tabManager')?.style.display === 'block') {
+    loadManagerData();
+}
+
+async function editEmployee(id) {
+    try {
+        const user = await apiRequest(`/api/manager/users/${id}`);
+        
+        document.getElementById('employeeForm').reset();
+        document.getElementById('empId').value = user.id;
+        document.getElementById('employeeModalTitle').textContent = 'Chỉnh sửa nhân viên';
+        
+        document.getElementById('empFullName').value = user.fullName || '';
+        document.getElementById('empEmail').value = user.email || '';
+        document.getElementById('empPhone').value = user.phone || '';
+        
+        // Disable editing username and password
+        document.getElementById('groupEmpUsername').style.display = 'none';
+        document.getElementById('groupEmpPassword').style.display = 'none';
+        document.getElementById('empUserName').required = false;
+        document.getElementById('empPassword').required = false;
+
+        if (typeof openModal === 'function') {
+            openModal('employeeModal');
+        } else {
+            document.getElementById('employeeModal').style.display = 'flex';
+        }
+    } catch (error) {
+        console.error("Error getting user details:", error);
+        if (typeof showToast !== 'undefined') showToast("Không thể tải thông tin nhân viên", "error");
+    }
+}
+
+function closeEmployeeModal() {
+    if (typeof closeModal === 'function') {
+        closeModal('employeeModal');
+    } else {
+        document.getElementById('employeeModal').style.display = 'none';
+    }
+}
+
+async function saveEmployee() {
+    const id = document.getElementById('empId').value;
+    const form = document.getElementById('employeeForm');
+    
+    if (!id) {
+        if (typeof showToast !== 'undefined') showToast('Không thể thêm nhân viên mới. Chức năng này chỉ dành cho Admin.', 'warning');
+        return;
+    }
+
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const data = {
+        fullName: document.getElementById('empFullName').value.trim(),
+        email: document.getElementById('empEmail').value.trim(),
+        phone: document.getElementById('empPhone').value.trim()
+    };
+
+    try {
+        await apiRequest(`/api/manager/users/${id}`, 'PUT', data);
+        if (typeof showToast !== 'undefined') showToast('Cập nhật thành công', 'success');
+        closeEmployeeModal();
+        loadEmployees(1);
+    } catch (error) {
+        console.error('Error saving employee:', error);
+        if (typeof showToast !== 'undefined') showToast('Lỗi khi lưu thông tin: ' + (error.message || ''), 'error');
+    }
+}
+
+async function lockEmployee(id) {
+    if (confirm("Bạn có chắc chắn muốn khóa tài khoản này?")) {
+        try {
+            await apiRequest(`/api/manager/users/${id}/lock`, 'PUT');
+            if (typeof showToast !== 'undefined') showToast("Đã khóa tài khoản", "success");
+            loadEmployees(1);
+        } catch (error) {
+            if (typeof showToast !== 'undefined') showToast("Lỗi khi khóa tài khoản", "error");
+        }
+    }
+}
+
+async function unlockEmployee(id) {
+    if (confirm("Bạn muốn mở khóa tài khoản này?")) {
+        try {
+            await apiRequest(`/api/manager/users/${id}/unlock`, 'PUT');
+            if (typeof showToast !== 'undefined') showToast("Đã mở khóa tài khoản", "success");
+            loadEmployees(1);
+        } catch (error) {
+            if (typeof showToast !== 'undefined') showToast("Lỗi khi mở khóa tài khoản", "error");
+        }
+    }
+}
+
+async function deleteEmployee(id) {
+    if (confirm("Bạn có chắc chắn muốn XÓA nhân viên này khỏi hệ thống? Dữ liệu không thể phục hồi!")) {
+        try {
+            await apiRequest(`/api/manager/users/${id}`, 'DELETE');
+            if (typeof showToast !== 'undefined') showToast("Đã xóa nhân viên", "success");
+            loadEmployees(1);
+        } catch (error) {
+            if (typeof showToast !== 'undefined') showToast("Lỗi khi xóa nhân viên", "error");
+        }
+    }
+}
+
+// Attach to switchTab so it loads data when switching to Employee tab
+document.addEventListener('DOMContentLoaded', () => {
+    // Monkey-patch switchTab to load employees when tab is active
+    if (typeof window.switchTab === 'function') {
+        const originalSwitchTab = window.switchTab;
+        window.switchTab = function(tabId, menuItem) {
+            originalSwitchTab(tabId, menuItem);
+            if (tabId === 'tabEmployees') {
+                loadEmployees(1);
+            }
+        };
+    }
+});

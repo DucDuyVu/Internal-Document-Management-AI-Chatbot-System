@@ -64,6 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function redirectByRole(role) {
     if (role === 'ADMIN') {
         window.location.href = "/admin/dashboard";
+    } else if (role === 'MANAGER') {
+        window.location.href = "/manager/dashboard";
     } else {
         window.location.href = "/user/dashboard";
     }

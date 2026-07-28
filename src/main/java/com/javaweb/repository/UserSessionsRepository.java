@@ -13,4 +13,6 @@ public interface UserSessionsRepository extends JpaRepository<UserSessionsEntity
 	List<UserSessionsEntity> findByUserId(UsersEntity user);
 	
 	Optional<UserSessionsEntity> findFirstByUserIdOrderByCreatedAtDesc(UsersEntity user);
+	
+	int countByUserIdAndIsRevokedFalse(UsersEntity user);
 }

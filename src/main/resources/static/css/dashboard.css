@@ -59,6 +59,112 @@
   --topbar-height: 64px;
 }
 
+/* ===== Dark Mode Variables ===== */
+html.dark {
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --bg-white: #1e293b;
+  --bg-gray-50: #0f172a;
+  --bg-gray-100: #334155;
+  --bg-gray-200: #475569;
+
+  --border-color: #334155;
+  --border-light: #1e293b;
+
+  --sidebar-bg: #1e293b;
+  --sidebar-hover: #334155;
+  --sidebar-text: #cbd5e1;
+  --sidebar-active: #3730a3;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.3);
+  
+  --primary-bg: #1e1b4b;
+  --success-bg: #064e3b;
+  --warning-bg: #78350f;
+  --danger-bg: #7f1d1d;
+  --info-bg: #1e3a8a;
+}
+
+/* ===== Theme Toggle Switch ===== */
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 54px;
+  height: 28px;
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.theme-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e2e8f0;
+  transition: .4s;
+  border-radius: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  border: 1px solid var(--border-color);
+}
+
+.theme-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.theme-switch input:checked + .slider {
+  background-color: #334155;
+  border-color: #1e293b;
+}
+
+.theme-switch input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.theme-switch .icon-sun {
+  color: #fbbf24;
+  font-size: 12px;
+  z-index: 1;
+}
+
+.theme-switch .icon-moon {
+  color: #94a3b8;
+  font-size: 12px;
+  z-index: 1;
+}
+
+html.dark .theme-switch .slider {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+html.dark .theme-switch input:checked + .slider:before {
+  background-color: #e2e8f0;
+}
+
 /* ===== Reset & Base ===== */
 *,
 *::before,
@@ -2869,8 +2975,8 @@ select.form-input {
   background: #fee2e2;
 }
 
-.role-badge.manager { background: rgba(255, 255, 255, 0.2); color: #fff; }
-.settings-role-badge.manager { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.role-badge.manager { background: rgba(255, 255, 255, 0.2); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); }
+.settings-role-badge.manager { background: var(--info-bg); color: #1e40af; border: 1px solid var(--info); }
 
 /* =============================================
    SKELETON LOADER & REFACTORED UI

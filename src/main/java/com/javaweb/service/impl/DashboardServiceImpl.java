@@ -33,6 +33,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final DocumentRepository documentRepository;
     private final UsersRepository usersRepository;
     private final DepartmentsRepository departmentsRepository;
+    private final com.javaweb.repository.UserSessionsRepository userSessionsRepository;
 
     @Override
     public DashboardDataResponse getDashboardStats() {
@@ -100,6 +101,16 @@ public class DashboardServiceImpl implements DashboardService {
                 .departmentName(deptName)
                 .build();
         }).collect(Collectors.toList());
+        // Manager info
+        boolean isManager = user.getRole() != null && user.getRole().name().equals("MANAGER");
+        int managedEmployeeCount = 0;
+        String departmentName = "";
+        int activeSessionsCount = userSessionsRepository.countByUserIdAndIsRevokedFalse(user);
+        
+        if (isManager && user.getDepartment() != null) {
+            managedEmployeeCount = (int) usersRepository.countByDepartmentId(user.getDepartment().getId());
+            departmentName = user.getDepartment().getName();
+        }
 
         return DashboardDataResponse.builder()
                 .documentCount(documentCount)
@@ -109,6 +120,12 @@ public class DashboardServiceImpl implements DashboardService {
                 .lastLoginTime(lastLogin != null ? lastLogin.getCreatedAt() : null)
                 .recentActivities(recentActivities)
                 .recentDocuments(recentDocuments)
+                .isManager(isManager)
+                .managedEmployeeCount(managedEmployeeCount)
+                .departmentName(departmentName)
+                .pendingDocumentCount(0) // TODO: Implement when approval workflow is added
+                .pendingRequestCount(0)  // TODO: Implement when department requests are added
+                .activeSessionsCount(activeSessionsCount)
                 .build();
     }
 }

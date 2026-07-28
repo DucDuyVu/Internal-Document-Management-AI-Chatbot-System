@@ -131,30 +131,43 @@
           <span class="section-sub" id="deptDocLabel">—</span>
         </div>
 
+        <!-- Summary bar -->
+        <div id="docSummaryBar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; font-size: 0.9rem; color: #4b5563; background: white; padding: 12px 20px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+          <div>
+            <strong>Tổng số:</strong> <span id="docTotalCount" style="color:#111827; font-weight:600;">0</span> tài liệu 
+            <span style="color:#d1d5db; margin:0 8px;">|</span> 
+            <span style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>Thất bại: <span id="docFailedCount" style="font-weight:600;">0</span></span>
+          </div>
+        </div>
+
         <!-- Thanh lọc -->
-        <div class="filter-bar">
-          <div class="search-wrap-lg">
+        <div class="filter-bar" style="display:flex; gap:12px; align-items:center; margin-bottom:20px;">
+          <div class="search-wrap-lg" style="flex:1;">
             <span class="search-icon-sm">🔍</span>
             <input type="text" id="docSearchInput" placeholder="Tìm kiếm tài liệu...">
           </div>
-          <select id="docTypeFilter" class="filter-select">
-            <option value="">Tất cả loại file</option>
-            <option value="pdf">PDF</option>
-            <option value="docx">Word (DOCX)</option>
-            <option value="xlsx">Excel (XLSX)</option>
-            <option value="pptx">PowerPoint</option>
-          </select>
-          <select id="docSortFilter" class="filter-select">
-            <option value="newest">Mới nhất</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="name">Theo tên</option>
-            <option value="size">Theo kích thước</option>
-          </select>
-          <div class="view-toggle">
-            <button class="view-btn active" id="btnGridView" onclick="setDocView('grid')"
-                    title="Xem dạng lưới">⊞</button>
-            <button class="view-btn" id="btnListView" onclick="setDocView('list')"
-                    title="Xem dạng danh sách">☰</button>
+          <div style="position:relative; display:flex; align-items:center; background:white; border:1px solid #e5e7eb; border-radius:8px; padding-left:12px;">
+            <i class="fa-solid fa-filter" style="color:#9ca3af; font-size:0.875rem;"></i>
+            <select id="docTypeFilter" class="filter-select" style="border:none; box-shadow:none; padding-left:8px;">
+              <option value="">Tất cả loại file</option>
+              <option value="pdf">PDF</option>
+              <option value="docx">Word (DOCX)</option>
+              <option value="xlsx">Excel (XLSX)</option>
+              <option value="pptx">PowerPoint</option>
+            </select>
+          </div>
+          <div style="position:relative; display:flex; align-items:center; background:white; border:1px solid #e5e7eb; border-radius:8px; padding-left:12px;">
+            <i class="fa-solid fa-arrow-down-short-wide" style="color:#9ca3af; font-size:0.875rem;"></i>
+            <select id="docSortFilter" class="filter-select" style="border:none; box-shadow:none; padding-left:8px;">
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+              <option value="name">Theo tên</option>
+              <option value="size">Theo kích thước</option>
+            </select>
+          </div>
+          <div class="view-toggle" style="display:flex; background:#f3f4f6; border-radius:8px; padding:4px;">
+            <button class="view-btn active" id="btnGridView" onclick="setDocView('grid')" title="Xem dạng lưới" style="padding:6px 12px; border-radius:6px; cursor:pointer; border:none; transition:all 0.2s; font-size:1.1rem;">⊞</button>
+            <button class="view-btn" id="btnListView" onclick="setDocView('list')" title="Xem dạng danh sách" style="padding:6px 12px; border-radius:6px; cursor:pointer; border:none; transition:all 0.2s; font-size:1.1rem;">☰</button>
           </div>
         </div>
 
@@ -302,6 +315,8 @@
 
       </div><!-- kết thúc tabSearch -->
 
+
+
       <!-- ===== TAB: HỒ SƠ CÁ NHÂN ===== -->
       <div id="tabProfile" style="display:none;">
         <div class="section-header">
@@ -352,7 +367,7 @@
                   <div class="profile-info-row">
                     <div class="profile-info-item">
                       <span class="profile-info-label">Phòng ban</span>
-                      <span class="profile-info-value" id="viewDept" style="cursor: pointer; color: var(--primary-color); text-decoration: underline;" onclick="switchTab('tabDepartmentDocs', this); if(typeof loadDepartmentDocs === 'function') loadDepartmentDocs();">—</span>
+                      <span class="profile-info-value" id="viewDept">—</span>
                     </div>
                     <div class="profile-info-item">
                       <span class="profile-info-label">Vai trò</span>
@@ -391,6 +406,9 @@
                   </div>
                 </div>
               </div>
+              
+
+              
             </div>
 
             <!-- Cập nhật hồ sơ -->
@@ -486,6 +504,110 @@
 
       </div><!-- kết thúc tabProfile -->
 
+      <!-- ===== TAB: CÀI ĐẶT HỆ THỐNG ===== -->
+      <div id="tabSettings" style="display:none;">
+        <div class="section-header">
+          <h2>⚙️ Cài đặt</h2>
+        </div>
+
+        <div class="settings-layout">
+          <!-- Left Nav -->
+          <div class="settings-nav">
+            <button class="settings-tab active" onclick="switchSettingsTab('stGeneral', this)">Chung</button>
+            <button class="settings-tab" onclick="switchSettingsTab('stNotifications', this)">Thông báo</button>
+            <button class="settings-tab" onclick="switchSettingsTab('stAppearance', this)">Giao diện</button>
+          </div>
+
+          <!-- Right Content -->
+          <div class="settings-content">
+
+            <!-- Chung -->
+            <div id="stGeneral" class="settings-card active">
+              <div class="settings-header">
+                <h3>Cài đặt chung</h3>
+                <p>Quản lý ngôn ngữ, múi giờ và định dạng hệ thống.</p>
+              </div>
+              <div class="settings-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Ngôn ngữ</label>
+                    <select class="form-input">
+                      <option>Tiếng Việt</option>
+                      <option>English</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Múi giờ</label>
+                    <select class="form-input">
+                      <option>UTC+07:00 (Hồ Chí Minh)</option>
+                      <option>UTC+00:00 (London)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Định dạng ngày tháng</label>
+                  <select class="form-input">
+                    <option>DD/MM/YYYY</option>
+                    <option>MM/DD/YYYY</option>
+                  </select>
+                </div>
+                <button class="btn-primary-sm" onclick="alert('Đã lưu thay đổi!')">Lưu thay đổi</button>
+              </div>
+            </div>
+
+            <!-- Thông báo -->
+            <div id="stNotifications" class="settings-card">
+              <div class="settings-header">
+                <h3>Cài đặt thông báo</h3>
+                <p>Tùy chỉnh cách bạn nhận thông báo từ hệ thống.</p>
+              </div>
+              <div class="settings-form">
+                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <label style="margin-bottom:0;">Thông báo trong ứng dụng</label>
+                    <p style="font-size:0.875rem; color:var(--text-muted);">Nhận thông báo push khi đang mở ứng dụng.</p>
+                  </div>
+                  <input type="checkbox" checked style="width:20px; height:20px; cursor:pointer;">
+                </div>
+                <div style="border-top: 1px solid var(--border-color); margin: 16px 0;"></div>
+                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <label style="margin-bottom:0;">Thông báo qua Email</label>
+                    <p style="font-size:0.875rem; color:var(--text-muted);">Nhận email khi có tài liệu mới hoặc cập nhật quan trọng.</p>
+                  </div>
+                  <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Giao diện -->
+            <div id="stAppearance" class="settings-card">
+              <div class="settings-header">
+                <h3>Cài đặt giao diện</h3>
+                <p>Tùy chỉnh hiển thị theo sở thích của bạn.</p>
+              </div>
+              <div class="settings-form">
+                <div class="form-group">
+                  <label>Mật độ hiển thị (Density)</label>
+                  <select class="form-input">
+                    <option>Thoải mái (Comfortable)</option>
+                    <option>Thu gọn (Compact)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Chủ đề (Theme)</label>
+                  <select class="form-input" id="settingsThemeSelect" onchange="setTheme(this.value)">
+                    <option value="system">Hệ thống</option>
+                    <option value="light">Sáng</option>
+                    <option value="dark">Tối</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
 
 
 <!-- ===== MODALS ===== -->

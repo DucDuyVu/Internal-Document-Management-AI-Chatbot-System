@@ -62,6 +62,7 @@ public class SecurityConfig {
 						// 3. Dashboard HTML
 						.requestMatchers(
 								"/admin/dashboard",
+								"/manager/dashboard",
 								"/user/dashboard")
 						.permitAll()
 

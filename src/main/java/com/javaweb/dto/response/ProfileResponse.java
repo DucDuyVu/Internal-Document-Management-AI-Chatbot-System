@@ -34,4 +34,11 @@ public class ProfileResponse {
 		private Integer chatSessionCount;
 		
 		private Integer activityCount;
+		
+		// Manager fields
+		private boolean isManager;
+		private int managedEmployeeCount;
+		private int pendingDocumentCount;
+		private int pendingRequestCount;
+		private int activeSessionsCount;
 }

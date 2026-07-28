@@ -97,6 +97,18 @@ public class UsersServiceImpl implements UsersService {
 		profileResponse.setChatSessionCount(chatSessionsRepository.countByUserChatId_IdAndDeletedAtIsNull(user.getId()));
 		profileResponse.setActivityCount(activityLogsRepository.countByUsersEntityId_Id(user.getId()));
 
+		// Manager fields
+		boolean isManager = user.getRole() != null && user.getRole() == UserRole.MANAGER;
+		profileResponse.setManager(isManager);
+		if (isManager && user.getDepartment() != null) {
+			profileResponse.setManagedEmployeeCount((int) usersRepository.countByDepartmentId(user.getDepartment().getId()));
+		} else {
+			profileResponse.setManagedEmployeeCount(0);
+		}
+		profileResponse.setPendingDocumentCount(0);
+		profileResponse.setPendingRequestCount(0);
+		profileResponse.setActiveSessionsCount(userSessionsRepository.countByUserIdAndIsRevokedFalse(user));
+
 		return profileResponse;
 	}
 

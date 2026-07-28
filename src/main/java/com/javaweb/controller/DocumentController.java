@@ -147,6 +147,11 @@ public class DocumentController {
             @PathVariable Long docId,
             @PathVariable Long departmentId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         documentPermissionService.revoke(docId, departmentId, userDetails.getUser());
 
         return ResponseEntity.noContent().build(); // trả về 204 No Content

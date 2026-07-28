@@ -17,6 +17,14 @@ public class DashboardDataResponse {
     
     private LocalDateTime lastLoginTime;
     
+    // Manager fields
+    private boolean isManager;
+    private int managedEmployeeCount;
+    private String departmentName;
+    private int pendingDocumentCount;
+    private int pendingRequestCount;
+    private int activeSessionsCount;
+    
     private List<DashboardActivityDTO> recentActivities;
     private List<DashboardDocumentDTO> recentDocuments;
 }

@@ -36,6 +36,11 @@ public class ViewController {
         return "user/dashboard"; // ✅ trỏ tới templates/user/dashboard.html
     }
 
+    @GetMapping("/manager/dashboard")
+    public String managerDashboardPage() {
+        return "manager/dashboard"; // ✅ trỏ tới templates/manager/dashboard.html
+    }
+
     @GetMapping("/admin/dashboard")
     public String adminDashboardPage() {
         return "admin/dashboard"; // ✅ trỏ tới templates/admin/dashboard.html

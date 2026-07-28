@@ -267,10 +267,13 @@ async function apiRequest(url, options = {}) {
         let errorMessage = "Có lỗi xảy ra";
 
         try {
-            const error = await response.json();
-            errorMessage = error.message || errorMessage;
+            const rawText = await response.text();
+            console.error(`[API Error] Status: ${response.status} | URL: ${url} | Body: ${rawText}`);
+            // Thử parse JSON từ raw text
+            const parsed = JSON.parse(rawText);
+            errorMessage = parsed.message || errorMessage;
         } catch (e) {
-            // Không có body JSON
+            // Không có body JSON hoặc không parse được
         }
 
         throw new Error(errorMessage);

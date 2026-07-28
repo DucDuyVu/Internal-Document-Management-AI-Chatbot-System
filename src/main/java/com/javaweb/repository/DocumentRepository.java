@@ -28,7 +28,9 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
     @Query("SELECT DISTINCT d FROM DocumentEntity d " +
            "LEFT JOIN DocumentPermissionsEntity p ON p.permissionsDocumentId = d AND p.revokedAt IS NULL " +
            "WHERE d.deletedAt IS NULL " +
-           "AND (d.departmentId = :departmentId OR d.departmentId IS NULL OR p.permissionDepartmentId.id = :departmentIdLong OR p.permissionDepartmentId IS NULL) " +
+           "AND (d.departmentId = :departmentId OR d.departmentId IS NULL " +
+           "     OR (p IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
+           "     OR (p IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
            "ORDER BY d.createdAt DESC")
     org.springframework.data.domain.Page<DocumentEntity> findVisibleToDepartmentWithSharing(
             @Param("departmentId") Integer departmentId,
@@ -38,7 +40,9 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
     @Query("SELECT DISTINCT d FROM DocumentEntity d " +
            "LEFT JOIN DocumentPermissionsEntity p ON p.permissionsDocumentId = d AND p.revokedAt IS NULL " +
            "WHERE d.deletedAt IS NULL " +
-           "AND (d.departmentId = :departmentId OR d.departmentId IS NULL OR p.permissionDepartmentId.id = :departmentIdLong OR p.permissionDepartmentId IS NULL) " +
+           "AND (d.departmentId = :departmentId OR d.departmentId IS NULL " +
+           "     OR (p IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
+           "     OR (p IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
            "AND LOWER(d.fileName) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "ORDER BY d.createdAt DESC")
     Page<DocumentEntity> searchVisibleToDepartmentWithPermissions(

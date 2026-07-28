@@ -137,7 +137,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                         DocumentEntity document = documentRepository.findById(documentId)
                                         .orElseThrow(() -> new NotFoundException("Tài liệu không tồn tại !"));
 
-                        if (departmentId != null && departmentId == 0) {
+                        if (departmentId != null && departmentId.equals(0L)) {
                                 departmentId = null;
                         }
 
@@ -232,7 +232,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                         throw new ForbiddenException("Không có quyền thu hồi tài liệu !");
                 }
 
-                if (departmentId != null && departmentId == 0) {
+                if (departmentId != null && departmentId.equals(0L)) {
                         departmentId = null;
                 }
 
