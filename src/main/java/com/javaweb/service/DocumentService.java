@@ -44,6 +44,9 @@ public interface DocumentService {
     // Lấy danh sách tài liệu cho User/Manager (bao gồm tài liệu của phòng ban và
     // được chia sẻ)
     Page<DocumentResponse> getMyDocuments(com.javaweb.entity.UsersEntity user, Pageable pageable);
+
+    // Xóa tài liệu (Soft delete)
+    void deleteDocument(Long id, Long userId);
 }
 
 /*

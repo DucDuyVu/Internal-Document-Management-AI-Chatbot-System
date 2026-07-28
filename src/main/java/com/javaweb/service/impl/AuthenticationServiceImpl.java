@@ -1,5 +1,7 @@
 package com.javaweb.service.impl;
 
+import com.event.ActionType;
+import com.event.AuditEven;
 import com.javaweb.dto.request.LoginRequest;
 import com.javaweb.dto.request.LogoutRequest;
 import com.javaweb.dto.request.RefreshTokenRequest;
@@ -48,6 +50,10 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
 	@Autowired
 	EmailService emailService;
+	
+	@Autowired
+	private com.javaweb.service.AuditLogService auditLogService;
+
 	// Xử lý login 
 	@Override
 	public LoginResponse login(LoginRequest loginRequest) {
@@ -87,6 +93,18 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 		
 		userSessionsRepo.save(userSessions); // lưu refresh token + tg tạo + tg hết hạn
 		
+		// Ghi nhận Audit Log
+		AuditEven auditEvent = new AuditEven();
+		auditEvent.setUserId(user.getId());
+		
+		ActionType actionType = new ActionType();
+		// Giả sử ActionType chưa có enum string, tạm thời set class rỗng (bạn cần cập nhật lại ActionType)
+		auditEvent.setAction(actionType);
+		
+		auditEvent.setTargetType("USER_SESSION");
+		auditEvent.setTargetId(userSessions.getId());
+		auditLogService.handleAuditEvent(auditEvent);
+
 		// Trả ra client login 
 		LoginResponse loginResponse = new LoginResponse();
 		

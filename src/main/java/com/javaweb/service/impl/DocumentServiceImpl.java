@@ -11,7 +11,9 @@ import com.javaweb.rag.DocumentProcessingService;
 import com.javaweb.repository.DocumentChunkRepository;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.service.DocumentService;
-
+import com.javaweb.service.AuditLogService;
+import com.event.ActionType;
+import com.event.AuditEven;
 import com.javaweb.repository.DepartmentsRepository;
 import com.javaweb.entity.DepartmentsEntity;
 import groovyjarjarantlr4.v4.parse.ANTLRParser.ruleEntry_return;
@@ -27,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -56,15 +59,18 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingService documentProcessingService;
     private final DepartmentsRepository departmentsRepository;
+    private final AuditLogService auditLogService;
 
     public DocumentServiceImpl(DocumentRepository documentRepository,
             DocumentChunkRepository documentChunkRepository,
             DocumentProcessingService documentProcessingService,
-            DepartmentsRepository departmentsRepository) {
+            DepartmentsRepository departmentsRepository,
+            AuditLogService auditLogService) {
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
         this.departmentsRepository = departmentsRepository;
+        this.auditLogService = auditLogService;
     }
 
     /**
@@ -92,6 +98,19 @@ public class DocumentServiceImpl implements DocumentService {
         document.setStatus(DocumentStatus.PENDING);
 
         DocumentEntity saved = documentRepository.save(document);
+
+        // Ghi nhận Audit Log
+        AuditEven auditEvent = new AuditEven();
+        auditEvent.setUserId(saved.getUploadedBy());
+
+        ActionType actionType = new ActionType();
+        // Tương tự, nếu bạn dùng ActionType là enum, gán bằng ActionType.UPLOAD (hoặc
+        // tương tự)
+        auditEvent.setAction(actionType);
+
+        auditEvent.setTargetType("DOCUMENT");
+        auditEvent.setTargetId(saved.getId());
+        auditLogService.handleAuditEvent(auditEvent);
 
         // Gọi pipeline nền — KHÔNG đợi kết quả, vì @Async trả về ngay
         documentProcessingService.process(saved.getId());
@@ -209,6 +228,30 @@ public class DocumentServiceImpl implements DocumentService {
             Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
             return toResponse(doc, chunkCount);
         });
+    }
+
+    // Xử lý xóa mềm tài liệu
+    @Override
+    @Transactional
+    public void deleteDocument(Long id, Long userId) {
+        DocumentEntity document = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy document id=" + id));
+
+        // xóa mềm
+        document.setDeletedAt(LocalDateTime.now());
+        documentRepository.save(document);
+
+        // Ghi nhận Audit Log
+        AuditEven auditEvent = new AuditEven();
+        auditEvent.setUserId(userId);
+
+        ActionType actionType = new ActionType();
+        // Nếu chuyển sang enum, gán bằng ActionType.DELETE
+        auditEvent.setAction(actionType);
+
+        auditEvent.setTargetType("DOCUMENT");
+        auditEvent.setTargetId(document.getId());
+        auditLogService.handleAuditEvent(auditEvent);
     }
 }
 
