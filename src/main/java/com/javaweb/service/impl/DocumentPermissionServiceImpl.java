@@ -1,10 +1,21 @@
 package com.javaweb.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+
+import com.event.AuditEven;
 import com.javaweb.dto.response.DocumentPermissionResponse;
 import com.javaweb.entity.DepartmentsEntity;
 import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.DocumentPermissionsEntity;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.entity.enums.ActionType;
 import com.javaweb.enums.UserRole;
 import com.javaweb.exception.BadRequestException;
 import com.javaweb.exception.ForbiddenException;
@@ -12,22 +23,10 @@ import com.javaweb.exception.NotFoundException;
 import com.javaweb.repository.DepartmentsRepository;
 import com.javaweb.repository.DocumentPermissionsRepository;
 import com.javaweb.repository.DocumentRepository;
-import com.javaweb.service.AuditLogService;
 import com.javaweb.service.DocumentPermissionService;
-import com.event.AuditEven;
-import com.event.ActionType;
-import java.util.HashMap;
-import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
 import com.javaweb.service.NotificationService;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class DocumentPermissionServiceImpl implements DocumentPermissionService {
@@ -192,9 +191,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                         // Ghi audit log
                         AuditEven auditEvent = new AuditEven();
                         auditEvent.setUserId(grantedBy.getId());
-                        ActionType actionType = new ActionType();
-                        // Nếu chuyển sang enum, gán bằng ActionType.SHARE_DOCUMENT
-                        auditEvent.setAction(actionType);
+                        auditEvent.setActionType(ActionType.SHARE_DOCUMENT);
                         auditEvent.setTargetType("DOCUMENT");
                         auditEvent.setTargetId(documentId);
 
@@ -274,9 +271,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
 
                 AuditEven auditEvent = new AuditEven();
                 auditEvent.setUserId(currentUser.getId());
-                ActionType actionType = new ActionType();
-                // Nếu chuyển sang enum, gán bằng ActionType.REVOKE_PERMISSION
-                auditEvent.setAction(actionType);
+                auditEvent.setActionType(ActionType.REVOKE_DOCUMENT);
                 auditEvent.setTargetType("DOCUMENT");
                 auditEvent.setTargetId(documentId);
 
