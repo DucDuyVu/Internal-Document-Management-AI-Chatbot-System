@@ -365,6 +365,19 @@ public class UsersServiceImpl implements UsersService {
 			}
 			changes.append("- Email: ").append(request.getEmail()).append("\n");
 			user.setEmail(request.getEmail());
+			
+			// Cập nhật username theo email mới
+			String newUserName = request.getEmail().split("@")[0];
+			if (!newUserName.equals(user.getUserName())) {
+				String finalUserName = newUserName;
+				int counter = 1;
+				while (usersRepository.existsByUserName(finalUserName)) {
+					finalUserName = newUserName + counter;
+					counter++;
+				}
+				user.setUserName(finalUserName);
+				changes.append("- Tên người dùng: ").append(finalUserName).append("\n");
+			}
 		}
 
 		if (request.getPhone() != null && !request.getPhone().equals(user.getPhone())) {

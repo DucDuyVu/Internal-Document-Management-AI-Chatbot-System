@@ -40,6 +40,10 @@ public class DocumentEntity {
     @Column(name = "status", nullable = false)
     private DocumentStatus status = DocumentStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status", length = 50)
+    private com.javaweb.entity.enums.ApprovalStatus approvalStatus;
+
     @Column(name = "error_message", length = 500)
     private String errorMessage;
 

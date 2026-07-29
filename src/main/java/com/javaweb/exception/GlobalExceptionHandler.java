@@ -45,4 +45,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("message", e.getMessage()));
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleException(Exception e) {
+        try {
+            java.nio.file.Files.write(java.nio.file.Paths.get("error.log"), 
+                (e.getMessage() + "\n" + java.util.Arrays.toString(e.getStackTrace())).getBytes());
+        } catch (Exception ignored) {}
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Internal Server Error: " + e.getMessage()));
+    }
 }

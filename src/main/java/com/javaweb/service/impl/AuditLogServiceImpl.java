@@ -70,9 +70,25 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Override
     public List<ActivityLogResponse> getRecentActivities(Long userId, int limit) {
         Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
-        List<ActivityLogsEntity> entities = repository.findByUsersEntityId_IdOrderByCreatedAtDesc(userId,
-                pageable);
+        List<ActivityLogsEntity> entities = repository.findByUsersEntityId_IdOrderByCreatedAtDesc(userId, pageable);
+        return mapToResponse(entities);
+    }
 
+    @Override
+    public List<ActivityLogResponse> getDepartmentRecentActivities(Long departmentId, int limit) {
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        List<ActivityLogsEntity> entities = repository.findByUsersEntityId_Department_IdOrderByCreatedAtDesc(departmentId, pageable);
+        return mapToResponse(entities);
+    }
+
+    @Override
+    public List<ActivityLogResponse> getAllRecentActivities(int limit) {
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        List<ActivityLogsEntity> entities = repository.findAllByOrderByCreatedAtDesc(pageable);
+        return mapToResponse(entities);
+    }
+
+    private List<ActivityLogResponse> mapToResponse(List<ActivityLogsEntity> entities) {
         return entities.stream().map(entity -> {
             ActivityLogResponse dto = new ActivityLogResponse();
             dto.setId(entity.getId());

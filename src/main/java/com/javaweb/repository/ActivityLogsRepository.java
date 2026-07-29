@@ -18,4 +18,8 @@ public interface ActivityLogsRepository extends JpaRepository<ActivityLogsEntity
     Optional<ActivityLogsEntity> findFirstByUsersEntityId_IdAndActionOrderByCreatedAtDesc(Long userId, String action);
     
     List<ActivityLogsEntity> findByUsersEntityId_IdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    
+    List<ActivityLogsEntity> findByUsersEntityId_Department_IdOrderByCreatedAtDesc(Long departmentId, Pageable pageable);
+    
+    List<ActivityLogsEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }

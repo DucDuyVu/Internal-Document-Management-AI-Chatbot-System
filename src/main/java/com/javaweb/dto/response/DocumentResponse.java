@@ -25,6 +25,7 @@ public class DocumentResponse {
     private String title;
     private String fileName;
     private DocumentStatus status;
+    private String approvalStatus;
     private Integer chunkCount;
     private String errorMessage;
     private LocalDateTime createdAt;
@@ -42,6 +43,7 @@ public class DocumentResponse {
      * Output: object đã điền sẵn, sẵn sàng serialize JSON.
      */
     public DocumentResponse(Long id, String title, String fileName, DocumentStatus status,
+            String approvalStatus,
             Integer chunkCount, String errorMessage,
             LocalDateTime createdAt, LocalDateTime updatedAt,
             Integer departmentId, String departmentName) {
@@ -49,12 +51,21 @@ public class DocumentResponse {
         this.title = title;
         this.fileName = fileName;
         this.status = status;
+        this.approvalStatus = approvalStatus;
         this.chunkCount = chunkCount;
         this.errorMessage = errorMessage;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.departmentId = departmentId;
         this.departmentName = departmentName;
+    }
+
+    public String getApprovalStatus() {
+        return approvalStatus;
+    }
+
+    public void setApprovalStatus(String approvalStatus) {
+        this.approvalStatus = approvalStatus;
     }
 
     public Long getId() {

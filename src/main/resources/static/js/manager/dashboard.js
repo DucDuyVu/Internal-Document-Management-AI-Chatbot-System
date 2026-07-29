@@ -92,6 +92,10 @@ function initUserDashboard() {
     if (typeof updateUserUI !== 'undefined') {
         updateUserUI(user);
     }
+    
+    if (typeof loadPendingApprovals === 'function') {
+        loadPendingApprovals();
+    }
 }
 
 function setupUserSidebar() {
@@ -381,10 +385,10 @@ function renderUserDocuments() {
                 let actionButtons = '';
                 if (isPending) {
                     actionButtons = `
-                        <button class="btn-card btn-card-primary" onclick="event.stopPropagation(); showToast('Tính năng Duyệt đang phát triển', 'info')">
+                        <button class="btn-card btn-card-primary" onclick="event.stopPropagation(); approveDocument(${doc.id})">
                             Duyệt
                         </button>
-                        <button class="btn-card btn-card-secondary" onclick="event.stopPropagation(); showToast('Tính năng Từ chối đang phát triển', 'info')">
+                        <button class="btn-card btn-card-secondary" onclick="event.stopPropagation(); rejectDocument(${doc.id})">
                             Từ chối
                         </button>
                     `;
@@ -573,6 +577,133 @@ async function viewUserDocument(docId) {
         }
     }
 }
+
+// =============================================
+// MANAGER APPROVAL
+// =============================================
+
+async function loadPendingApprovals() {
+    try {
+        if (typeof apiRequest === 'undefined') return;
+
+        const response = await apiRequest('/api/manager/documents/pending');
+        const docs = response.content || response || [];
+        const container = document.getElementById('drawerPendingDocsList');
+        const badge = document.getElementById('navPendingBadge');
+        
+        if (badge) {
+            if (docs.length > 0) {
+                badge.textContent = docs.length;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        if (!container) return;
+
+        if (docs.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding: 40px 0; color:#6b7280;">
+                    <i class="fa-regular fa-folder-open" style="font-size:2rem; margin-bottom:12px; color:#d1d5db;"></i>
+                    <p>Không có tài liệu nào chờ duyệt</p>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = docs.map(doc => `
+            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:16px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:1.5rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</span>
+                        <div>
+                            <h4 style="margin:0; font-size:0.9rem; font-weight:600; color:#111827; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${doc.fileName}">${doc.fileName}</h4>
+                            <div style="font-size:0.75rem; color:#6b7280; margin-top:2px;">
+                                ${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize} • ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="approveDocument(${doc.id})" style="flex:1; background:#4f46e5; color:white; border:none; padding:8px; border-radius:6px; font-size:0.85rem; font-weight:500; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+                        Duyệt ngay
+                    </button>
+                    <button onclick="rejectDocument(${doc.id})" style="flex:1; background:#fff; color:#ef4444; border:1px solid #fca5a5; padding:8px; border-radius:6px; font-size:0.85rem; font-weight:500; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#fff'">
+                        Từ chối
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Error loading pending approvals:', error);
+    }
+}
+
+async function approveDocument(docId) {
+    if (typeof showConfirmDialog !== 'undefined') {
+        showConfirmDialog('Xác nhận duyệt', 'Bạn có chắc chắn muốn duyệt tài liệu này? Hệ thống sẽ bắt đầu gửi tài liệu cho AI xử lý.', async () => {
+            await executeApprove(docId);
+        });
+    } else if (confirm('Bạn có chắc chắn muốn duyệt tài liệu này?')) {
+        await executeApprove(docId);
+    }
+}
+
+async function executeApprove(docId) {
+    try {
+        if (typeof apiRequest === 'undefined') throw new Error('apiRequest not found');
+        
+        await apiRequest(`/api/manager/documents/${docId}/approve`, {
+            method: 'PUT'
+        });
+        
+        if (typeof showToast !== 'undefined') showToast('Duyệt tài liệu thành công!', 'success');
+        
+        // Refresh lists
+        loadPendingApprovals();
+        if (UserState?.currentTab === 'tabDocuments' || document.getElementById('tabDocuments')?.style?.display === 'block') {
+             loadUserDocuments();
+        }
+        
+    } catch (error) {
+        console.error('Lỗi khi duyệt:', error);
+        if (typeof showToast !== 'undefined') showToast(error.message || 'Lỗi khi duyệt', 'error');
+    }
+}
+
+async function rejectDocument(docId) {
+    if (typeof showConfirmDialog !== 'undefined') {
+        showConfirmDialog('Xác nhận từ chối', 'Bạn có chắc chắn muốn từ chối tài liệu này?', async () => {
+            await executeReject(docId);
+        });
+    } else if (confirm('Bạn có chắc chắn muốn từ chối tài liệu này?')) {
+        await executeReject(docId);
+    }
+}
+
+async function executeReject(docId) {
+    try {
+        if (typeof apiRequest === 'undefined') throw new Error('apiRequest not found');
+        
+        await apiRequest(`/api/manager/documents/${docId}/reject`, {
+            method: 'PUT'
+        });
+        
+        if (typeof showToast !== 'undefined') showToast('Đã từ chối tài liệu!', 'success');
+        
+        // Refresh lists
+        loadPendingApprovals();
+        if (UserState?.currentTab === 'tabDocuments' || document.getElementById('tabDocuments')?.style?.display === 'block') {
+             loadUserDocuments();
+        }
+        
+    } catch (error) {
+        console.error('Lỗi khi từ chối:', error);
+        if (typeof showToast !== 'undefined') showToast(error.message || 'Lỗi khi từ chối', 'error');
+    }
+}
+
 
 // =============================================
 // AI CHATBOT

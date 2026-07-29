@@ -991,15 +991,18 @@ function renderDocumentTable() {
             <td>${(AdminState.documents.page - 1) * AdminState.documents.pageSize + index + 1}</td>
             <td onclick="openDocumentDetail(${doc.id})" title="Click để xem chi tiết">
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:1.3rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</span>
+                    <span style="font-size:1.3rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType || 'pdf') : '📄'}</span>
                     <span style="font-weight:500;color:#4f46e5;text-decoration:underline;text-decoration-color:transparent;" onmouseover="this.style.textDecorationColor='#4f46e5'" onmouseout="this.style.textDecorationColor='transparent'">${doc.fileName || '—'}</span>
                 </div>
             </td>
             <td>${doc.departmentName || '—'}</td>
+            <td>${(doc.fileType || 'PDF').toUpperCase()}</td>
+            <td>${doc.fileSize ? (doc.fileSize / 1024 / 1024).toFixed(2) + ' MB' : '—'}</td>
             <td>
                 <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">
                     ${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}
                 </span>
+                ${doc.approvalStatus ? `<br><small style="color:gray; font-size: 0.75rem;">(${doc.approvalStatus})</small>` : ''}
             </td>
             <td>${doc.chunkCount || 0}</td>
             <td>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</td>
@@ -1008,7 +1011,8 @@ function renderDocumentTable() {
                     <button class="btn-icon" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết" style="font-size:1rem;">👁️</button>
                     <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id})" title="Tải xuống" style="font-size:1rem;">⬇️</button>
                     ${doc.status === 'FAILED' ? `<button class="btn-icon" onclick="event.stopPropagation(); retryDocument(${doc.id})" title="Thử lại" style="font-size:1rem;">🔄</button>` : ''}
-                    <button class="btn-icon" onclick="event.stopPropagation(); deleteDocument(${doc.id}, '${doc.fileName}')" title="Xoá" style="font-size:1rem;">🗑️</button>
+                    ${(doc.status === 'PENDING' || doc.approvalStatus === 'PENDING') ? `<button class="btn-icon" style="color:var(--warning)" onclick="event.stopPropagation(); emergencyApproveDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Duyệt khẩn cấp" style="font-size:1rem;">⚡</button>` : ''}
+                    <button class="btn-icon" onclick="event.stopPropagation(); deleteDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Xoá" style="font-size:1rem;">🗑️</button>
                 </div>
             </td>
         </tr>
@@ -1154,6 +1158,61 @@ function deleteDocument(docId, fileName) {
             }
         }
     );
+}
+
+let emergencyApproveDocId = null;
+
+function emergencyApproveDocument(docId, fileName) {
+    emergencyApproveDocId = docId;
+    const nameEl = document.getElementById('emergencyDocName');
+    const reasonEl = document.getElementById('emergencyReason');
+    const submitBtn = document.getElementById('submitEmergencyBtn');
+
+    if (nameEl) nameEl.textContent = fileName;
+    if (reasonEl) reasonEl.value = '';
+    
+    if (submitBtn) {
+        submitBtn.onclick = async () => {
+            const reason = reasonEl?.value?.trim();
+            if (!reason) {
+                if (typeof showToast !== 'undefined') showToast('Vui lòng nhập lý do duyệt khẩn cấp', 'warning');
+                return;
+            }
+            
+            try {
+                if (typeof apiRequest === 'undefined') throw new Error('apiRequest() không tồn tại');
+
+                const submitBtnOriginalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+
+                await apiRequest(`/api/admin/documents/${emergencyApproveDocId}/emergency-approve`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ reason })
+                });
+
+                if (typeof showToast !== 'undefined') showToast('Duyệt khẩn cấp thành công!', 'success');
+                if (typeof closeModal !== 'undefined') closeModal('emergencyApproveModal');
+                
+                loadDocuments();
+                
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = submitBtnOriginalText;
+
+            } catch (error) {
+                console.error('Error emergency approving document:', error);
+                if (typeof showToast !== 'undefined') {
+                    showToast(error.message || 'Không thể duyệt khẩn cấp', 'error');
+                }
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '⚡ Duyệt khẩn cấp';
+            }
+        };
+    }
+
+    if (typeof openModal !== 'undefined') {
+        openModal('emergencyApproveModal');
+    }
 }
 
 // =============================================

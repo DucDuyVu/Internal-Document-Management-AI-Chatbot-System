@@ -27,7 +27,15 @@ public class ActivityLogController {
             @RequestParam(defaultValue = "10") int limit) {
 
         UsersEntity currentUser = userDetails.getUser();
-        List<ActivityLogResponse> activities = auditLogService.getRecentActivities(currentUser.getId(), limit);
+        List<ActivityLogResponse> activities;
+
+        if (currentUser.getRole() == com.javaweb.enums.UserRole.ADMIN) {
+            activities = auditLogService.getAllRecentActivities(limit);
+        } else if (currentUser.getRole() == com.javaweb.enums.UserRole.MANAGER && currentUser.getDepartment() != null) {
+            activities = auditLogService.getDepartmentRecentActivities(currentUser.getDepartment().getId(), limit);
+        } else {
+            activities = auditLogService.getRecentActivities(currentUser.getId(), limit);
+        }
 
         return ResponseEntity.ok(activities);
     }

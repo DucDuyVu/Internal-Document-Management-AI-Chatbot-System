@@ -2,6 +2,8 @@ package com.javaweb.service;
 
 import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.dto.request.DocumentUploadRequest;
+import com.javaweb.entity.UsersEntity;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +29,7 @@ public interface DocumentService {
      * Lưu ý: không throw checked exception ra ngoài — lỗi validate file
      * sẽ ném InvalidFileException (unchecked), bắt ở GlobalExceptionHandler.
      */
-    DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request);
+    DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request, UsersEntity currentUser);
 
     /**
      * Dùng ở: DocumentController.getStatus() (endpoint polling).
@@ -40,10 +42,13 @@ public interface DocumentService {
 
     // Lấy danh sách các tài liệu (Admin)
     Page<DocumentResponse> getAllDocuments(Pageable pageable);
+    
+    // Lấy danh sách tài liệu chờ duyệt (Manager)
+    List<DocumentResponse> getPendingApprovals(Integer departmentId);
 
     // Lấy danh sách tài liệu cho User/Manager (bao gồm tài liệu của phòng ban và
     // được chia sẻ)
-    Page<DocumentResponse> getMyDocuments(com.javaweb.entity.UsersEntity user, Pageable pageable);
+    Page<DocumentResponse> getMyDocuments(UsersEntity user, Pageable pageable);
 
     // Xóa tài liệu (Soft delete)
     void deleteDocument(Long id, Long userId);

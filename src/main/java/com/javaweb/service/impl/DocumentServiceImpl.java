@@ -1,23 +1,21 @@
 package com.javaweb.service.impl;
 
+import com.event.AuditEven;
 import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.dto.request.DocumentUploadRequest;
+import com.javaweb.entity.DepartmentsEntity;
 import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.entity.enums.ActionType;
+import com.javaweb.entity.enums.ApprovalStatus;
 import com.javaweb.entity.enums.DocumentStatus;
 import com.javaweb.exception.DocumentNotFoundException;
 import com.javaweb.exception.InvalidFileException;
 import com.javaweb.rag.DocumentProcessingService;
+import com.javaweb.repository.DepartmentsRepository;
 import com.javaweb.repository.DocumentChunkRepository;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.service.DocumentService;
-import com.javaweb.service.AuditLogService;
-import com.event.AuditEven;
-import com.javaweb.repository.DepartmentsRepository;
-import com.javaweb.entity.DepartmentsEntity;
-import groovyjarjarantlr4.v4.parse.ANTLRParser.ruleEntry_return;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -25,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,6 +32,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Implementation thật của DocumentService.
@@ -68,8 +69,7 @@ public class DocumentServiceImpl implements DocumentService {
     public DocumentServiceImpl(DocumentRepository documentRepository,
             DocumentChunkRepository documentChunkRepository,
             DocumentProcessingService documentProcessingService,
-            DepartmentsRepository departmentsRepository,
-            AuditLogService auditLogService) {
+            DepartmentsRepository departmentsRepository) {
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
@@ -87,34 +87,52 @@ public class DocumentServiceImpl implements DocumentService {
      */
     @Override
     @Transactional
-    public DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request) {
+    public DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request, UsersEntity currentUser) {
         validateFile(file);
         String storedPath = storeFile(file);
+
+        // --- BẢO MẬT: XỬ LÝ PHÒNG BAN ---
+        Integer targetDeptId = request.getDepartmentId();
+
+        // 1. Nếu Frontend không truyền phòng ban, mặc định gán vào phòng của người up
+        if (targetDeptId == null && currentUser.getDepartment() != null) {
+            targetDeptId = currentUser.getDepartment().getId().intValue();
+        }
+
+        // 2. Nếu User muốn up vào phòng ban khác phòng của mình, bắt buộc phải là ADMIN
+        boolean isSameDepartment = currentUser.getDepartment() != null
+                && currentUser.getDepartment().getId().intValue() == targetDeptId;
+        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+
+        if (!isSameDepartment && !isAdmin) {
+            throw new AccessDeniedException("Bảo mật: Bạn không có quyền tải tài liệu vào phòng ban của người khác!");
+        }
 
         DocumentEntity document = new DocumentEntity();
         document.setFileName(file.getOriginalFilename());
         document.setFilePath(storedPath);
         document.setFileType(file.getContentType());
         document.setFileSize(file.getSize());
-        document.setDepartmentId(request.getDepartmentId());
-        document.setUploadedBy(1L); // TODO SECURITY: thay bằng userId thật khi bật lại Spring Security
+        document.setDepartmentId(targetDeptId);
+        document.setUploadedBy(currentUser.getId());
+
+        // --- LUỒNG PHÊ DUYỆT TÀI LIỆU ---
         document.setStatus(DocumentStatus.PENDING);
+        document.setApprovalStatus(ApprovalStatus.PENDING); // Bắt buộc Manager duyệt mới chạy AI
 
         DocumentEntity saved = documentRepository.save(document);
 
         // Ghi nhận Audit Log
         AuditEven auditEvent = new AuditEven();
         auditEvent.setUserId(saved.getUploadedBy());
-
         auditEvent.setActionType(ActionType.UPLOAD_DOCUMENT);
-
         auditEvent.setTargetType("DOCUMENT");
         auditEvent.setTargetId(saved.getId());
-        // Thông báo đến các service lắng nghe event
         eventPublisher.publishEvent(auditEvent);
 
-        // Gọi pipeline nền — KHÔNG đợi kết quả, vì @Async trả về ngay
-        documentProcessingService.process(saved.getId());
+        // KHÔNG gọi pipeline ở đây. Manager sẽ duyệt (qua ManagerDocumentController)
+        // thì pipeline mới chạy
+        // documentProcessingService.process(saved.getId());
 
         return toResponse(saved, 0);
     }
@@ -149,7 +167,12 @@ public class DocumentServiceImpl implements DocumentService {
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new InvalidFileException("File vượt quá 20MB");
         }
-        if (!"application/pdf".equals(file.getContentType())) {
+        String contentType = file.getContentType();
+        String fileName = file.getOriginalFilename();
+        boolean isPdfByContentType = "application/pdf".equals(contentType);
+        boolean isPdfByExtension = fileName != null && fileName.toLowerCase().endsWith(".pdf");
+
+        if (!isPdfByContentType && !isPdfByExtension) {
             throw new InvalidFileException("Chỉ hỗ trợ file PDF");
         }
     }
@@ -190,6 +213,7 @@ public class DocumentServiceImpl implements DocumentService {
                 document.getFileName(),
                 document.getFileName(),
                 document.getStatus(),
+                document.getApprovalStatus() != null ? document.getApprovalStatus().name() : null, // DUYỆT
                 chunkCount,
                 document.getErrorMessage(),
                 document.getCreatedAt(),
@@ -204,10 +228,20 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Map entity -> DTO
         return documPage.map(doc -> {
-
             Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
             return toResponse(doc, chunkCount);
         });
+    }
+
+    @Override
+    public List<DocumentResponse> getPendingApprovals(Integer departmentId) {
+        List<DocumentEntity> pendingDocs = documentRepository.findByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(departmentId, ApprovalStatus.PENDING);
+        return pendingDocs.stream()
+                .map(doc -> {
+                    Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
+                    return toResponse(doc, chunkCount);
+                })
+                .collect(Collectors.toList());
     }
 
     // Xử lý cho user xem được tài liệu phòng ban mình + tài liệu public + tài liệu
@@ -245,7 +279,6 @@ public class DocumentServiceImpl implements DocumentService {
         // Ghi nhận Audit Log
         AuditEven auditEvent = new AuditEven();
         auditEvent.setUserId(userId);
-
         auditEvent.setActionType(ActionType.DELETE_DOCUMENT);
 
         auditEvent.setTargetType("DOCUMENT");

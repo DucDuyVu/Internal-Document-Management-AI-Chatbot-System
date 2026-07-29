@@ -62,11 +62,14 @@ public class DocumentController {
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public ResponseEntity<DocumentResponse> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "departmentId", required = false) Integer departmentId) {
+            @RequestParam(value = "departmentId", required = false) Integer departmentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
         DocumentUploadRequest request = new DocumentUploadRequest();
         request.setDepartmentId(departmentId);
-
-        DocumentResponse response = documentService.uploadDocument(file, request);
+        
+        // Giải pháp lai: Truyền cả request và currentUser xuống Service
+        DocumentResponse response = documentService.uploadDocument(file, request, userDetails.getUser());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
