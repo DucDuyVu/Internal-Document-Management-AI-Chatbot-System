@@ -24,8 +24,8 @@ public class MessageFileRefsEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@Column(name = "excerpt")
-	private String excerpt;
+		@Column(name = "excerpt", columnDefinition = "TEXT")
+		private String excerpt;
 	
 	@Column(name = "created_at")
 	private LocalDateTime createdAt;
