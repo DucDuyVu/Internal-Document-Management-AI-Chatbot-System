@@ -2,6 +2,8 @@ package com.event;
 
 import java.util.Map;
 
+import com.javaweb.entity.enums.ActionType;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +16,7 @@ import lombok.Setter;
 public class AuditEven {
     private Long userId;
 
-    private ActionType action;
+    private ActionType actionType;
 
     private String targetType;
 

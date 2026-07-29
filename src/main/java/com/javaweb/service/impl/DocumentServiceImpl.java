@@ -4,6 +4,7 @@ import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.dto.request.DocumentUploadRequest;
 import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.entity.enums.ActionType;
 import com.javaweb.entity.enums.DocumentStatus;
 import com.javaweb.exception.DocumentNotFoundException;
 import com.javaweb.exception.InvalidFileException;
@@ -12,12 +13,13 @@ import com.javaweb.repository.DocumentChunkRepository;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.service.DocumentService;
 import com.javaweb.service.AuditLogService;
-import com.event.ActionType;
 import com.event.AuditEven;
 import com.javaweb.repository.DepartmentsRepository;
 import com.javaweb.entity.DepartmentsEntity;
 import groovyjarjarantlr4.v4.parse.ANTLRParser.ruleEntry_return;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -59,7 +61,9 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingService documentProcessingService;
     private final DepartmentsRepository departmentsRepository;
-    private final AuditLogService auditLogService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     public DocumentServiceImpl(DocumentRepository documentRepository,
             DocumentChunkRepository documentChunkRepository,
@@ -70,7 +74,6 @@ public class DocumentServiceImpl implements DocumentService {
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
         this.departmentsRepository = departmentsRepository;
-        this.auditLogService = auditLogService;
     }
 
     /**
@@ -103,14 +106,12 @@ public class DocumentServiceImpl implements DocumentService {
         AuditEven auditEvent = new AuditEven();
         auditEvent.setUserId(saved.getUploadedBy());
 
-        ActionType actionType = new ActionType();
-        // Tương tự, nếu bạn dùng ActionType là enum, gán bằng ActionType.UPLOAD (hoặc
-        // tương tự)
-        auditEvent.setAction(actionType);
+        auditEvent.setActionType(ActionType.UPLOAD_DOCUMENT);
 
         auditEvent.setTargetType("DOCUMENT");
         auditEvent.setTargetId(saved.getId());
-        auditLogService.handleAuditEvent(auditEvent);
+        // Thông báo đến các service lắng nghe event
+        eventPublisher.publishEvent(auditEvent);
 
         // Gọi pipeline nền — KHÔNG đợi kết quả, vì @Async trả về ngay
         documentProcessingService.process(saved.getId());
@@ -245,13 +246,13 @@ public class DocumentServiceImpl implements DocumentService {
         AuditEven auditEvent = new AuditEven();
         auditEvent.setUserId(userId);
 
-        ActionType actionType = new ActionType();
-        // Nếu chuyển sang enum, gán bằng ActionType.DELETE
-        auditEvent.setAction(actionType);
+        auditEvent.setActionType(ActionType.DELETE_DOCUMENT);
 
         auditEvent.setTargetType("DOCUMENT");
         auditEvent.setTargetId(document.getId());
-        auditLogService.handleAuditEvent(auditEvent);
+
+        // Thông báo đến các service lắng nghe event
+        eventPublisher.publishEvent(auditEvent);
     }
 }
 

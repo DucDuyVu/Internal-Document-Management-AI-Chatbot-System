@@ -19,6 +19,7 @@ import com.event.ActionType;
 import java.util.HashMap;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -40,7 +41,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
         private DocumentPermissionsRepository documentPermissionsRepository;
 
         @Autowired
-        private AuditLogService auditLogService;
+        private ApplicationEventPublisher eventPublisher;
 
         @Autowired
         private NotificationService notificationService;
@@ -203,7 +204,8 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                                         targetDept != null ? targetDept.getName() : "Tất cả phòng ban");
                         auditEvent.setMetadata(meta);
 
-                        auditLogService.handleAuditEvent(auditEvent);
+                        // Bắn đến event để xử lý Log audit
+                        eventPublisher.publishEvent(auditEvent);
 
                         // Bắn thông báo chia sẻ tài liệu
                         String deptName = targetDept != null ? targetDept.getName() : "Toàn bộ công ty";
@@ -228,6 +230,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                 }
         }
 
+        // Thu hồi quyền xem tài liệu
         @Override
         @Transactional
         public void revoke(Long documentId, Long departmentId, UsersEntity currentUser) {
@@ -281,6 +284,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                 meta.put("revokedDepartmentId", departmentId != null ? departmentId : Long.valueOf(0));
                 auditEvent.setMetadata(meta);
 
-                auditLogService.handleAuditEvent(auditEvent);
+                // Bắn đến event để xử lý audit log
+                eventPublisher.publishEvent(auditEvent);
         }
 }

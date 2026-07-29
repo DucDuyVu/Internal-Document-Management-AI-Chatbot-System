@@ -1,0 +1,14 @@
+package com.javaweb.entity.enums;
+
+public enum ActionType {
+    LOGIN,
+    LOGOUT,
+    UPLOAD_DOCUMENT,
+    CREATE_DOCUMENT,
+    VIEW_DOCUMENT,
+    EDIT_DOCUMENT,
+    DELETE_DOCUMENT,
+    SHARE_DOCUMENT,
+    REVOKE_DOCUMENT,
+    CHANGE_PERMISSION
+}
