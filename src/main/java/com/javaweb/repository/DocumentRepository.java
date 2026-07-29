@@ -1,6 +1,7 @@
 package com.javaweb.repository;
 
 import com.javaweb.entity.DocumentEntity;
+import com.javaweb.entity.enums.DocumentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -62,6 +63,10 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
      */
     List<DocumentEntity> findByDeletedAtIsNull();
     long countByUploadedByAndDeletedAtIsNull(Long uploadedBy);
+
+    long countByDepartmentIdAndDeletedAtIsNull(Integer departmentId);
+    
+    long countByDepartmentIdAndStatusAndDeletedAtIsNull(Integer departmentId, DocumentStatus status);
 
     List<DocumentEntity> findByUploadedByAndDeletedAtIsNullOrderByCreatedAtDesc(Long uploadedBy, Pageable pageable);
 }

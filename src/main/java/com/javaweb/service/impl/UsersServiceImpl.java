@@ -101,11 +101,15 @@ public class UsersServiceImpl implements UsersService {
 		boolean isManager = user.getRole() != null && user.getRole() == UserRole.MANAGER;
 		profileResponse.setManager(isManager);
 		if (isManager && user.getDepartment() != null) {
-			profileResponse.setManagedEmployeeCount((int) usersRepository.countByDepartmentId(user.getDepartment().getId()));
+			Integer deptId = Math.toIntExact(user.getDepartment().getId());
+			profileResponse.setManagedEmployeeCount((int) usersRepository.countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(user.getDepartment().getId()));
+			profileResponse.setDepartmentDocumentsCount((int) documentRepository.countByDepartmentIdAndDeletedAtIsNull(deptId));
+			profileResponse.setPendingDocumentCount((int) documentRepository.countByDepartmentIdAndStatusAndDeletedAtIsNull(deptId, com.javaweb.entity.enums.DocumentStatus.PENDING));
 		} else {
 			profileResponse.setManagedEmployeeCount(0);
+			profileResponse.setDepartmentDocumentsCount(0);
+			profileResponse.setPendingDocumentCount(0);
 		}
-		profileResponse.setPendingDocumentCount(0);
 		profileResponse.setPendingRequestCount(0);
 		profileResponse.setActiveSessionsCount(userSessionsRepository.countByUserIdAndIsRevokedFalse(user));
 
@@ -279,6 +283,7 @@ public class UsersServiceImpl implements UsersService {
 			response.setFullName(user.getFullName());
 			response.setUsername(user.getUserName());
 			response.setEmail(user.getEmail());
+			response.setPhone(user.getPhone());
 			if (user.getRole() != null) {
 				response.setRole(user.getRole().name());
 			}
@@ -330,6 +335,7 @@ public class UsersServiceImpl implements UsersService {
 		response.setFullName(user.getFullName());
 		response.setUsername(user.getUserName());
 		response.setEmail(user.getEmail());
+		response.setPhone(user.getPhone());
 		response.setRole(user.getRole().name());
 		response.setActive(user.isActive());
 		if (user.getDepartment() != null) {
@@ -351,6 +357,14 @@ public class UsersServiceImpl implements UsersService {
 		if (request.getFullName() != null && !request.getFullName().equals(user.getFullName())) {
 			changes.append("- Họ tên: ").append(request.getFullName()).append("\n");
 			user.setFullName(request.getFullName());
+		}
+
+		if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+			if (usersRepository.existsByEmail(request.getEmail())) {
+				throw new BadRequestException("Email đã tồn tại !");
+			}
+			changes.append("- Email: ").append(request.getEmail()).append("\n");
+			user.setEmail(request.getEmail());
 		}
 
 		if (request.getPhone() != null && !request.getPhone().equals(user.getPhone())) {
@@ -395,6 +409,7 @@ public class UsersServiceImpl implements UsersService {
 		response.setFullName(user.getFullName());
 		response.setUsername(user.getUserName());
 		response.setEmail(user.getEmail());
+		response.setPhone(user.getPhone());
 		response.setRole(user.getRole().name());
 		response.setActive(user.isActive());
 		if (user.getDepartment() != null) {
@@ -424,6 +439,7 @@ public class UsersServiceImpl implements UsersService {
 		response.setFullName(user.getFullName());
 		response.setUsername(user.getUserName());
 		response.setEmail(user.getEmail());
+		response.setPhone(user.getPhone());
 		response.setRole(user.getRole().name());
 		response.setActive(user.isActive());
 		if (user.getDepartment() != null) {

@@ -12,6 +12,7 @@ public class AdminUserResponse {
     private String email;
     private String role;
     private String departmentName;
+    private String phone;
     
     @com.fasterxml.jackson.annotation.JsonProperty("isActive")
     private boolean isActive;

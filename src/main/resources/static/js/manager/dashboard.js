@@ -13,7 +13,7 @@ function getDocStyle(type) {
     if (t === 'doc' || t === 'docx') return { color: '#2563eb', bg: '#eff6ff', icon: 'fa-file-word' };
     if (t === 'xls' || t === 'xlsx') return { color: '#16a34a', bg: '#f0fdf4', icon: 'fa-file-excel' };
     if (t === 'ppt' || t === 'pptx') return { color: '#ea580c', bg: '#fff7ed', icon: 'fa-file-powerpoint' };
-    if (['png','jpg','jpeg','gif','webp','svg'].includes(t)) return { color: '#7c3aed', bg: '#f5f3ff', icon: 'fa-file-image' };
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(t)) return { color: '#7c3aed', bg: '#f5f3ff', icon: 'fa-file-image' };
     if (t === 'txt') return { color: '#374151', bg: '#f9fafb', icon: 'fa-file-lines' };
     if (t === 'zip' || t === 'rar') return { color: '#b45309', bg: '#fffbeb', icon: 'fa-file-zipper' };
     return { color: '#4f46e5', bg: '#eef2ff', icon: 'fa-file' };
@@ -81,13 +81,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initUserDashboard();
-    if(typeof loadManagerData === 'function') loadManagerData();
+    if (typeof loadManagerData === 'function') loadManagerData();
 });
 
 function initUserDashboard() {
     setupUserSidebar();
     setupUserEventListeners();
-    
+
     const user = typeof getUser !== 'undefined' ? getUser() : null;
     if (typeof updateUserUI !== 'undefined') {
         updateUserUI(user);
@@ -143,21 +143,21 @@ function setupUserEventListeners() {
 
     // Logout
     const logoutButtons = [
-            document.getElementById('logoutBtn'),
-            document.getElementById('logoutBtnTop')
-        ];
+        document.getElementById('logoutBtn'),
+        document.getElementById('logoutBtnTop')
+    ];
 
-        logoutButtons.forEach((btn) => {
-            if (btn) {
-                btn.addEventListener('click', async () => {
-                    if (typeof logout !== 'undefined') {
-                        await logout(); // hàm lấy từ auth.js
-                    } else {
-                        console.error('Hàm logout() không tồn tại, kiểm tra lại auth.js đã load chưa');
-                    }
-                });
-            }
-        });
+    logoutButtons.forEach((btn) => {
+        if (btn) {
+            btn.addEventListener('click', async () => {
+                if (typeof logout !== 'undefined') {
+                    await logout(); // hàm lấy từ auth.js
+                } else {
+                    console.error('Hàm logout() không tồn tại, kiểm tra lại auth.js đã load chưa');
+                }
+            });
+        }
+    });
 }
 
 function loadUserTabData(tabId) {
@@ -203,7 +203,7 @@ async function loadHomeData() {
 
         // Bỏ skeleton loaders
         document.querySelectorAll('.stat-value').forEach(el => el.classList.remove('skeleton-loader'));
-        
+
         document.getElementById('statDocCount').textContent = data.documentCount || 0;
         document.getElementById('statChatCount').textContent = data.chatSessionCount || 0;
         document.getElementById('statViewCount').textContent = data.viewCount || 0;
@@ -267,7 +267,7 @@ async function loadHomeData() {
                 }).join('');
             }
         }
-        
+
         // Update user banner info
         const currentUser = typeof getUser !== 'undefined' ? getUser() : null;
         if (currentUser) {
@@ -282,28 +282,28 @@ async function loadHomeData() {
                 document.getElementById('wRoleWrap').style.display = 'inline';
             }
         }
-        
+
         if (data.lastLoginTime) {
             const lastLoginEl = document.getElementById('wLastLogin');
             if (lastLoginEl) lastLoginEl.textContent = typeof formatDate !== 'undefined' ? formatDate(data.lastLoginTime) : data.lastLoginTime;
             const wLastLoginWrap = document.getElementById('wLastLoginWrap');
-            if(wLastLoginWrap) wLastLoginWrap.style.display = 'inline';
+            if (wLastLoginWrap) wLastLoginWrap.style.display = 'inline';
         }
 
     } catch (error) {
         console.error('Error loading home data:', error);
-        
+
         document.querySelectorAll('.stat-value').forEach(el => {
             el.classList.remove('skeleton-loader');
             el.textContent = 'Lỗi';
             el.style.fontSize = '1.2rem';
         });
-        
+
         const list = document.getElementById('activityList');
-        if(list) list.innerHTML = '<li class="activity-item"><div class="activity-dot red"></div><div class="activity-info"><p>Không tải được</p><span>—</span></div></li>';
-        
+        if (list) list.innerHTML = '<li class="activity-item"><div class="activity-dot red"></div><div class="activity-info"><p>Không tải được</p><span>—</span></div></li>';
+
         const grid = document.getElementById('recentDocGrid');
-        if(grid) grid.innerHTML = '<div class="empty-state"><span>⚠️</span><p>Không tải được dữ liệu</p></div>';
+        if (grid) grid.innerHTML = '<div class="empty-state"><span>⚠️</span><p>Không tải được dữ liệu</p></div>';
 
         if (typeof showToast !== 'undefined') {
             showToast('Không thể tải dữ liệu trang chủ', 'error');
@@ -362,42 +362,77 @@ function renderUserDocuments() {
         if (!docs || docs.length === 0) {
             gridView.innerHTML = '<div class="empty-state"><span>📄</span><p>Không tìm thấy tài liệu</p></div>';
         } else {
-        gridView.innerHTML = docs.map(doc => {
+            gridView.innerHTML = docs.map(doc => {
                 const style = getDocStyle(doc.fileType);
                 const isFailed = doc.status === 'FAILED';
                 const isPending = doc.status === 'PENDING';
                 const cannotShare = isFailed || isPending;
-                
-                let cardStyle = "cursor:pointer;";
-                if (isFailed) {
-                    cardStyle = "cursor:pointer; border: 1px solid #fca5a5; background-color: #fef2f2;";
+
+                let statusClass = 'status-completed';
+                let badgeText = 'Hoàn thành';
+                if (isPending) {
+                    statusClass = 'status-pending';
+                    badgeText = 'Đang chờ';
+                } else if (isFailed) {
+                    statusClass = 'status-failed';
+                    badgeText = 'Thất bại';
                 }
-                
+
+                let actionButtons = '';
+                if (isPending) {
+                    actionButtons = `
+                        <button class="btn-card btn-card-primary" onclick="event.stopPropagation(); showToast('Tính năng Duyệt đang phát triển', 'info')">
+                            Duyệt
+                        </button>
+                        <button class="btn-card btn-card-secondary" onclick="event.stopPropagation(); showToast('Tính năng Từ chối đang phát triển', 'info')">
+                            Từ chối
+                        </button>
+                    `;
+                } else if (isFailed) {
+                    actionButtons = `
+                        <button class="btn-card btn-card-primary" onclick="event.stopPropagation(); showToast('Tính năng Thử lại đang phát triển', 'info')">
+                            <i class="fa-solid fa-rotate-right"></i> Thử lại
+                        </button>
+                        <button class="btn-card btn-card-danger" onclick="event.stopPropagation(); showToast('Tính năng Xoá đang phát triển', 'info')">
+                            <i class="fa-solid fa-trash-can"></i> Xoá
+                        </button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button class="btn-card btn-card-secondary" ${cannotShare ? 'disabled' : `onclick="event.stopPropagation();openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')"`}>
+                            <i class="fa-solid fa-share-nodes"></i> Chia sẻ
+                        </button>
+                        <button class="btn-card btn-card-danger" onclick="event.stopPropagation(); showToast('Tính năng Thu hồi nhanh đang phát triển. Vui lòng dùng nút Chia sẻ để quản lý.', 'info')">
+                            <i class="fa-solid fa-ban"></i> Thu hồi
+                        </button>
+                    `;
+                }
+
                 return `
-                <div class="doc-card" style="${isFailed ? 'border: 1px solid #fca5a5; background-color: #fff1f2;' : ''}">
-                    <div onclick="openDocumentDetail(${doc.id})" style="cursor:pointer">
-                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                            <div style="width:44px;height:44px;border-radius:10px;background:${style.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <i class="fa-solid ${style.icon}" style="font-size:1.3rem;color:${style.color};"></i>
-                            </div>
-                            <div style="min-width:0;">
-                                <div style="font-size:0.8rem;font-weight:700;color:${style.color};background:${style.bg};display:inline-block;padding:2px 7px;border-radius:4px;letter-spacing:0.5px;">${(doc.fileType || 'FILE').toUpperCase()}</div>
-                            </div>
+                <div class="doc-card-v2 ${statusClass}">
+                    <div class="badge">${badgeText}</div>
+                    
+                    <button class="doc-menu-btn" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </button>
+
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                        <div style="width:40px;height:40px;border-radius:8px;background:${style.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fa-solid ${style.icon}" style="font-size:1.2rem;color:${style.color};"></i>
                         </div>
-                        <h4 style="font-size:0.875rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px;" title="${doc.fileName}">${doc.fileName}</h4>
-                        <div class="doc-card-meta">
-                            <div><i class="fa-solid fa-hard-drive" style="color:#9ca3af;margin-right:4px;"></i>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
-                            <div title="Thời gian tải tài liệu lên hệ thống"><i class="fa-regular fa-calendar" style="color:#9ca3af;margin-right:4px;"></i>Ngày tải lên: ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
-                        </div>
-                        <div class="doc-card-meta" style="margin-top:6px;">
-                            <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
+                        <div style="font-size:0.75rem;font-weight:700;color:${style.color};letter-spacing:0.5px;">
+                            ${(doc.fileType || 'FILE').toUpperCase()}
                         </div>
                     </div>
-                    <div style="margin-top:12px;border-top:1px solid ${isFailed ? '#fecaca' : '#f3f4f6'};padding-top:10px;">
-                        <button style="width:100%;background:none;border:1px solid ${isFailed ? '#fca5a5' : '#e5e7eb'};border-radius:6px;padding:6px 12px;font-size:0.8rem;color:${cannotShare ? '#9ca3af' : '#6b7280'};cursor:${cannotShare ? 'not-allowed' : 'pointer'};font-weight:600;transition:all 0.2s;" 
-                            ${cannotShare ? `disabled title="Chưa thể phân quyền do tài liệu chưa sẵn sàng hoặc bị lỗi"` : `onclick="event.stopPropagation();openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')" onmouseover="this.style.background='#f9fafb';this.style.borderColor='#4f46e5';this.style.color='#4f46e5'" onmouseout="this.style.background='none';this.style.borderColor='#e5e7eb';this.style.color='#6b7280'"`}>
-                            <i class="fa-solid fa-shield-halved"></i> Quản lý Quyền
-                        </button>
+                    
+                    <h4 class="doc-title" title="${doc.fileName}">${doc.fileName}</h4>
+                    
+                    <div style="font-size:0.75rem;color:#6b7280;margin-bottom:12px;">
+                        Tải lên ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}
+                    </div>
+                    
+                    <div class="doc-action-grid">
+                        ${actionButtons}
                     </div>
                 </div>`;
             }).join('');
@@ -428,10 +463,10 @@ function renderUserDocuments() {
                     <td>
                         <button class="btn-icon" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết">👁️</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id})" title="Tải xuống">⬇️</button>
-                        ${cannotShare ? 
-                            `<button class="btn-icon" disabled title="Chưa thể phân quyền" style="color: #cbd5e1; cursor: not-allowed;">🛡️</button>` : 
-                            `<button class="btn-icon" onclick="event.stopPropagation(); openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')" title="Quản lý Quyền" style="color: #64748b;">🛡️</button>`
-                        }
+                        ${cannotShare ?
+                        `<button class="btn-icon" disabled title="Chưa thể phân quyền" style="color: #cbd5e1; cursor: not-allowed;">🛡️</button>` :
+                        `<button class="btn-icon" onclick="event.stopPropagation(); openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')" title="Quản lý Quyền" style="color: #64748b;">🛡️</button>`
+                    }
                     </td>
                 </tr>
             `}).join('');
@@ -945,8 +980,8 @@ async function loadSearchFilters() {
 
 async function performSearch() {
     const query = document.getElementById('globalSearchInput')?.value?.trim()
-               || document.getElementById('searchHeroInput')?.value?.trim()
-               || document.getElementById('searchInput')?.value?.trim();
+        || document.getElementById('searchHeroInput')?.value?.trim()
+        || document.getElementById('searchInput')?.value?.trim();
     if (!query || query.length < 2) {
         const container = document.getElementById('searchResults');
         if (container) {
@@ -1075,7 +1110,26 @@ async function loadManagerData() {
             if (msPendingDocs) msPendingDocs.textContent = pendingCount;
             if (pendingDocCount) pendingDocCount.textContent = pendingCount;
             if (msActiveSessions) msActiveSessions.textContent = sessions;
-            if (msTotalDocs) msTotalDocs.textContent = totalDocs;
+            if (msTotalDocs) {
+                msTotalDocs.textContent = totalDocs;
+                const trendEl = document.getElementById('msTotalDocsTrend');
+                if (totalDocs === 0) {
+                    msTotalDocs.style.color = '#9ca3af';
+                    if (trendEl) {
+                        trendEl.className = 'kpi-trend neutral';
+                        trendEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Chưa có tài liệu nào';
+                    }
+                } else {
+                    msTotalDocs.style.color = '';
+                    if (trendEl) {
+                        trendEl.className = 'kpi-trend up';
+                        trendEl.innerHTML = '<i class="fa-solid fa-folder-open"></i> Đang lưu trữ';
+                    }
+                }
+            }
+
+            // Remove skeleton loader if present
+            document.querySelectorAll('.skeleton-loader').forEach(el => el.classList.remove('skeleton-loader'));
 
             // Online users KPI
             if (msOnlineUsers) {
@@ -1102,8 +1156,8 @@ async function loadManagerData() {
                 }
             }
 
-            // Populate timeline with recent activity (mock data based on profile)
-            renderManagerTimeline(profile);
+            // Populate timeline with recent activity (real-time from backend)
+            loadRecentActivities();
         }
 
     } catch (error) {
@@ -1114,36 +1168,62 @@ async function loadManagerData() {
     }
 }
 
-function renderManagerTimeline(profile) {
+async function loadRecentActivities() {
     const timeline = document.getElementById('managerTimeline');
     if (!timeline) return;
 
-    const items = [];
-    const deptName = profile.departmentName || 'phòng ban';
+    try {
+        const activities = await apiRequest('/api/activity-logs/recent?limit=10');
 
-    // Generate contextual timeline items
-    if (profile.pendingDocumentCount > 0) {
-        items.push({ dot: 'bg-warning', time: 'Hôm nay', text: `<strong>${profile.pendingDocumentCount}</strong> tài liệu đang chờ duyệt` });
-    }
-    items.push({ dot: 'bg-primary', time: 'Hôm nay', text: `Bạn đã đăng nhập quản lý <em>${deptName}</em>` });
-    if (profile.managedEmployeeCount > 0) {
-        items.push({ dot: 'bg-success', time: 'Tổng hợp', text: `Quản lý <strong>${profile.managedEmployeeCount}</strong> nhân viên` });
-    }
-    if (profile.departmentDocumentsCount > 0) {
-        items.push({ dot: 'bg-primary', time: 'Tổng hợp', text: `Phòng ban có <strong>${profile.departmentDocumentsCount}</strong> tài liệu` });
-    }
-    items.push({ dot: 'bg-success', time: '', text: `Hệ thống AI đang hoạt động bình thường` });
+        if (!activities || activities.length === 0) {
+            timeline.innerHTML = `<div style="color:var(--text-muted); font-size:0.85rem; padding:10px 0;">Không có hoạt động gần đây.</div>`;
+            return;
+        }
 
-    timeline.innerHTML = items.map(item => `
-        <div class="timeline-item">
-            <div class="tl-dot ${item.dot}"></div>
-            <div class="tl-content">
-                <div class="tl-time">${item.time}</div>
-                <p style="margin:0; color:var(--text-primary); font-size:0.87rem;">${item.text}</p>
-            </div>
-        </div>
-    `).join('');
+        timeline.innerHTML = activities.map(act => {
+            let dot = 'bg-primary';
+            let icon = 'fa-solid fa-bolt';
+            let actionText = act.action;
+
+            // Map action to color and text
+            if (act.action === 'LOGIN') {
+                dot = 'bg-success';
+                actionText = 'Đã đăng nhập vào hệ thống';
+            } else if (act.action === 'UPLOAD_DOCUMENT') {
+                dot = 'bg-primary';
+                actionText = 'Tải lên tài liệu ID: ' + act.targetId;
+            } else if (act.action === 'DELETE_DOCUMENT') {
+                dot = 'bg-danger';
+                actionText = 'Xóa tài liệu ID: ' + act.targetId;
+            } else if (act.action === 'SHARE_DOCUMENT') {
+                dot = 'bg-warning';
+                actionText = 'Chia sẻ tài liệu ID: ' + act.targetId;
+            } else if (act.action === 'REVOKE_DOCUMENT') {
+                dot = 'bg-warning';
+                actionText = 'Thu hồi quyền tài liệu ID: ' + act.targetId;
+            } else if (act.action === 'GRANT_PERMISSION') {
+                dot = 'bg-success';
+                actionText = 'Cấp quyền tài liệu ID: ' + act.targetId;
+            }
+
+            const timeStr = formatDate(act.createdAt);
+
+            return `
+            <div class="timeline-item">
+                <div class="tl-dot ${dot}"></div>
+                <div class="tl-content">
+                    <div class="tl-time">${timeStr}</div>
+                    <p style="margin:0; color:var(--text-primary); font-size:0.87rem;">${actionText}</p>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        console.error("Lỗi khi tải nhật ký hoạt động:", e);
+    }
 }
+
+// Start polling every 5 seconds
+setInterval(loadRecentActivities, 5000);
 
 // =============================================
 // USER PROFILE
@@ -1182,7 +1262,7 @@ async function loadUserProfile() {
                 avatarEl.style.fontSize = '1.5rem';
             }
         }
-        
+
         // Cập nhật avatar trên Topbar
         const topbarAvatar = document.getElementById('userAvatar');
         if (topbarAvatar) {
@@ -1307,7 +1387,7 @@ async function updateProfile() {
         if (avatarInput && avatarInput.files.length > 0) {
             const formData = new FormData();
             formData.append('file', avatarInput.files[0]);
-            
+
             const uploadRes = await apiRequest('/api/users/upload-avatar', {
                 method: 'POST',
                 body: formData,
@@ -1345,9 +1425,9 @@ async function updateProfile() {
         if (typeof showToast !== 'undefined') {
             showToast('Cập nhật hồ sơ thành công!', 'success');
         }
-        
+
         loadUserProfile(); // Reload data to update view
-        
+
         // Switch back to Info tab
         const infoBtn = document.querySelector('.settings-tab[onclick*="ptInfo"]');
         if (infoBtn) {
@@ -1639,23 +1719,23 @@ let currentPermissionDocId = null;
 async function openPermissionModal(docId, docName) {
     try {
         currentPermissionDocId = docId;
-        
+
         const titleEl = document.getElementById('permissionModalTitle');
         if (titleEl) {
             titleEl.textContent = `Quản lý Quyền Truy cập - ${docName || 'Tài liệu'}`;
         }
-        
+
         // Reset state
         const tbodyEl = document.getElementById('permissionListBody');
         if (tbodyEl) {
             tbodyEl.innerHTML = '<tr><td colspan="4" class="empty-state" style="text-align:center; padding: 20px;">Đang tải dữ liệu...</td></tr>';
         }
-        
+
         const deptSelectEl = document.getElementById('departmentSelect');
         if (deptSelectEl) {
             deptSelectEl.innerHTML = '<option value="">-- Đang tải danh sách... --</option>';
         }
-        
+
         if (typeof openModal === 'function') {
             openModal('permissionModal');
         } else {
@@ -1663,7 +1743,7 @@ async function openPermissionModal(docId, docName) {
             alert("Lỗi hệ thống: Không tìm thấy hàm hiển thị giao diện. Vui lòng thử lại.");
             return;
         }
-        
+
         await Promise.all([
             loadDepartmentsForShare(),
             loadDocumentPermissions(docId)
@@ -1678,13 +1758,13 @@ async function loadDepartmentsForShare() {
     try {
         const departments = await apiRequest('/api/departments');
         const currentUser = JSON.parse(localStorage.getItem('user'));
-        
+
         const select = document.getElementById('departmentSelect');
         if (!select) {
             throw new Error("Không tìm thấy phần tử departmentSelect trong DOM");
         }
         select.innerHTML = '<option value="">-- Chọn phòng ban --</option>\n<option value="0">-- Tất cả phòng ban --</option>';
-        
+
         departments.forEach(dept => {
             // Đừng hiển thị phòng ban của chính mình vì mình đã có quyền
             if (!currentUser || currentUser.departmentId !== dept.id) {
@@ -1706,14 +1786,14 @@ async function loadDocumentPermissions(docId) {
         if (!tbody) {
             throw new Error("Không tìm thấy phần tử permissionListBody trong DOM");
         }
-        
+
         const permissions = await apiRequest(`/api/documents/${docId}/permissions`);
-        
+
         if (permissions.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" class="empty-state" style="text-align:center; padding: 20px; color: #64748b;">Chưa chia sẻ cho phòng ban nào</td></tr>';
             return;
         }
-        
+
         tbody.innerHTML = permissions.map(perm => {
             const deptName = perm.departmentName || 'Tất cả phòng ban';
             return `
@@ -1736,25 +1816,25 @@ async function loadDocumentPermissions(docId) {
 
 async function shareDocumentPermission() {
     if (!currentPermissionDocId) return;
-    
+
     const select = document.getElementById('departmentSelect');
     const deptId = select.value;
-    
+
     if (!deptId) {
         showToast('Vui lòng chọn phòng ban để chia sẻ', 'error');
         return;
     }
-    
+
     const btn = document.getElementById('btnShareDoc');
     btn.disabled = true;
     btn.textContent = 'Đang xử lý...';
-    
+
     try {
         await apiRequest(`/api/documents/${currentPermissionDocId}/permissions`, {
             method: 'POST',
             body: { departmentId: parseInt(deptId) }
         });
-        
+
         showToast('Đã chia sẻ thành công', 'success');
         select.value = ''; // reset
         await loadDocumentPermissions(currentPermissionDocId); // reload list
@@ -1769,12 +1849,12 @@ async function shareDocumentPermission() {
 
 async function revokeDocumentPermission(deptId) {
     if (!currentPermissionDocId || !confirm('Bạn có chắc chắn muốn thu hồi quyền truy cập của phòng ban này?')) return;
-    
+
     try {
         await apiRequest(`/api/documents/${currentPermissionDocId}/permissions/${deptId}`, {
             method: 'DELETE'
         });
-        
+
         showToast('Đã thu hồi quyền thành công', 'success');
         await loadDocumentPermissions(currentPermissionDocId); // reload list
     } catch (error) {
@@ -1787,31 +1867,51 @@ async function revokeDocumentPermission(deptId) {
 // EMPLOYEES MANAGEMENT
 // =============================================
 
-async function loadEmployees(page = 0, size = 10, search = '') {
+async function loadEmployees(page = 1, size = 10, search = '') {
     try {
         if (typeof apiRequest === 'undefined') return;
-        const response = await apiRequest(`/api/manager/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}`);
-        renderEmployees(response.content || response, response.totalElements);
+
+        // Cập nhật giá trị search và status từ input trên màn hình
+        const searchInput = document.getElementById('employeeSearch');
+        if (searchInput && search === '') {
+            search = searchInput.value;
+        }
+        const statusFilter = document.getElementById('employeeStatusFilter');
+        const status = statusFilter ? statusFilter.value : '';
+
+        let url = `/api/manager/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}`;
+        if (status) {
+            url += `&status=${status}`;
+        }
+
+        const response = await apiRequest(url);
+        renderEmployees(response.content || response, response.totalElements, page, size);
     } catch (error) {
         console.error('Error loading employees:', error);
         if (typeof showToast !== 'undefined') showToast('Không thể tải danh sách nhân viên', 'error');
     }
 }
 
-function renderEmployees(users, total) {
+function renderEmployees(users, total, currentPage = 1, size = 10) {
     const tbody = document.getElementById('employeeTableBody');
     if (!tbody) return;
 
     if (!users || users.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center; padding: 40px 0;"><i class="fa-solid fa-users" style="font-size:2rem; color:#d1d5db; margin-bottom:12px;"></i><p>Không có nhân viên nào</p></td></tr>';
+
+        const pageInfo = document.getElementById('employeePageInfo');
+        if (pageInfo) pageInfo.textContent = 'Hiển thị 0 nhân viên';
+
+        const pagination = document.getElementById('employeePagination');
+        if (pagination) pagination.innerHTML = '';
         return;
     }
 
     tbody.innerHTML = users.map(u => {
-        const statusBadge = u.isActive 
-            ? '<span class="status-badge" style="background:#dcfce7;color:#166534;"><i class="fa-solid fa-check"></i> Hoạt động</span>' 
+        const statusBadge = u.isActive
+            ? '<span class="status-badge" style="background:#dcfce7;color:#166534;"><i class="fa-solid fa-check"></i> Hoạt động</span>'
             : '<span class="status-badge" style="background:#fee2e2;color:#b91c1c;"><i class="fa-solid fa-lock"></i> Đã khóa</span>';
-        
+
         return `
         <tr>
             <td>
@@ -1820,22 +1920,64 @@ function renderEmployees(users, total) {
                         ${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : (u.fullName || 'U').charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <div style="font-weight:600; color:#111827;">${u.fullName}</div>
-                        <div style="font-size:0.8rem; color:#6b7280;">${u.userName}</div>
+                        <div style="font-weight:600; color:#111827; margin-bottom: 2px;">${u.fullName}</div>
+                        <div style="font-size:0.8rem; color:#6b7280; display:flex; align-items:center; gap:8px;">
+                            <span title="Tên đăng nhập"><i class="fa-solid fa-at" style="color:#9ca3af;"></i> ${u.username}</span>
+                            ${u.phone ? `<span style="color:#e5e7eb;">|</span><span title="Số điện thoại"><i class="fa-solid fa-phone" style="color:#9ca3af; font-size: 0.75rem;"></i> ${u.phone}</span>` : '<span style="color:#e5e7eb;">|</span><span title="Số điện thoại" style="color:#d1d5db; font-style:italic;">Chưa cập nhật SĐT</span>'}
+                        </div>
                     </div>
                 </div>
             </td>
-            <td style="color:#4b5563;">${u.email || '-'}</td>
-            <td style="color:#4b5563;">${u.phone || '-'}</td>
+            <td style="color:#4b5563;">
+                <div>${u.email || 'Chưa có email'}</div>
+            </td>
             <td>${statusBadge}</td>
-            <td style="text-align:center;">
+            <td style="text-align:right;">
                 <button class="btn-icon" onclick="editEmployee(${u.id})" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
             </td>
         </tr>`;
     }).join('');
 
     const pageInfo = document.getElementById('employeePageInfo');
-    if (pageInfo) pageInfo.textContent = `Hiển thị ${users.length} nhân viên`;
+    if (pageInfo) {
+        if (total !== undefined) {
+            pageInfo.textContent = `Hiển thị ${users.length} / ${total} nhân viên`;
+        } else {
+            pageInfo.textContent = `Hiển thị ${users.length} nhân viên`;
+        }
+    }
+
+    // Update Pagination
+    updateEmployeePagination(currentPage, total, size);
+}
+
+function updateEmployeePagination(currentPage, total, size) {
+    const container = document.getElementById('employeePagination');
+    if (!container) return;
+
+    if (!total || total <= size) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const totalPages = Math.ceil(total / size);
+    let html = '';
+
+    html += `<button class="page-btn" onclick="loadEmployees(${currentPage - 1}, ${size})" ${currentPage <= 1 ? 'disabled' : ''}>‹</button>`;
+
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === currentPage) {
+            html += `<button class="page-btn active">${i}</button>`;
+        } else if (i <= 3 || i > totalPages - 3 || Math.abs(i - currentPage) <= 1) {
+            html += `<button class="page-btn" onclick="loadEmployees(${i}, ${size})">${i}</button>`;
+        } else if (i === 4 && currentPage > 4) {
+            html += `<span>...</span>`;
+        }
+    }
+
+    html += `<button class="page-btn" onclick="loadEmployees(${currentPage + 1}, ${size})" ${currentPage >= totalPages ? 'disabled' : ''}>›</button>`;
+
+    container.innerHTML = html;
 }
 
 function loadReports() {
@@ -1851,15 +1993,15 @@ if (typeof loadManagerData === 'function' && document.getElementById('tabManager
 async function editEmployee(id) {
     try {
         const user = await apiRequest(`/api/manager/users/${id}`);
-        
+
         document.getElementById('employeeForm').reset();
         document.getElementById('empId').value = user.id;
         document.getElementById('employeeModalTitle').textContent = 'Chỉnh sửa nhân viên';
-        
+
         document.getElementById('empFullName').value = user.fullName || '';
         document.getElementById('empEmail').value = user.email || '';
         document.getElementById('empPhone').value = user.phone || '';
-        
+
         // Disable editing username and password
         document.getElementById('groupEmpUsername').style.display = 'none';
         document.getElementById('groupEmpPassword').style.display = 'none';
@@ -1888,7 +2030,7 @@ function closeEmployeeModal() {
 async function saveEmployee() {
     const id = document.getElementById('empId').value;
     const form = document.getElementById('employeeForm');
-    
+
     if (!id) {
         if (typeof showToast !== 'undefined') showToast('Không thể thêm nhân viên mới. Chức năng này chỉ dành cho Admin.', 'warning');
         return;
@@ -1906,7 +2048,7 @@ async function saveEmployee() {
     };
 
     try {
-        await apiRequest(`/api/manager/users/${id}`, 'PUT', data);
+        await apiRequest(`/api/manager/users/${id}`, { method: 'PUT', body: data });
         if (typeof showToast !== 'undefined') showToast('Cập nhật thành công', 'success');
         closeEmployeeModal();
         loadEmployees(1);
@@ -1919,7 +2061,7 @@ async function saveEmployee() {
 async function lockEmployee(id) {
     if (confirm("Bạn có chắc chắn muốn khóa tài khoản này?")) {
         try {
-            await apiRequest(`/api/manager/users/${id}/lock`, 'PUT');
+            await apiRequest(`/api/manager/users/${id}/lock`, { method: 'PUT' });
             if (typeof showToast !== 'undefined') showToast("Đã khóa tài khoản", "success");
             loadEmployees(1);
         } catch (error) {
@@ -1931,7 +2073,7 @@ async function lockEmployee(id) {
 async function unlockEmployee(id) {
     if (confirm("Bạn muốn mở khóa tài khoản này?")) {
         try {
-            await apiRequest(`/api/manager/users/${id}/unlock`, 'PUT');
+            await apiRequest(`/api/manager/users/${id}/unlock`, { method: 'PUT' });
             if (typeof showToast !== 'undefined') showToast("Đã mở khóa tài khoản", "success");
             loadEmployees(1);
         } catch (error) {
@@ -1943,7 +2085,7 @@ async function unlockEmployee(id) {
 async function deleteEmployee(id) {
     if (confirm("Bạn có chắc chắn muốn XÓA nhân viên này khỏi hệ thống? Dữ liệu không thể phục hồi!")) {
         try {
-            await apiRequest(`/api/manager/users/${id}`, 'DELETE');
+            await apiRequest(`/api/manager/users/${id}`, { method: 'DELETE' });
             if (typeof showToast !== 'undefined') showToast("Đã xóa nhân viên", "success");
             loadEmployees(1);
         } catch (error) {
@@ -1957,7 +2099,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Monkey-patch switchTab to load employees when tab is active
     if (typeof window.switchTab === 'function') {
         const originalSwitchTab = window.switchTab;
-        window.switchTab = function(tabId, menuItem) {
+        window.switchTab = function (tabId, menuItem) {
             originalSwitchTab(tabId, menuItem);
             if (tabId === 'tabEmployees') {
                 loadEmployees(1);

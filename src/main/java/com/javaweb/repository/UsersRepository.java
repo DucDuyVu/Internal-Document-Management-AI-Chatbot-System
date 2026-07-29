@@ -25,6 +25,9 @@ public interface UsersRepository extends JpaRepository<UsersEntity, Long> {
 
 	// Đếm user theo id phòng ban
 	long countByDepartmentId(Long departmentId);
+	
+	// Đếm user đang hoạt động theo id phòng ban
+	long countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(Long departmentId);
 
 	// Tìm xem còn users hoạt động thuộc phòng ban không
 	boolean existsByDepartmentIdAndIsActiveTrue(Long id);

@@ -1,6 +1,7 @@
 package com.javaweb.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,9 +60,40 @@ public class AuditLogServiceImpl implements AuditLogService {
 
             entity.setCreatedAt(LocalDateTime.now());
 
-            repository.save(entity);
+            repository.save(entity); // lưu log vào DB
         } catch (Exception e) {
             logger.error("Lỗi khi lưu bản ghi nhật ký hoạt động !", e);
         }
+    }
+
+    // Lấy các hoạt động gần đây ném ra giao diện 
+    @Override
+    public List<ActivityLogResponse> getRecentActivities(Long userId, int limit) {
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        List<ActivityLogsEntity> entities = repository.findByUsersEntityId_IdOrderByCreatedAtDesc(userId,
+                pageable);
+
+        return entities.stream().map(entity -> {
+            ActivityLogResponse dto = new ActivityLogResponse();
+            dto.setId(entity.getId());
+            if (entity.getUsersEntityId() != null) {
+                dto.setUserId(entity.getUsersEntityId().getId());
+                dto.setUserFullName(entity.getUsersEntityId().getFullName());
+            }
+            dto.setAction(entity.getAction());
+            dto.setTargetType(entity.getTargetType());
+            dto.setTargetId(entity.getTargetId());
+            dto.setCreatedAt(entity.getCreatedAt());
+            try {
+                if (entity.getMetadata() != null) {
+                    dto.setMetadata(objectMapper.readValue(entity.getMetadata(),
+                            new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
+                            }));
+                }
+            } catch (Exception e) {
+                logger.warn("Could not parse metadata for activity log " + entity.getId());
+            }
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
     }
 }
