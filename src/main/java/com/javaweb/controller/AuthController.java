@@ -35,6 +35,7 @@ public class AuthController {
 	PasswordResetService passwordResetService;
 	@PostMapping("/login")
 	public LoginResponse login(@RequestBody LoginRequest loginRequest) {
+		System.out.println("LOGIN CONTROLLER - REACHED");
 		return authenticationService.login(loginRequest);
 	}
 	

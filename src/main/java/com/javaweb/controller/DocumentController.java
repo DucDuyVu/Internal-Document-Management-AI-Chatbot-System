@@ -8,6 +8,7 @@ import com.javaweb.repository.DocumentPermissionsRepository;
 import com.javaweb.security.CustomUserDetails;
 import com.javaweb.service.DocumentPermissionService;
 import com.javaweb.service.DocumentService;
+import com.javaweb.entity.UsersEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,10 +65,17 @@ public class DocumentController {
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public ResponseEntity<DocumentResponse> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "departmentId", required = false) Integer departmentId) {
+            @RequestParam(value = "departmentId", required = false) Integer departmentId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            
+        // Tạo request bọc departmentId theo chuẩn của nhánh dev hiện tại
         DocumentUploadRequest request = new DocumentUploadRequest();
         request.setDepartmentId(departmentId);
-
+        
+        // Ghi chú: Nếu hàm uploadDocument() của nhánh dev-truong bị đổi sang nhận userId
+        // thay vì DocumentUploadRequest, bạn sẽ sửa dòng dưới thành: 
+        // documentService.uploadDocument(file, userDetails.getUserId());
+        
         DocumentResponse response = documentService.uploadDocument(file, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -157,31 +167,3 @@ public class DocumentController {
         return ResponseEntity.noContent().build(); // trả về 204 No Content
     }
 }
-
-/*
- * ============================================================
- * FLOW - toàn bộ Bước 8
- * ============================================================
- * Frontend
- * │
- * ├─ POST /api/documents/upload (multipart: file + departmentId)
- * │ ↓
- * │ DocumentController.upload()
- * │ ↓
- * │ DocumentService.uploadDocument()
- * │ ↓
- * │ DocumentServiceImpl: validate → lưu file → save Document(PENDING)
- * │ ↓
- * │ DocumentProcessingService.process(id) [@Async, chạy nền]
- * │ ↓
- * │ trả về 201 + {id, status: PENDING}
- * │
- * └─ GET /api/documents/{id} (lặp lại mỗi vài giây)
- * ↓
- * DocumentController.getStatus()
- * ↓
- * DocumentService.getDocumentStatus()
- * ↓
- * trả về {status: PROCESSING/COMPLETED/FAILED, chunkCount}
- * ============================================================
- */

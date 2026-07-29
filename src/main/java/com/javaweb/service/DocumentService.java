@@ -27,8 +27,7 @@ public interface DocumentService {
      * Lưu ý: không throw checked exception ra ngoài — lỗi validate file
      * sẽ ném InvalidFileException (unchecked), bắt ở GlobalExceptionHandler.
      */
-    DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request);
-
+    DocumentResponse uploadDocument(MultipartFile file, Long currentUserId);
     /**
      * Dùng ở: DocumentController.getStatus() (endpoint polling).
      * Input: id của Document.
