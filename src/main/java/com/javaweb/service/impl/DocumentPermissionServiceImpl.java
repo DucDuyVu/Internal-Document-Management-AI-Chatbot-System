@@ -12,10 +12,14 @@ import com.javaweb.exception.NotFoundException;
 import com.javaweb.repository.DepartmentsRepository;
 import com.javaweb.repository.DocumentPermissionsRepository;
 import com.javaweb.repository.DocumentRepository;
-import com.javaweb.service.ActivityLogService;
+import com.javaweb.service.AuditLogService;
 import com.javaweb.service.DocumentPermissionService;
+import com.event.AuditEven;
+import com.event.ActionType;
+import java.util.HashMap;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -37,7 +41,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
         private DocumentPermissionsRepository documentPermissionsRepository;
 
         @Autowired
-        private ActivityLogService activityLogService;
+        private ApplicationEventPublisher eventPublisher;
 
         @Autowired
         private NotificationService notificationService;
@@ -186,21 +190,31 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                         DocumentPermissionsEntity saved = documentPermissionsRepository.save(permission);
 
                         // Ghi audit log
-                        activityLogService.log(
-                                        grantedBy.getId(),
-                                        "SHARE_DOCUMENT",
-                                        "document",
-                                        documentId,
-                                        Map.of("sharedWithDepartmentId",
-                                                        departmentId != null ? departmentId : Long.valueOf(0),
-                                                        "sharedWithDepartmentName",
-                                                        targetDept != null ? targetDept.getName()
-                                                                        : "Tất cả phòng ban"));
-                        
+                        AuditEven auditEvent = new AuditEven();
+                        auditEvent.setUserId(grantedBy.getId());
+                        ActionType actionType = new ActionType();
+                        // Nếu chuyển sang enum, gán bằng ActionType.SHARE_DOCUMENT
+                        auditEvent.setAction(actionType);
+                        auditEvent.setTargetType("DOCUMENT");
+                        auditEvent.setTargetId(documentId);
+
+                        Map<String, Object> meta = new HashMap<>();
+                        meta.put("sharedWithDepartmentId", departmentId != null ? departmentId : Long.valueOf(0));
+                        meta.put("sharedWithDepartmentName",
+                                        targetDept != null ? targetDept.getName() : "Tất cả phòng ban");
+                        auditEvent.setMetadata(meta);
+
+                        // Bắn đến event để xử lý Log audit
+                        eventPublisher.publishEvent(auditEvent);
+
                         // Bắn thông báo chia sẻ tài liệu
                         String deptName = targetDept != null ? targetDept.getName() : "Toàn bộ công ty";
-                        notificationService.notifyAdmins("Tài liệu được chia sẻ", "Người dùng " + grantedBy.getFullName() + " đã chia sẻ tài liệu '" + document.getFileName() + "' cho phòng ban: " + deptName);
-                        notificationService.notifyDepartment(departmentId, "Tài liệu mới", "Bạn được chia sẻ tài liệu mới: '" + document.getFileName() + "'. Vui lòng kiểm tra mục Tài liệu.");
+                        notificationService.notifyAdmins("Tài liệu được chia sẻ",
+                                        "Người dùng " + grantedBy.getFullName() + " đã chia sẻ tài liệu '"
+                                                        + document.getFileName() + "' cho phòng ban: " + deptName);
+                        notificationService.notifyDepartment(departmentId, "Tài liệu mới",
+                                        "Bạn được chia sẻ tài liệu mới: '" + document.getFileName()
+                                                        + "'. Vui lòng kiểm tra mục Tài liệu.");
 
                         return new DocumentPermissionResponse(
                                         saved.getId(),
@@ -216,6 +230,7 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                 }
         }
 
+        // Thu hồi quyền xem tài liệu
         @Override
         @Transactional
         public void revoke(Long documentId, Long departmentId, UsersEntity currentUser) {
@@ -257,7 +272,19 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                 permission.setRevokedBy(currentUser);
                 documentPermissionsRepository.save(permission);
 
-                activityLogService.log(currentUser.getId(), "REVOKE_PERMISSION", "document", documentId,
-                                Map.of("revokedDepartmentId", departmentId != null ? departmentId : Long.valueOf(0)));
+                AuditEven auditEvent = new AuditEven();
+                auditEvent.setUserId(currentUser.getId());
+                ActionType actionType = new ActionType();
+                // Nếu chuyển sang enum, gán bằng ActionType.REVOKE_PERMISSION
+                auditEvent.setAction(actionType);
+                auditEvent.setTargetType("DOCUMENT");
+                auditEvent.setTargetId(documentId);
+
+                Map<String, Object> meta = new HashMap<>();
+                meta.put("revokedDepartmentId", departmentId != null ? departmentId : Long.valueOf(0));
+                auditEvent.setMetadata(meta);
+
+                // Bắn đến event để xử lý audit log
+                eventPublisher.publishEvent(auditEvent);
         }
 }

@@ -4,6 +4,7 @@ import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.dto.request.DocumentUploadRequest;
 import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.entity.enums.ActionType;
 import com.javaweb.entity.enums.DocumentStatus;
 import com.javaweb.exception.DocumentNotFoundException;
 import com.javaweb.exception.InvalidFileException;
@@ -11,11 +12,14 @@ import com.javaweb.rag.DocumentProcessingService;
 import com.javaweb.repository.DocumentChunkRepository;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.service.DocumentService;
-
+import com.javaweb.service.AuditLogService;
+import com.event.AuditEven;
 import com.javaweb.repository.DepartmentsRepository;
 import com.javaweb.entity.DepartmentsEntity;
 import groovyjarjarantlr4.v4.parse.ANTLRParser.ruleEntry_return;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -57,10 +62,14 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentProcessingService documentProcessingService;
     private final DepartmentsRepository departmentsRepository;
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     public DocumentServiceImpl(DocumentRepository documentRepository,
             DocumentChunkRepository documentChunkRepository,
             DocumentProcessingService documentProcessingService,
-            DepartmentsRepository departmentsRepository) {
+            DepartmentsRepository departmentsRepository,
+            AuditLogService auditLogService) {
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
@@ -92,6 +101,17 @@ public class DocumentServiceImpl implements DocumentService {
         document.setStatus(DocumentStatus.PENDING);
 
         DocumentEntity saved = documentRepository.save(document);
+
+        // Ghi nhận Audit Log
+        AuditEven auditEvent = new AuditEven();
+        auditEvent.setUserId(saved.getUploadedBy());
+
+        auditEvent.setActionType(ActionType.UPLOAD_DOCUMENT);
+
+        auditEvent.setTargetType("DOCUMENT");
+        auditEvent.setTargetId(saved.getId());
+        // Thông báo đến các service lắng nghe event
+        eventPublisher.publishEvent(auditEvent);
 
         // Gọi pipeline nền — KHÔNG đợi kết quả, vì @Async trả về ngay
         documentProcessingService.process(saved.getId());
@@ -209,6 +229,30 @@ public class DocumentServiceImpl implements DocumentService {
             Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
             return toResponse(doc, chunkCount);
         });
+    }
+
+    // Xử lý xóa mềm tài liệu
+    @Override
+    @Transactional
+    public void deleteDocument(Long id, Long userId) {
+        DocumentEntity document = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy document id=" + id));
+
+        // xóa mềm
+        document.setDeletedAt(LocalDateTime.now());
+        documentRepository.save(document);
+
+        // Ghi nhận Audit Log
+        AuditEven auditEvent = new AuditEven();
+        auditEvent.setUserId(userId);
+
+        auditEvent.setActionType(ActionType.DELETE_DOCUMENT);
+
+        auditEvent.setTargetType("DOCUMENT");
+        auditEvent.setTargetId(document.getId());
+
+        // Thông báo đến các service lắng nghe event
+        eventPublisher.publishEvent(auditEvent);
     }
 }
 
