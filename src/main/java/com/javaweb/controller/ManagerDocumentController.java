@@ -106,9 +106,10 @@ public class ManagerDocumentController {
         document.setApprovalStatus(ApprovalStatus.REJECTED);
         document.setStatus(DocumentStatus.FAILED);
         document.setErrorMessage("Bị từ chối bởi Quản lý.");
-     
-
+        documentRepository.save(document);
         
+        return ResponseEntity.ok("Đã từ chối tài liệu thành công.");
+    }
 
     // 3. THỬ LẠI KHI AI BỊ LỖI
     @PutMapping("/{id}/retry")

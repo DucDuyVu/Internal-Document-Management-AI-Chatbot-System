@@ -67,25 +67,12 @@ public class DocumentController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "departmentId", required = false) Integer departmentId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-<<<<<<< HEAD
 
         DocumentUploadRequest request = new DocumentUploadRequest();
         request.setDepartmentId(departmentId);
         
         // Giải pháp lai: Truyền cả request và currentUser xuống Service
         DocumentResponse response = documentService.uploadDocument(file, request, userDetails.getUser());
-=======
-            
-        // Tạo request bọc departmentId theo chuẩn của nhánh dev hiện tại
-        DocumentUploadRequest request = new DocumentUploadRequest();
-        request.setDepartmentId(departmentId);
-        
-        // Ghi chú: Nếu hàm uploadDocument() của nhánh dev-truong bị đổi sang nhận userId
-        // thay vì DocumentUploadRequest, bạn sẽ sửa dòng dưới thành: 
-        // documentService.uploadDocument(file, userDetails.getUserId());
-        
-        DocumentResponse response = documentService.uploadDocument(file, request);
->>>>>>> ee7b888f05b3f8115c4498f3244fc24594172e75
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

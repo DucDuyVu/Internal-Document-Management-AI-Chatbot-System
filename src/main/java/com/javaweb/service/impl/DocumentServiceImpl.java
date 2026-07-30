@@ -2,10 +2,7 @@ package com.javaweb.service.impl;
 
 import com.event.AuditEven;
 import com.javaweb.dto.response.DocumentResponse;
-<<<<<<< HEAD
 import com.javaweb.dto.request.DocumentUploadRequest;
-=======
->>>>>>> ee7b888f05b3f8115c4498f3244fc24594172e75
 import com.javaweb.entity.DepartmentsEntity;
 import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.UsersEntity;
@@ -55,16 +52,10 @@ public class DocumentServiceImpl implements DocumentService {
     private ApplicationEventPublisher eventPublisher;
 
     public DocumentServiceImpl(DocumentRepository documentRepository,
-<<<<<<< HEAD
             DocumentChunkRepository documentChunkRepository,
             DocumentProcessingService documentProcessingService,
-            DepartmentsRepository departmentsRepository) {
-=======
-                               DocumentChunkRepository documentChunkRepository,
-                               DocumentProcessingService documentProcessingService,
-                               DepartmentsRepository departmentsRepository,
-                               UsersRepository usersRepository) {
->>>>>>> ee7b888f05b3f8115c4498f3244fc24594172e75
+            DepartmentsRepository departmentsRepository,
+            UsersRepository usersRepository) {
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
@@ -74,7 +65,6 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     @Transactional
-<<<<<<< HEAD
     public DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request, UsersEntity currentUser) {
         validateFile(file);
         String storedPath = storeFile(file);
@@ -95,40 +85,18 @@ public class DocumentServiceImpl implements DocumentService {
         if (!isSameDepartment && !isAdmin) {
             throw new AccessDeniedException("Bảo mật: Bạn không có quyền tải tài liệu vào phòng ban của người khác!");
         }
-=======
-    public DocumentResponse uploadDocument(MultipartFile file, Long currentUserId) {
-        validateFile(file);
-        String storedPath = storeFile(file);
-
-        // Query lại trong transaction này -> department load được an toàn
-        UsersEntity currentUser = usersRepository.findById(currentUserId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại, id=" + currentUserId));
->>>>>>> ee7b888f05b3f8115c4498f3244fc24594172e75
 
         DocumentEntity document = new DocumentEntity();
         document.setFileName(file.getOriginalFilename());
         document.setFilePath(storedPath);
         document.setFileType(file.getContentType());
         document.setFileSize(file.getSize());
-<<<<<<< HEAD
         document.setDepartmentId(targetDeptId);
         document.setUploadedBy(currentUser.getId());
 
         // --- LUỒNG PHÊ DUYỆT TÀI LIỆU ---
         document.setStatus(DocumentStatus.PENDING);
         document.setApprovalStatus(ApprovalStatus.PENDING); // Bắt buộc Manager duyệt mới chạy AI
-=======
-        document.setDepartmentId(
-                currentUser.getDepartment() != null
-                        ? currentUser.getDepartment().getId().intValue()
-                        : null
-        );
-        document.setUploadedBy(currentUserId);
-        
-        // Luồng Phê duyệt Tài liệu (Human Approval Workflow)
-        document.setStatus(DocumentStatus.PENDING); 
-        document.setApprovalStatus(ApprovalStatus.PENDING); // Bắt buộc Manager duyệt
->>>>>>> ee7b888f05b3f8115c4498f3244fc24594172e75
 
         DocumentEntity saved = documentRepository.save(document);
 
@@ -140,12 +108,8 @@ public class DocumentServiceImpl implements DocumentService {
         auditEvent.setTargetId(saved.getId());
         eventPublisher.publishEvent(auditEvent);
 
-<<<<<<< HEAD
         // KHÔNG gọi pipeline ở đây. Manager sẽ duyệt (qua ManagerDocumentController)
         // thì pipeline mới chạy
-=======
-        // KHÔNG GỌI PIPELINE AI NỮA -> Chờ Manager duyệt (ManagerDocumentController) mới gọi
->>>>>>> ee7b888f05b3f8115c4498f3244fc24594172e75
         // documentProcessingService.process(saved.getId());
 
         return toResponse(saved, 0);
@@ -205,11 +169,7 @@ public class DocumentServiceImpl implements DocumentService {
                 document.getFileName(),
                 document.getFileName(),
                 document.getStatus(),
-<<<<<<< HEAD
                 document.getApprovalStatus() != null ? document.getApprovalStatus().name() : null, // DUYỆT
-=======
-                document.getApprovalStatus() != null ? document.getApprovalStatus().name() : null, // Gửi ApprovalStatus xuống Frontend
->>>>>>> ee7b888f05b3f8115c4498f3244fc24594172e75
                 chunkCount,
                 document.getErrorMessage(),
                 document.getCreatedAt(),
@@ -228,7 +188,6 @@ public class DocumentServiceImpl implements DocumentService {
         });
     }
 
-<<<<<<< HEAD
     @Override
     public List<DocumentResponse> getPendingApprovals(Integer departmentId) {
         List<DocumentEntity> pendingDocs = documentRepository.findByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(departmentId, ApprovalStatus.PENDING);
@@ -242,8 +201,6 @@ public class DocumentServiceImpl implements DocumentService {
 
     // Xử lý cho user xem được tài liệu phòng ban mình + tài liệu public + tài liệu
     // được phòng ban khác chia sẻ
-=======
->>>>>>> ee7b888f05b3f8115c4498f3244fc24594172e75
     @Override
     public Page<DocumentResponse> getMyDocuments(UsersEntity user, Pageable pageable) {
         Long deptIdLong = (user.getDepartment() != null) ? user.getDepartment().getId() : null;
