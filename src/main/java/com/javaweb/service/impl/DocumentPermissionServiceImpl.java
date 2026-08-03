@@ -86,7 +86,9 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                                                                 ? p.getPermissionDepartmentId().getName()
                                                                 : null,
                                                 p.getGrantedBy() != null ? p.getGrantedBy().getFullName() : null,
-                                                p.getCreatedAt()))
+                                                p.getCreatedAt(),
+                                                p.getRole(),
+                                                p.getIsPublicLink()))
                                 .toList();
         }
 
@@ -127,14 +129,19 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                                                                 ? p.getPermissionDepartmentId().getName()
                                                                 : null,
                                                 p.getGrantedBy() != null ? p.getGrantedBy().getFullName() : null,
-                                                p.getCreatedAt()))
+                                                p.getCreatedAt(),
+                                                p.getRole(),
+                                                p.getIsPublicLink()))
                                 .toList();
         }
 
         @Override
         @Transactional
-        public DocumentPermissionResponse share(Long documentId, Long departmentId, UsersEntity grantedBy) {
+        public DocumentPermissionResponse share(Long documentId, com.javaweb.dto.request.ShareDocumentRequest request, UsersEntity grantedBy) {
                 try {
+                        Long departmentId = request.getDepartmentId();
+                        String role = request.getRole() != null ? request.getRole() : "VIEW";
+                        Boolean isPublicLink = request.getIsPublicLink() != null ? request.getIsPublicLink() : false;
 
                         // Kiểm tra tài liệu tồn tại
                         DocumentEntity document = documentRepository.findById(documentId)
@@ -185,6 +192,8 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                         permission.setPermissionDepartmentId(targetDept);
                         permission.setGrantedBy(grantedBy);
                         permission.setCreatedAt(LocalDateTime.now());
+                        permission.setRole(role);
+                        permission.setIsPublicLink(isPublicLink);
 
                         DocumentPermissionsEntity saved = documentPermissionsRepository.save(permission);
 
@@ -220,7 +229,9 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                                         targetDept != null ? targetDept.getId() : null,
                                         targetDept != null ? targetDept.getName() : null,
                                         grantedBy.getFullName(),
-                                        saved.getCreatedAt());
+                                        saved.getCreatedAt(),
+                                        saved.getRole(),
+                                        saved.getIsPublicLink());
                 } catch (Exception e) {
                         throw new BadRequestException(
                                         "DEBUG LỖI: " + e.getMessage() + " | Class: " + e.getClass().getName());

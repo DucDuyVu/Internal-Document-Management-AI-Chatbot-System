@@ -47,6 +47,18 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    public void notifyManagers(Long departmentId, String title, String message) {
+        if (departmentId == null) return;
+        List<UsersEntity> deptUsers = usersRepository.findByDepartmentId(departmentId);
+        for (UsersEntity u : deptUsers) {
+            if (u.getRole() == com.javaweb.enums.UserRole.MANAGER) {
+                createNotification(u, title, message);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
     public void notifyDepartment(Long departmentId, String title, String message) {
         if (departmentId == null) {
             // Gửi cho toàn bộ users (nếu share cho null tức là toàn bộ phòng ban)
@@ -58,6 +70,46 @@ public class NotificationServiceImpl implements NotificationService {
             List<UsersEntity> deptUsers = usersRepository.findByDepartmentId(departmentId);
             for (UsersEntity u : deptUsers) {
                 createNotification(u, title, message);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void notifySystemAction(UsersEntity actor, Long targetDeptId, String title, String actionDescription, boolean notifyAllDeptUsers) {
+        if (actor == null) return;
+        
+        // Gửi cho chính người thực hiện
+        createNotification(actor, title, "Bạn " + actionDescription);
+
+        // Xác định danh xưng dựa trên Role
+        String roleName = "Người dùng";
+        switch (actor.getRole()) {
+            case ADMIN: roleName = "Quản trị viên"; break;
+            case MANAGER: roleName = "Quản lý"; break;
+            case USER: roleName = "Nhân viên"; break;
+        }
+
+        String observerMessage = roleName + " " + actor.getFullName() + " " + actionDescription;
+
+        // Gửi cho toàn bộ Admins (trừ chính người thực hiện)
+        List<UsersEntity> admins = usersRepository.findByRole(com.javaweb.enums.UserRole.ADMIN);
+        for (UsersEntity admin : admins) {
+            if (!admin.getId().equals(actor.getId())) {
+                createNotification(admin, title, observerMessage);
+            }
+        }
+
+        // Gửi cho phòng ban
+        if (targetDeptId != null) {
+            List<UsersEntity> deptUsers = usersRepository.findByDepartmentId(targetDeptId);
+            for (UsersEntity u : deptUsers) {
+                if (u.getId().equals(actor.getId()) || u.getRole() == com.javaweb.enums.UserRole.ADMIN) {
+                    continue; // Bỏ qua người thực hiện hoặc Admin vì Admin đã nhận ở trên
+                }
+                if (notifyAllDeptUsers || u.getRole() == com.javaweb.enums.UserRole.MANAGER) {
+                    createNotification(u, title, observerMessage);
+                }
             }
         }
     }

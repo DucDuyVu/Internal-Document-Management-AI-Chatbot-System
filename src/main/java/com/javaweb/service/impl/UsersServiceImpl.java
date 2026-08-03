@@ -104,7 +104,7 @@ public class UsersServiceImpl implements UsersService {
 			Integer deptId = Math.toIntExact(user.getDepartment().getId());
 			profileResponse.setManagedEmployeeCount((int) usersRepository.countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(user.getDepartment().getId()));
 			profileResponse.setDepartmentDocumentsCount((int) documentRepository.countByDepartmentIdAndDeletedAtIsNull(deptId));
-			profileResponse.setPendingDocumentCount((int) documentRepository.countByDepartmentIdAndStatusAndDeletedAtIsNull(deptId, com.javaweb.entity.enums.DocumentStatus.PENDING));
+			profileResponse.setPendingDocumentCount((int) documentRepository.countByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(deptId, com.javaweb.entity.enums.ApprovalStatus.PENDING));
 		} else {
 			profileResponse.setManagedEmployeeCount(0);
 			profileResponse.setDepartmentDocumentsCount(0);
@@ -138,9 +138,7 @@ public class UsersServiceImpl implements UsersService {
 		user.setUpdatedAt(LocalDateTime.now());
 
 		UsersEntity updateUser = usersRepository.save(user); // save thông tin update
-		
-		notificationService.notifyAdmins("Cập nhật thông tin", 
-				"Người dùng " + updateUser.getUserName() + " (" + updateUser.getFullName() + ") vừa cập nhật thông tin hồ sơ cá nhân.");
+		notificationService.notifySystemAction(updateUser, null, "Cập nhật thông tin", "vừa cập nhật thông tin hồ sơ cá nhân.", false);
 
 		ProfileResponse profileResponse = new ProfileResponse();
 		profileResponse.setFullName(updateUser.getFullName());

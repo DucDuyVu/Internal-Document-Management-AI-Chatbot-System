@@ -26,20 +26,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.javaweb.service.StorageService;
+import com.javaweb.service.NotificationService;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class DocumentServiceImpl implements DocumentService {
 
-    private static final String UPLOAD_DIR = "uploads";
     private static final long MAX_FILE_SIZE = 20L * 1024 * 1024; // 20MB
 
     private final DocumentRepository documentRepository;
@@ -47,6 +45,8 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentProcessingService documentProcessingService;
     private final DepartmentsRepository departmentsRepository;
     private final UsersRepository usersRepository;
+    private final StorageService storageService;
+    private final NotificationService notificationService;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -55,19 +55,28 @@ public class DocumentServiceImpl implements DocumentService {
             DocumentChunkRepository documentChunkRepository,
             DocumentProcessingService documentProcessingService,
             DepartmentsRepository departmentsRepository,
-            UsersRepository usersRepository) {
+            UsersRepository usersRepository,
+            StorageService storageService,
+            NotificationService notificationService) {
         this.documentRepository = documentRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
         this.departmentsRepository = departmentsRepository;
         this.usersRepository = usersRepository;
+        this.storageService = storageService;
+        this.notificationService = notificationService;
     }
 
     @Override
     @Transactional
     public DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request, UsersEntity currentUser) {
         validateFile(file);
-        String storedPath = storeFile(file);
+        String storedPath;
+        try {
+            storedPath = storageService.uploadFile(file);
+        } catch (IOException e) {
+            throw new InvalidFileException("Lỗi khi lưu file lên MinIO: " + e.getMessage());
+        }
 
         // --- BẢO MẬT: XỬ LÝ PHÒNG BAN ---
         Integer targetDeptId = request.getDepartmentId();
@@ -95,8 +104,14 @@ public class DocumentServiceImpl implements DocumentService {
         document.setUploadedBy(currentUser.getId());
 
         // --- LUỒNG PHÊ DUYỆT TÀI LIỆU ---
-        document.setStatus(DocumentStatus.PENDING);
-        document.setApprovalStatus(ApprovalStatus.PENDING); // Bắt buộc Manager duyệt mới chạy AI
+        
+        if (isAdmin) {
+            document.setStatus(DocumentStatus.PROCESSING);
+            document.setApprovalStatus(ApprovalStatus.APPROVED);
+        } else {
+            document.setStatus(DocumentStatus.PENDING);
+            document.setApprovalStatus(ApprovalStatus.PENDING); // Bắt buộc Manager duyệt mới chạy AI
+        }
 
         DocumentEntity saved = documentRepository.save(document);
 
@@ -108,9 +123,16 @@ public class DocumentServiceImpl implements DocumentService {
         auditEvent.setTargetId(saved.getId());
         eventPublisher.publishEvent(auditEvent);
 
-        // KHÔNG gọi pipeline ở đây. Manager sẽ duyệt (qua ManagerDocumentController)
-        // thì pipeline mới chạy
-        // documentProcessingService.process(saved.getId());
+        // Gửi thông báo
+        Long notifyDeptId = targetDeptId != null ? Long.valueOf(targetDeptId) : null;
+        String notifyTitle = isAdmin ? "Tài liệu mới" : "Tài liệu mới chờ duyệt";
+        notificationService.notifySystemAction(currentUser, notifyDeptId, notifyTitle, 
+                "vừa tải lên tài liệu: " + file.getOriginalFilename(), isAdmin);
+
+        // Gọi pipeline xử lý AI nếu là ADMIN up, còn User thì chờ Manager duyệt
+        if (isAdmin) {
+            documentProcessingService.process(saved.getId());
+        }
 
         return toResponse(saved, 0);
     }
@@ -141,19 +163,13 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
-    private String storeFile(MultipartFile file) {
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            String uniqueName = UUID.randomUUID() + ".pdf";
-            Path targetPath = uploadPath.resolve(uniqueName);
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-            return targetPath.toString();
-        } catch (IOException e) {
-            throw new InvalidFileException("Lỗi khi lưu file: " + e.getMessage());
-        }
+    @Override
+    public ResponseInputStream<GetObjectResponse> downloadDocument(Long id, UsersEntity user) {
+        DocumentEntity document = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy document id=" + id));
+
+        // Cần thêm logic kiểm tra quyền (Authorization) ở đây nếu cần thiết
+        return storageService.downloadFile(document.getFilePath());
     }
 
     private DocumentResponse toResponse(DocumentEntity document, int chunkCount) {
@@ -175,12 +191,15 @@ public class DocumentServiceImpl implements DocumentService {
                 document.getCreatedAt(),
                 document.getUpdatedAt(),
                 document.getDepartmentId(),
-                departmentName);
+                departmentName,
+                document.getUploadedBy(),
+                document.getFileSize(),
+                document.getFileType());
     }
 
     @Override
     public Page<DocumentResponse> getAllDocuments(Pageable pageable) {
-        Page<DocumentEntity> documPage = documentRepository.findAll(pageable);
+        Page<DocumentEntity> documPage = documentRepository.findByDeletedAtIsNull(pageable);
 
         return documPage.map(doc -> {
             Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
@@ -190,7 +209,8 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public List<DocumentResponse> getPendingApprovals(Integer departmentId) {
-        List<DocumentEntity> pendingDocs = documentRepository.findByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(departmentId, ApprovalStatus.PENDING);
+        List<DocumentEntity> pendingDocs = documentRepository
+                .findByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(departmentId, ApprovalStatus.PENDING);
         return pendingDocs.stream()
                 .map(doc -> {
                     Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
@@ -206,11 +226,18 @@ public class DocumentServiceImpl implements DocumentService {
         Long deptIdLong = (user.getDepartment() != null) ? user.getDepartment().getId() : null;
         Integer deptIdInt = (deptIdLong != null) ? deptIdLong.intValue() : null;
 
+        // Lấy ID của user đang đăng nhập
+        Long currentId = user.getId();
+        boolean isManager = user.getRole().name().equals("MANAGER") || user.getRole().name().equals("ADMIN");
+
         Page<DocumentEntity> documPage;
         if (deptIdInt != null) {
-            documPage = documentRepository.findVisibleToDepartmentWithSharing(deptIdInt, deptIdLong, pageable);
+            documPage = documentRepository.findVisibleToDepartmentWithSharing(deptIdInt, deptIdLong, currentId,
+                    isManager,
+                    pageable);
         } else {
-            documPage = documentRepository.findVisibleToDepartmentWithSharing(null, null, pageable);
+            documPage = documentRepository.findVisibleToDepartmentWithSharing(null, null, currentId, isManager,
+                    pageable);
         }
 
         return documPage.map(doc -> {

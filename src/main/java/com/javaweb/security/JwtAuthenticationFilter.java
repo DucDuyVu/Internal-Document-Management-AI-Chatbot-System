@@ -40,16 +40,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		String authHeader = request.getHeader("Authorization");
 		System.out.println("Authorization: " + authHeader);
 
-		// request không chứa JWT || sai định dạng "Bearer "
+		// request không chứa JWT trong Header và cũng không có trong Parameter
 		// thì bỏ qua xác thực, chuyển sang filter tiếp
-		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-			filterChain.doFilter(request, response);
-
-			return;
+		String token = null;
+		
+		if (authHeader != null && authHeader.startsWith("Bearer ")) {
+			token = authHeader.substring(7);
+		} else if (request.getParameter("token") != null) {
+			token = request.getParameter("token");
 		}
 
-		// Cắt tiền tố "Bearer " để lấy JWT
-		String token = authHeader.substring(7);
+		if (token == null) {
+			filterChain.doFilter(request, response);
+			return;
+		}
 
 		// Check JWT hợp lệ (đúng chữ ký, chưa hết hạn, không chỉnh sửa ..)
 		if (!jwtService.validateToken(token)) {

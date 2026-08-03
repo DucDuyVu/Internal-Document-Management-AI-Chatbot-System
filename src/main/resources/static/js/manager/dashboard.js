@@ -175,6 +175,9 @@ function loadUserTabData(tabId) {
         case 'tabDocuments':
             loadUserDocuments();
             break;
+        case 'tabApprovals':
+            if (typeof loadPendingApprovals === 'function') loadPendingApprovals();
+            break;
         case 'tabChat':
             loadChatSessions();
             break;
@@ -588,8 +591,9 @@ async function loadPendingApprovals() {
 
         const response = await apiRequest('/api/manager/documents/pending');
         const docs = response.content || response || [];
-        const container = document.getElementById('drawerPendingDocsList');
+        const container = document.getElementById('approvalsListContainer') || document.getElementById('drawerPendingDocsList');
         const badge = document.getElementById('navPendingBadge');
+        const tabBadge = document.getElementById('approvalsTabBadge');
         
         if (badge) {
             if (docs.length > 0) {
@@ -598,6 +602,9 @@ async function loadPendingApprovals() {
             } else {
                 badge.style.display = 'none';
             }
+        }
+        if (tabBadge) {
+            tabBadge.textContent = docs.length;
         }
 
         if (!container) return;

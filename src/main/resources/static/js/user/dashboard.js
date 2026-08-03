@@ -127,6 +127,12 @@ function setupUserEventListeners() {
         if (el) el.addEventListener('change', filterUserDocuments);
     });
 
+    // Upload Document
+    const uploadInput = document.getElementById('uploadDocInput');
+    if (uploadInput) {
+        uploadInput.addEventListener('change', handleUploadDocument);
+    }
+
     // Chat input
     const chatInput = document.getElementById('chatInput');
     if (chatInput) {
@@ -254,7 +260,7 @@ async function loadHomeData() {
                             <div>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
                             <div><i class="fa-regular fa-calendar" style="color:#9ca3af;margin-right:4px;"></i>Ngày tải lên: ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
                         </div>
-                        ${doc.departmentName ? `<div class="doc-card-meta" style="margin-top:4px;"><i class="fa-solid fa-building" style="color:#9ca3af;"></i> ${doc.departmentName}</div>` : ''}
+                        ${(doc.uploadedByName || doc.departmentName) ? `<div class="doc-card-meta" style="margin-top:4px;"><i class="fa-solid fa-user" style="color:#9ca3af;"></i> ${doc.uploadedByName || 'Người dùng'} &bull; <i class="fa-solid fa-building" style="color:#9ca3af;"></i> ${doc.departmentName || 'Tất cả phòng ban'}</div>` : ''}
                         <div style="margin-top:8px;">
                             <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
                         </div>
@@ -359,8 +365,8 @@ function renderUserDocuments() {
         } else {
         gridView.innerHTML = docs.map(doc => {
                 const style = getDocStyle(doc.fileType);
-                const isFailed = doc.status === 'FAILED';
-                const isPending = doc.status === 'PENDING';
+                const isFailed = doc.status === 'FAILED' || doc.approvalStatus === 'REJECTED';
+                const isPending = doc.approvalStatus === 'PENDING';
                 const cannotShare = isFailed || isPending;
                 
                 let cardStyle = "cursor:pointer;";
@@ -368,30 +374,112 @@ function renderUserDocuments() {
                     cardStyle = "cursor:pointer; border: 1px solid #fca5a5; background-color: #fef2f2;";
                 }
                 
+                const isOwner = doc.uploadedBy && currentUser && doc.uploadedBy === currentUser.id;
+
+                if (isOwner) {
+                    return `
+                    <div class="doc-card" style="border: 1px solid #e5e7eb; background-color: #ffffff; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:48px;height:48px;border-radius:12px;background:${style.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fa-solid ${style.icon}" style="font-size:1.4rem;color:${style.color};"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <h4 style="margin: 0; font-size:1rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${doc.fileName}">${doc.fileName}</h4>
+                                <div style="font-size:0.8rem; color:#9ca3af; margin-top: 2px;">${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
+                            </div>
+                        </div>
+                        
+                        <div style="position: relative; padding: 12px 0;">
+                            <!-- Progress line -->
+                            <div style="position: absolute; top: 20px; left: 15%; right: 15%; height: 2px; background: #e5e7eb; z-index: 1;"></div>
+                            
+                            <div style="display: flex; justify-content: space-between; position: relative; z-index: 2; font-size: 0.8rem; font-weight: 600; color: #6b7280;">
+                                <div style="background: white; padding: 0 4px; color: #b45309;">Tải lên</div>
+                                <div style="background: white; padding: 0 4px; color: ${doc.approvalStatus === 'APPROVED' ? '#b45309' : (doc.approvalStatus === 'REJECTED' ? '#991b1b' : '#6b7280')};">Duyệt</div>
+                                <div style="background: white; padding: 0 4px; color: ${doc.status === 'COMPLETED' ? '#166534' : (doc.status === 'FAILED' ? '#991b1b' : '#6b7280')};">Xử lý AI</div>
+                            </div>
+                        </div>
+
+                        ${doc.approvalStatus === 'PENDING' ? `
+                        <div style="background: #fef3c7; color: #92400e; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-regular fa-clock"></i> Chờ manager duyệt · Chỉ mình bạn xem được
+                        </div>` : ''}
+
+                        ${doc.approvalStatus === 'REJECTED' ? `
+                        <div style="background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px;">
+                            <div><i class="fa-solid fa-triangle-exclamation"></i> Bị từ chối</div>
+                            <div style="font-size: 0.8rem;">Lý do: ${doc.errorMessage || 'Không có lý do cụ thể'}</div>
+                        </div>` : ''}
+
+                        ${(doc.approvalStatus === 'APPROVED' && doc.status === 'FAILED') ? `
+                        <div style="background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px;">
+                            <div><i class="fa-solid fa-triangle-exclamation"></i> Lỗi xử lý AI</div>
+                            <div style="font-size: 0.8rem;">Hãy liên hệ Quản lý để thử lại.</div>
+                        </div>` : ''}
+
+                        <div style="display: flex; gap: 8px; margin-top: auto;">
+                            <button style="flex: 1; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: #ffffff; color: #374151; border: 1px solid #d1d5db;" onclick="event.stopPropagation(); viewDocumentInline(${doc.id})" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#ffffff'">
+                                Xem
+                            </button>
+                            ${(doc.approvalStatus === 'PENDING' || doc.approvalStatus === 'REJECTED') ? `
+                            <button style="flex: 1; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: #ffffff; color: #ef4444; border: 1px solid #fca5a5;" onclick="deleteUserDocument(${doc.id})" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
+                                <i class="fa-solid fa-trash-can"></i> Thu hồi
+                            </button>` : ''}
+                        </div>
+                    </div>`;
+                }
+
+                let combinedStatusClass = '';
+                let combinedStatusLabel = '';
+                
+                if (doc.approvalStatus === 'PENDING') {
+                    combinedStatusClass = 'status-pending';
+                    combinedStatusLabel = 'Chờ duyệt';
+                } else if (doc.approvalStatus === 'REJECTED') {
+                    combinedStatusClass = 'status-failed';
+                    combinedStatusLabel = 'Đã từ chối';
+                } else {
+                    if (doc.status === 'PENDING') {
+                        combinedStatusClass = 'status-processing';
+                        combinedStatusLabel = 'AI Đang xử lý';
+                    } else if (doc.status === 'FAILED') {
+                        combinedStatusClass = 'status-failed';
+                        combinedStatusLabel = 'Lỗi xử lý';
+                    } else {
+                        combinedStatusClass = 'status-success';
+                        combinedStatusLabel = 'Hoàn tất';
+                    }
+                }
+
                 return `
-                <div class="doc-card" style="${isFailed ? 'border: 1px solid #fca5a5; background-color: #fff1f2;' : ''}">
-                    <div onclick="openDocumentDetail(${doc.id})" style="cursor:pointer">
-                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                            <div style="width:44px;height:44px;border-radius:10px;background:${style.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <i class="fa-solid ${style.icon}" style="font-size:1.3rem;color:${style.color};"></i>
-                            </div>
-                            <div style="min-width:0;">
-                                <div style="font-size:0.8rem;font-weight:700;color:${style.color};background:${style.bg};display:inline-block;padding:2px 7px;border-radius:4px;letter-spacing:0.5px;">${(doc.fileType || 'FILE').toUpperCase()}</div>
-                            </div>
+                <div class="doc-card-v2 ${combinedStatusClass}" style="position: relative; background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+                    <div style="position:absolute; top:16px; left:16px;">
+                        <div class="badge ${combinedStatusClass}">${combinedStatusLabel}</div>
+                    </div>
+                    
+                    <button class="doc-menu-btn" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết" style="position:absolute; top:12px; right:12px; background:transparent; border:none; color:#9ca3af; cursor:pointer; font-size:1.2rem;">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </button>
+
+                    <div style="display:flex; flex-direction:column; align-items:center; margin-top: 24px; margin-bottom: 16px;">
+                        <div style="width:64px;height:64px;border-radius:16px;background:${style.bg};display:flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+                            <i class="fa-solid ${style.icon}" style="font-size:2rem;color:${style.color};"></i>
                         </div>
-                        <h4 style="font-size:0.875rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px;" title="${doc.fileName}">${doc.fileName}</h4>
-                        <div class="doc-card-meta">
-                            <div><i class="fa-solid fa-hard-drive" style="color:#9ca3af;margin-right:4px;"></i>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
-                            <div title="Thời gian tải tài liệu lên hệ thống"><i class="fa-regular fa-calendar" style="color:#9ca3af;margin-right:4px;"></i>Ngày tải lên: ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
+                        <h4 class="doc-title" title="${doc.fileName}" style="text-align:center; font-size:1.05rem; margin-bottom:4px; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-weight: 600; color: #111827;">${doc.fileName}</h4>
+                        <div style="font-size:0.8rem;color:#6b7280;text-align:center;">
+                            ${(doc.fileType ? doc.fileType.split('/').pop() : 'FILE').toUpperCase()} • ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}
                         </div>
-                        <div class="doc-card-meta" style="margin-top:6px;">
-                            <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
+                        <div style="font-size:0.85rem;color:#4f46e5;font-weight:600;text-align:center;margin-top:4px;">
+                            <i class="fa-solid fa-user"></i> ${doc.uploadedByName || 'Người dùng'} &bull; <i class="fa-solid fa-building"></i> ${doc.departmentName || 'Tất cả phòng ban'}
                         </div>
                     </div>
-                    <div style="margin-top:12px;border-top:1px solid ${isFailed ? '#fecaca' : '#f3f4f6'};padding-top:10px;">
-                        <button style="width:100%;background:none;border:1px solid ${isFailed ? '#fca5a5' : '#e5e7eb'};border-radius:6px;padding:6px 12px;font-size:0.8rem;color:${cannotShare ? '#9ca3af' : '#6b7280'};cursor:${cannotShare ? 'not-allowed' : 'pointer'};font-weight:600;transition:all 0.2s;" 
-                            ${cannotShare ? `disabled title="Chưa thể phân quyền do tài liệu chưa sẵn sàng hoặc bị lỗi"` : `onclick="event.stopPropagation();openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')" onmouseover="this.style.background='#f9fafb';this.style.borderColor='#4f46e5';this.style.color='#4f46e5'" onmouseout="this.style.background='none';this.style.borderColor='#e5e7eb';this.style.color='#6b7280'"`}>
-                            <i class="fa-solid fa-shield-halved"></i> Quản lý Quyền
+                    
+                    <div style="display:flex; gap: 8px; margin-top: auto;">
+                        <button class="btn-card" style="flex: 1; justify-content: center; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')">
+                            <i class="fa-solid fa-download"></i> Tải xuống
+                        </button>
+                        <button class="btn-card" style="flex: 1; justify-content: center; background: #ffffff; color: #374151; border: 1px solid #d1d5db; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" onclick="event.stopPropagation(); viewDocumentInline(${doc.id})">
+                            Xem
                         </button>
                     </div>
                 </div>`;
@@ -414,19 +502,18 @@ function renderUserDocuments() {
                         <span style="font-size:1.1rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType) : '📄'}</span>
                         <span style="font-weight:500;color:#4f46e5;">${doc.fileName}</span>
                     </td>
-                    <td>${doc.fileType?.toUpperCase()}</td>
+                    <td>${doc.fileType ? doc.fileType.split('/').pop().toUpperCase() : ''}</td>
                     <td>${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</td>
                     <td>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</td>
                     <td>
-                        <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">AI: ${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}</span>
+                            ${doc.approvalStatus ? `<span class="status-badge ${doc.approvalStatus === 'APPROVED' ? 'status-success' : (doc.approvalStatus === 'PENDING' ? 'status-pending' : 'status-failed')}">Duyệt: ${doc.approvalStatus}</span>` : ''}
+                        </div>
                     </td>
                     <td>
-                        <button class="btn-icon" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết">👁️</button>
-                        <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id})" title="Tải xuống">⬇️</button>
-                        ${cannotShare ? 
-                            `<button class="btn-icon" disabled title="Chưa thể phân quyền" style="color: #cbd5e1; cursor: not-allowed;">🛡️</button>` : 
-                            `<button class="btn-icon" onclick="event.stopPropagation(); openPermissionModal(${doc.id}, '${doc.fileName.replace(/'/g, "\\'")}')" title="Quản lý Quyền" style="color: #64748b;">🛡️</button>`
-                        }
+                        <button class="btn-icon" onclick="event.stopPropagation(); viewDocumentInline(${doc.id})" title="Xem chi tiết">👁️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Tải xuống">⬇️</button>
                     </td>
                 </tr>
             `}).join('');
@@ -479,6 +566,58 @@ function setDocView(view) {
     renderUserDocuments();
 }
 
+async function handleUploadDocument(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+        if (typeof showToast !== 'undefined') showToast('Kích thước file không được vượt quá 10MB', 'error');
+        event.target.value = ''; // Reset input
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Nếu user thuộc phòng ban nào, truyền lên server (để server lưu departmentId)
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    if (currentUser && currentUser.departmentId) {
+        formData.append('departmentId', currentUser.departmentId);
+    }
+
+    try {
+        if (typeof showToast !== 'undefined') showToast('Đang tải lên...', 'info');
+        
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+        const url = `${typeof API_BASE !== 'undefined' ? API_BASE : ''}/api/documents/upload`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err || 'Upload thất bại');
+        }
+
+        if (typeof showToast !== 'undefined') showToast('Tải lên thành công! Đang chờ duyệt.', 'success');
+        
+        // Refresh danh sách
+        loadUserDocuments();
+        
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        if (typeof showToast !== 'undefined') showToast(error.message, 'error');
+    } finally {
+        event.target.value = ''; // Reset input
+    }
+}
+
 async function viewUserDocument(docId) {
     try {
         if (typeof apiRequest === 'undefined') {
@@ -506,7 +645,7 @@ async function viewUserDocument(docId) {
 
         const downloadBtn = document.getElementById('docDownloadBtn');
         if (downloadBtn) {
-            downloadBtn.onclick = () => downloadDocument(docId);
+            downloadBtn.onclick = () => downloadDocument(docId, doc.fileName);
         }
 
         const askBtn = document.getElementById('btnAskAI');
@@ -531,6 +670,29 @@ async function viewUserDocument(docId) {
         if (typeof showToast !== 'undefined') {
             showToast('Không thể xem chi tiết tài liệu', 'error');
         }
+    }
+}
+
+async function deleteUserDocument(docId) {
+    if (!confirm('Bạn có chắc chắn muốn thu hồi tài liệu này? Hệ thống sẽ xóa nó hoàn toàn.')) {
+        return;
+    }
+
+    try {
+        if (typeof apiRequest === 'undefined') {
+            throw new Error('apiRequest() không tồn tại');
+        }
+
+        await apiRequest(`/api/documents/${docId}`, {
+            method: 'DELETE'
+        });
+
+        if (typeof showToast !== 'undefined') showToast('Đã thu hồi tài liệu thành công', 'success');
+        
+        loadUserDocuments();
+    } catch (error) {
+        console.error('Lỗi khi xóa tài liệu:', error);
+        if (typeof showToast !== 'undefined') showToast(error.message || 'Lỗi khi xóa tài liệu', 'error');
     }
 }
 
@@ -1179,7 +1341,7 @@ async function loadProfileActivities() {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const activities = await apiRequest('/api/user/activities?limit=20');
+        const activities = await apiRequest('/api/activity-logs/recent?limit=20');
         const list = document.getElementById('profileActivityList');
 
         if (!list) return;
@@ -1465,30 +1627,57 @@ window.changePassword = changePassword;
 window.filterUserDocuments = filterUserDocuments;
 
 // ===== DOWNLOAD FUNCTION =====
-async function downloadDocument(docId) {
+async function downloadDocument(docId, fileName) {
     try {
-        if (typeof apiRequest === 'undefined') {
-            throw new Error('apiRequest() không tồn tại');
+        if (typeof showToast !== 'undefined') {
+            showToast('Đang tải tài liệu...', 'info');
         }
 
-        // Lấy thông tin document
-        const doc = await apiRequest(`/api/documents/${docId}`);
-
-        // Tạo link tải
         const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
-        const downloadUrl = `${API_BASE}/api/documents/${docId}/download`;
-
-        // Mở link tải trong tab mới
-        window.open(`${downloadUrl}?token=${token}`, '_blank');
-
-        if (typeof showToast !== 'undefined') {
-            showToast('Đang tải tài liệu...', 'success');
+        const response = await fetch(`${API_BASE}/api/documents/${docId}/download`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `Lỗi tải xuống: ${response.status}`);
         }
-
-    } catch (error) {
-        console.error('Error downloading document:', error);
+        
+        const blob = await response.blob();
+        
+        let finalFileName = fileName || 'document.pdf';
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition) {
+            let matches = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+            if (matches && matches[1]) {
+                finalFileName = decodeURIComponent(matches[1]);
+            } else {
+                matches = /filename="?([^;"]+)"?/i.exec(disposition);
+                if (matches && matches[1]) {
+                    finalFileName = matches[1];
+                }
+            }
+        }
+        
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = finalFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(downloadUrl);
+        
         if (typeof showToast !== 'undefined') {
-            showToast('Không thể tải tài liệu', 'error');
+            showToast('Tải tài liệu thành công', 'success');
+        }
+    } catch (error) {
+        console.error('Download error:', error);
+        if (typeof showToast !== 'undefined') {
+            showToast('Không thể tải xuống tài liệu', 'error');
         }
     }
 }

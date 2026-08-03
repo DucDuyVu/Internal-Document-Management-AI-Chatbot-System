@@ -42,7 +42,9 @@ public class SearchServiceImpl implements SearchService {
                 deptId = currentUser.getDepartment().getId().intValue();
                 deptIdLong = currentUser.getDepartment().getId();
             }
-            documentEntities = documentRepository.searchVisibleToDepartmentWithPermissions(deptId, deptIdLong, query, top5);
+            boolean isManager = currentUser.getRole().name().equals("MANAGER");
+            documentEntities = documentRepository.searchVisibleToDepartmentWithPermissions(deptId, deptIdLong,
+                    currentUser.getId(), isManager, query, top5);
         }
 
         List<SearchDocumentDto> documents = documentEntities.getContent().stream()
@@ -51,11 +53,11 @@ public class SearchServiceImpl implements SearchService {
                     if (doc.getFileName() != null && doc.getFileName().contains(".")) {
                         extension = doc.getFileName().substring(doc.getFileName().lastIndexOf(".") + 1).toLowerCase();
                     }
-                    
+
                     String icon = getFileIcon(extension);
                     String color = getIconColor(extension);
                     String bg = getIconBg(extension);
-                    
+
                     String meta = "Tài liệu";
                     if (doc.getDepartmentId() != null) {
                         meta = "Phòng ban"; // Note: could fetch department name if needed, but keeping it simple

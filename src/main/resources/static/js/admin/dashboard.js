@@ -982,41 +982,72 @@ function renderDocumentTable() {
     const docs = AdminState.documents.filtered;
 
     if (!docs || docs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><span>📁</span>Không tìm thấy tài liệu</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:#64748b;"><span>📁</span> Không tìm thấy tài liệu nào</td></tr>';
         return;
     }
 
-    tbody.innerHTML = docs.map((doc, index) => `
-        <tr style="cursor:pointer;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-            <td>${(AdminState.documents.page - 1) * AdminState.documents.pageSize + index + 1}</td>
-            <td onclick="openDocumentDetail(${doc.id})" title="Click để xem chi tiết">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:1.3rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType || 'pdf') : '📄'}</span>
-                    <span style="font-weight:500;color:#4f46e5;text-decoration:underline;text-decoration-color:transparent;" onmouseover="this.style.textDecorationColor='#4f46e5'" onmouseout="this.style.textDecorationColor='transparent'">${doc.fileName || '—'}</span>
+    tbody.innerHTML = docs.map((doc, index) => {
+        let statusHtml = '';
+        if (doc.approvalStatus === 'REJECTED') {
+            statusHtml = '<span class="badge-modern danger"><i class="fa-solid fa-xmark"></i> Từ chối</span>';
+        } else if (doc.approvalStatus === 'PENDING') {
+            statusHtml = '<span class="badge-modern warning"><i class="fa-solid fa-clock"></i> Chờ duyệt</span>';
+        } else {
+            // Nếu đã duyệt hoặc không có quy trình duyệt
+            if (doc.status === 'COMPLETED') {
+                statusHtml = '<span class="badge-modern success"><i class="fa-solid fa-check"></i> Đã xử lý AI</span>';
+            } else if (doc.status === 'PROCESSING') {
+                statusHtml = '<span class="badge-modern info"><i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý AI</span>';
+            } else if (doc.status === 'FAILED') {
+                statusHtml = '<span class="badge-modern danger"><i class="fa-solid fa-triangle-exclamation"></i> Lỗi AI</span>';
+            } else {
+                statusHtml = '<span class="badge-modern secondary"><i class="fa-regular fa-clock"></i> Chờ xử lý AI</span>';
+            }
+        }
+
+        const safeFileName = (doc.fileName || '').replace(/'/g, "\\'");
+
+        return `
+        <tr>
+            <td class="text-muted">${(AdminState.documents.page - 1) * AdminState.documents.pageSize + index + 1}</td>
+            <td>
+                <div class="doc-title-cell" onclick="openDocumentDetail(${doc.id})" style="cursor:pointer;" title="Click để xem chi tiết">
+                    <div class="doc-icon pdf"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="doc-name">${doc.fileName || '—'}</div>
                 </div>
             </td>
-            <td>${doc.departmentName || '—'}</td>
-            <td>${(doc.fileType || 'PDF').toUpperCase()}</td>
-            <td>${doc.fileSize ? (doc.fileSize / 1024 / 1024).toFixed(2) + ' MB' : '—'}</td>
+            <td class="text-muted">${doc.departmentName || '—'}</td>
+            <td><span class="badge-modern secondary">${doc.fileType ? doc.fileType.split('/').pop().toUpperCase() : 'PDF'}</span></td>
+            <td class="text-muted">${doc.fileSize ? (doc.fileSize / 1024 / 1024).toFixed(2) + ' MB' : '—'}</td>
+            <td>${statusHtml}</td>
+            <td class="text-muted">${doc.chunkCount || 0}</td>
+            <td class="text-muted">${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</td>
             <td>
-                <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">
-                    ${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}
-                </span>
-                ${doc.approvalStatus ? `<br><small style="color:gray; font-size: 0.75rem;">(${doc.approvalStatus})</small>` : ''}
-            </td>
-            <td>${doc.chunkCount || 0}</td>
-            <td>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</td>
-            <td>
-                <div style="display:flex;gap:6px;">
-                    <button class="btn-icon" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết" style="font-size:1rem;">👁️</button>
-                    <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id})" title="Tải xuống" style="font-size:1rem;">⬇️</button>
-                    ${doc.status === 'FAILED' ? `<button class="btn-icon" onclick="event.stopPropagation(); retryDocument(${doc.id})" title="Thử lại" style="font-size:1rem;">🔄</button>` : ''}
-                    ${(doc.status === 'PENDING' || doc.approvalStatus === 'PENDING') ? `<button class="btn-icon" style="color:var(--warning)" onclick="event.stopPropagation(); emergencyApproveDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Duyệt khẩn cấp" style="font-size:1rem;">⚡</button>` : ''}
-                    <button class="btn-icon" onclick="event.stopPropagation(); deleteDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Xoá" style="font-size:1rem;">🗑️</button>
+                <div class="action-btn-group">
+                    <button class="modern-action-btn view" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Chi tiết thông tin">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
+                    <button class="modern-action-btn view" onclick="event.stopPropagation(); typeof viewDocumentInline === 'function' ? viewDocumentInline(${doc.id}) : null" title="Xem trực tiếp">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <button class="modern-action-btn download" onclick="event.stopPropagation(); typeof downloadDocument === 'function' ? downloadDocument(${doc.id}, '${safeFileName}') : null" title="Tải xuống">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    ${doc.status === 'FAILED' ? `
+                    <button class="modern-action-btn retry" onclick="event.stopPropagation(); retryDocument(${doc.id})" title="Thử lại xử lý AI">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>` : ''}
+                    ${(doc.status === 'PENDING' || doc.approvalStatus === 'PENDING') ? `
+                    <button class="modern-action-btn approve" onclick="event.stopPropagation(); emergencyApproveDocument(${doc.id}, '${safeFileName}')" title="Duyệt khẩn cấp">
+                        <i class="fa-solid fa-bolt"></i>
+                    </button>` : ''}
+                    <button class="modern-action-btn delete" onclick="event.stopPropagation(); deleteDocument(${doc.id}, '${safeFileName}')" title="Xóa tài liệu">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 function filterDocs(status, btn) {
@@ -1081,7 +1112,7 @@ async function viewDocument(docId) {
         }
 
         if (downloadBtn) {
-            downloadBtn.onclick = () => downloadDocument(docId);
+            downloadBtn.onclick = () => downloadDocument(docId, doc.fileName);
         }
 
         if (askBtn) {
@@ -1100,9 +1131,59 @@ async function viewDocument(docId) {
     }
 }
 
-function downloadDocument(docId) {
-    const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
-    window.open(`${API_BASE}/api/documents/${docId}/download?token=${token}`, '_blank');
+async function downloadDocument(docId, fileName) {
+    try {
+        if (typeof showToast !== 'undefined') {
+            showToast('Đang tải tài liệu...', 'info');
+        }
+        
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+        const response = await fetch(`${API_BASE}/api/documents/${docId}/download`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `Lỗi tải xuống: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        
+        let finalFileName = fileName || 'document.pdf';
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition) {
+            let matches = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+            if (matches && matches[1]) {
+                finalFileName = decodeURIComponent(matches[1]);
+            } else {
+                matches = /filename="?([^;"]+)"?/i.exec(disposition);
+                if (matches && matches[1]) {
+                    finalFileName = matches[1];
+                }
+            }
+        }
+        
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = finalFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        if (typeof showToast !== 'undefined') {
+            showToast('Tải tài liệu thành công', 'success');
+        }
+    } catch (error) {
+        console.error('Download error:', error);
+        if (typeof showToast !== 'undefined') {
+            showToast(error.message || 'Không thể tải xuống tài liệu', 'error');
+        }
+    }
 }
 
 async function retryDocument(docId) {

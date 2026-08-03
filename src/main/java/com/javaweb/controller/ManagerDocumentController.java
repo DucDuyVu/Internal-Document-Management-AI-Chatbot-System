@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -86,6 +87,7 @@ public class ManagerDocumentController {
     // 2. TỪ CHỐI TÀI LIỆU
     @PutMapping("/{id}/reject")
     public ResponseEntity<String> rejectDocument(@PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> payload,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         DocumentEntity document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy tài liệu id=" + id));
@@ -102,10 +104,15 @@ public class ManagerDocumentController {
             return ResponseEntity.badRequest().body("Chỉ có thể từ chối tài liệu đang ở trạng thái PENDING.");
         }
 
+        String reason = "Bị từ chối bởi Quản lý.";
+        if (payload != null && payload.containsKey("reason") && !payload.get("reason").trim().isEmpty()) {
+            reason = payload.get("reason").trim();
+        }
+
         // Từ chối (AI không bao giờ được gọi)
         document.setApprovalStatus(ApprovalStatus.REJECTED);
         document.setStatus(DocumentStatus.FAILED);
-        document.setErrorMessage("Bị từ chối bởi Quản lý.");
+        document.setErrorMessage(reason);
         documentRepository.save(document);
         
         return ResponseEntity.ok("Đã từ chối tài liệu thành công.");

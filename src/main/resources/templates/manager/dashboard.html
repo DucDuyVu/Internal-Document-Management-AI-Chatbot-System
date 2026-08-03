@@ -586,10 +586,18 @@
         </div>
         <div class="card-body">
           <!-- Summary bar -->
-          <div style="display:flex; gap:24px; align-items:center; margin-bottom:16px; font-size:0.875rem; color:var(--text-secondary);">
-            <span>Tổng số: <strong id="docTotalCount" style="color:var(--text-primary);">0</strong> tài liệu</span>
-            <span style="color:#d1d5db;">|</span>
-            <span style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>Thất bại: <strong id="docFailedCount">0</strong></span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div style="display:flex; gap:24px; align-items:center; font-size:0.875rem; color:var(--text-secondary);">
+              <span>Tổng số: <strong id="docTotalCount" style="color:var(--text-primary);">0</strong> tài liệu</span>
+              <span style="color:#d1d5db;">|</span>
+              <span style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>Thất bại: <strong id="docFailedCount">0</strong></span>
+            </div>
+            <div>
+              <input type="file" id="uploadDocInput" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+              <button class="btn-primary" onclick="document.getElementById('uploadDocInput').click()" id="uploadDocBtn">
+                <i class="fa-solid fa-cloud-arrow-up" style="margin-right:6px;"></i> Tải lên tài liệu
+              </button>
+            </div>
           </div>
 
           <!-- Filter bar -->
@@ -659,6 +667,31 @@
         </div>
       </div>
     </div><!-- kết thúc tabDocuments -->
+
+    <!-- ===== TAB: TRUNG TÂM PHÊ DUYỆT TÀI LIỆU ===== -->
+    <div id="tabApprovals" class="tab-content" style="display:none;">
+      <div class="section-card-v2" style="margin-bottom:24px; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:48px; height:48px; background:#4f46e5; border-radius:12px; display:flex; align-items:center; justify-content:center; color:white; font-size:1.5rem;">
+              <i class="fa-solid fa-file-signature"></i>
+            </div>
+            <div>
+              <h2 style="margin:0; font-size:1.4rem; font-weight:800; color:#0f172a;">Trung Tâm Phê Duyệt Tài Liệu</h2>
+              <p style="margin:4px 0 0 0; color:#64748b; font-size:0.95rem; font-weight:500;">Xử lý tờ trình, hợp đồng và quyết định ban hành từ các phòng ban</p>
+            </div>
+          </div>
+          <div style="background:#fef9c3; border:1px solid #fef08a; padding:8px 16px; border-radius:24px; display:flex; align-items:center; gap:8px;">
+            <i class="fa-regular fa-clock" style="color:#d97706; font-size:1.1rem;"></i>
+            <span style="color:#b45309; font-weight:700; font-size:0.95rem;">Còn <span id="approvalsTabBadge">0</span> tài liệu chờ bạn duyệt</span>
+          </div>
+        </div>
+        
+        <div id="approvalsListContainer" style="display:flex; flex-direction:column; gap:16px;">
+            <!-- Pending documents will be loaded here by JS -->
+        </div>
+      </div>
+    </div><!-- kết thúc tabApprovals -->
 
     <!-- ===== TAB: AI CHATBOT ===== -->
     <div id="tabChat" class="tab-content" style="display:none;">
@@ -1106,6 +1139,25 @@
         <div class="modal-actions">
           <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
           <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Từ chối tài liệu -->
+    <div class="modal-overlay" id="rejectDocModal">
+      <div class="modal" style="max-width:480px;">
+        <div class="modal-header">
+          <h3 id="rejectDocModalTitle">Từ chối tài liệu</h3>
+          <button class="modal-close" onclick="closeModal('rejectDocModal')">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 0.9rem;">Nhập lý do để người upload biết cách chỉnh sửa.</p>
+          <input type="hidden" id="rejectDocId">
+          <textarea id="rejectReason" class="form-input" rows="4" placeholder="Ví dụ: file bị mờ, thiếu trang cuối..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('rejectDocModal')">Hủy</button>
+          <button class="btn-primary-sm bg-danger" onclick="executeReject()">Xác nhận từ chối</button>
         </div>
       </div>
     </div>

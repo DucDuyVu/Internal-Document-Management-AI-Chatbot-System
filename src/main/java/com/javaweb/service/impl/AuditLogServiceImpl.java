@@ -66,7 +66,7 @@ public class AuditLogServiceImpl implements AuditLogService {
         }
     }
 
-    // Lấy các hoạt động gần đây ném ra giao diện 
+    // Lấy các hoạt động gần đây ném ra giao diện
     @Override
     public List<ActivityLogResponse> getRecentActivities(Long userId, int limit) {
         Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
@@ -77,7 +77,8 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Override
     public List<ActivityLogResponse> getDepartmentRecentActivities(Long departmentId, int limit) {
         Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
-        List<ActivityLogsEntity> entities = repository.findByUsersEntityId_Department_IdOrderByCreatedAtDesc(departmentId, pageable);
+        List<ActivityLogsEntity> entities = repository
+                .findByUsersEntityId_Department_IdOrderByCreatedAtDesc(departmentId, pageable);
         return mapToResponse(entities);
     }
 
