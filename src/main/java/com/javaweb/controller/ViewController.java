@@ -38,7 +38,12 @@ public class ViewController {
 
     @GetMapping("/manager/dashboard")
     public String managerDashboardPage() {
-        return "manager/dashboard"; // ✅ trỏ tới templates/manager/dashboard.html
+        return "manager/dashboard"; 
+        // ✅ trỏ tới templates/manager/dashboard.html
+    }
+    @GetMapping("/user/chat")
+    public String chatPage() {
+        return "user/chat"; // ✅ trỏ tới templates/user/chat.html
     }
 
     @GetMapping("/admin/dashboard")
