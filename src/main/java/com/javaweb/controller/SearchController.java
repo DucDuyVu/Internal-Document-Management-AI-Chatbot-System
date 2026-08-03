@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/search")
+@RequestMapping({"/api/search", "/api/user"})
 public class SearchController {
 
     @Autowired
     private SearchService searchService;
 
-    @GetMapping("")
+    @GetMapping({"", "/search"})
     public ResponseEntity<GlobalSearchResponse> searchGlobal(
             @RequestParam("q") String query,
             Authentication authentication) {

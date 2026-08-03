@@ -5,6 +5,7 @@ import com.javaweb.dto.response.AdminDepartmentResponse;
 import com.javaweb.entity.DepartmentsEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.exception.BadRequestException;
+import com.javaweb.exception.NotFoundException;
 import com.javaweb.repository.DepartmentsRepository;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.service.DepartmentsService;
@@ -24,13 +25,12 @@ public class DepartmentsServiceImpl implements DepartmentsService {
     @Autowired
     private UsersRepository usersRepository;
 
-    // Xử lý lấy danh sách phòng ban
     @Override
     public List<AdminDepartmentResponse> getAllDepartments() {
         List<DepartmentsEntity> departments = departmentsRepository.findAllByDeletedAtIsNullOrderByIdAsc();
 
         return departments.stream().map(dept -> {
-            long count = usersRepository.countByDepartmentId(dept.getId());
+            long count = usersRepository.countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(dept.getId());
             return AdminDepartmentResponse.builder()
                     .id(dept.getId())
                     .name(dept.getName())
@@ -40,25 +40,23 @@ public class DepartmentsServiceImpl implements DepartmentsService {
         }).collect(Collectors.toList());
     }
 
-    // Xử lý tạo phòng ban mới
     @Override
     public AdminDepartmentResponse createDepartment(AdminDepartmentRequest request) {
+        validateDepartmentRequest(request);
 
-        // check tên phòng ban có trùng không
-        if (departmentsRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(request.getName())) {
-            throw new BadRequestException("Tên phòng ban đã tồn tại ! ");
+        String normalizedName = request.getName().trim();
+        if (departmentsRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(normalizedName)) {
+            throw new BadRequestException("Tên phòng ban đã tồn tại !");
         }
 
         DepartmentsEntity departments = new DepartmentsEntity();
-        departments.setName(request.getName());
-        departments.setDescription(request.getDescription());
+        departments.setName(normalizedName);
+        departments.setDescription(request.getDescription() == null ? "" : request.getDescription().trim());
         departments.setCreatedAt(LocalDateTime.now());
         departments.setUpdatedAt(LocalDateTime.now());
 
-        // Lưu xuống DB
         DepartmentsEntity saved = departmentsRepository.save(departments);
 
-        // Convert entity vừa lưu => response trả về client
         return AdminDepartmentResponse.builder()
                 .id(saved.getId())
                 .name(saved.getName())
@@ -67,30 +65,25 @@ public class DepartmentsServiceImpl implements DepartmentsService {
                 .build();
     }
 
-    // Xử lý sửa phòng ban
     @Override
     public AdminDepartmentResponse updateDepartment(Long id, AdminDepartmentRequest request) {
-        // Tìm theo id
-        DepartmentsEntity department = departmentsRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phòng ban !"));
+        validateDepartmentRequest(request);
 
-        // Check trùng tên
-        if (!department.getName().equalsIgnoreCase(request.getName())) {
-            if (departmentsRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(request.getName())) {
-                throw new BadRequestException("Phòng ban đã tồn tại ");
-            }
+        DepartmentsEntity department = departmentsRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy phòng ban !"));
+
+        String normalizedName = request.getName().trim();
+        if (!department.getName().equalsIgnoreCase(normalizedName)
+                && departmentsRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(normalizedName)) {
+            throw new BadRequestException("Phòng ban đã tồn tại");
         }
 
-        // Gán dữ liệu mới
-        department.setName(request.getName());
-        department.setDescription(request.getDescription());
+        department.setName(normalizedName);
+        department.setDescription(request.getDescription() == null ? "" : request.getDescription().trim());
         department.setUpdatedAt(LocalDateTime.now());
 
-        // Lưu xuống DB
         DepartmentsEntity updated = departmentsRepository.save(department);
-
-        // Convert DepartmentsEntity => AdminDepartmentResponse
-        long count = usersRepository.countByDepartmentId(updated.getId());
+        long count = usersRepository.countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(updated.getId());
         return AdminDepartmentResponse.builder()
                 .id(updated.getId())
                 .name(updated.getName())
@@ -99,36 +92,26 @@ public class DepartmentsServiceImpl implements DepartmentsService {
                 .build();
     }
 
-    // Xử lý xóa phòng ban
     @Override
     public void deleteDepartment(Long id) {
-
-        // Tìm phòng ban cần xóa
         DepartmentsEntity department = departmentsRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy phòng ban !"));
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy phòng ban !"));
 
-        boolean hasActiveUsers = usersRepository.existsByDepartmentIdAndIsActiveTrue(id);
-
+        boolean hasActiveUsers = usersRepository.existsByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(id);
         if (hasActiveUsers) {
             throw new BadRequestException("Không thể xóa phòng ban vẫn còn người dùng đang hoạt động !");
         }
 
-        // Xóa mềm (chỉ set deleteAt)
         department.setDeletedAt(LocalDateTime.now());
         departmentsRepository.save(department);
     }
 
-    // Lấy phòng ban theo id
     @Override
     public AdminDepartmentResponse getDepartmentById(Long id) {
-        // Tìm theo id
         DepartmentsEntity department = departmentsRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy phòng ban !"));
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy phòng ban !"));
 
-        // Đếm số user trong phòng ban
-        long count = usersRepository.countByDepartmentId(id);
-
-        // Convert thông tin cần trả về client
+        long count = usersRepository.countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(id);
 
         return AdminDepartmentResponse.builder()
                 .id(department.getId())
@@ -138,24 +121,25 @@ public class DepartmentsServiceImpl implements DepartmentsService {
                 .build();
     }
 
-    // chuyển user sang phòng ban
     @Override
     public void assignUserToDepartment(Long userId, Long departmentId) {
-        // Tìm user
         UsersEntity user = usersRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException("Không tìm thấy user !"));
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy user !"));
 
         if (departmentId != null) {
-            // Tìm phòng ban có tồn tại không
             DepartmentsEntity department = departmentsRepository.findByIdAndDeletedAtIsNull(departmentId)
-                    .orElseThrow(() -> new BadRequestException("Không tồn tại phòng ban !"));
-            // Gắn cả đối tượng vào user
+                    .orElseThrow(() -> new NotFoundException("Không tồn tại phòng ban !"));
             user.setDepartment(department);
         } else {
-            // Xóa khỏi phòng ban
             user.setDepartment(null);
         }
 
         usersRepository.save(user);
+    }
+
+    private void validateDepartmentRequest(AdminDepartmentRequest request) {
+        if (request == null || request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new BadRequestException("Tên phòng ban không được để trống");
+        }
     }
 }

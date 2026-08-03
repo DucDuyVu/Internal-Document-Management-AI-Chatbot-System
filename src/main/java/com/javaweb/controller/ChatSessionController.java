@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
  * sau khi JwtAuthenticationFilter xác thực token thành công.
  */
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping({"/api/chat", "/api/user"})
 public class ChatSessionController {
 
     private final ChatSessionService chatSessionService;
@@ -61,7 +61,7 @@ public class ChatSessionController {
      *         được JwtAuthenticationFilter query sẵn từ DB) — ép kiểu
      *         thẳng, KHÔNG query lại DB ở Service nữa (tránh N+1 vô ích).
      */
-    @PostMapping("/sessions")
+    @PostMapping({"/sessions", "/chat-sessions"})
     public ResponseEntity<ChatSessionResponse> createSession(
             @RequestBody(required = false) ChatSessionRequest request) {
 
@@ -92,7 +92,7 @@ public class ChatSessionController {
      * Lưu ý: cùng cách lấy currentUser như createSession() — ép kiểu thẳng
      *        principal về UsersEntity, không dùng getName().
      */
-    @GetMapping("/sessions")
+    @GetMapping({"/sessions", "/chat-sessions"})
     public ResponseEntity<List<ChatSessionResponse>> getSessions() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -113,7 +113,7 @@ public class ChatSessionController {
      *        thuộc currentUser hay không nằm ở tầng Service, Controller
      *        không tự kiểm tra lại.
      */
-    @GetMapping("/sessions/{id}/messages")
+    @GetMapping({"/sessions/{id}/messages", "/chat-sessions/{id}/messages"})
     public ResponseEntity<List<ChatMessageHistoryResponse>> getMessages(@PathVariable Long id) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -133,7 +133,7 @@ public class ChatSessionController {
      * Lưu ý: mọi validate (tồn tại, đúng chủ, chưa xóa trước đó) nằm ở
      *        tầng Service — Controller chỉ chuyển tiếp và trả status.
      */
-    @DeleteMapping("/sessions/{id}")
+    @DeleteMapping({"/sessions/{id}", "/chat-sessions/{id}"})
     public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

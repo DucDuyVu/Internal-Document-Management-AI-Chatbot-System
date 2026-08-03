@@ -148,7 +148,6 @@
             <span class="search-icon-sm">🔍</span>
             <input type="text" id="docSearchInput" placeholder="Tìm kiếm tài liệu...">
           </div>
-<<<<<<< HEAD
           <div style="position:relative; display:flex; align-items:center; background:white; border:1px solid #e5e7eb; border-radius:8px; padding-left:12px;">
             <i class="fa-solid fa-filter" style="color:#9ca3af; font-size:0.875rem;"></i>
             <select id="docTypeFilter" class="filter-select" style="border:none; box-shadow:none; padding-left:8px;">
@@ -168,30 +167,10 @@
               <option value="size">Theo kích thước</option>
             </select>
           </div>
+          <button class="btn btn-primary" onclick="openUploadModal()">+ Tải lên</button>
           <div class="view-toggle" style="display:flex; background:#f3f4f6; border-radius:8px; padding:4px;">
             <button class="view-btn active" id="btnGridView" onclick="setDocView('grid')" title="Xem dạng lưới" style="padding:6px 12px; border-radius:6px; cursor:pointer; border:none; transition:all 0.2s; font-size:1.1rem;">⊞</button>
             <button class="view-btn" id="btnListView" onclick="setDocView('list')" title="Xem dạng danh sách" style="padding:6px 12px; border-radius:6px; cursor:pointer; border:none; transition:all 0.2s; font-size:1.1rem;">☰</button>
-=======
-          <select id="docTypeFilter" class="filter-select">
-            <option value="">Tất cả loại file</option>
-            <option value="pdf">PDF</option>
-            <option value="docx">Word (DOCX)</option>
-            <option value="xlsx">Excel (XLSX)</option>
-            <option value="pptx">PowerPoint</option>
-          </select>
-          <select id="docSortFilter" class="filter-select">
-            <option value="newest">Mới nhất</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="name">Theo tên</option>
-            <option value="size">Theo kích thước</option>
-          </select>
-          <button class="btn btn-primary" onclick="openUploadModal()">+ Tải lên</button>
-          <div class="view-toggle">
-            <button class="view-btn active" id="btnGridView" onclick="setDocView('grid')"
-                    title="Xem dạng lưới">⊞</button>
-            <button class="view-btn" id="btnListView" onclick="setDocView('list')"
-                    title="Xem dạng danh sách">☰</button>
->>>>>>> feature/chat-ui
           </div>
         </div>
 
@@ -528,7 +507,6 @@
 
       </div><!-- kết thúc tabProfile -->
 
-<<<<<<< HEAD
       <!-- ===== TAB: CÀI ĐẶT HỆ THỐNG ===== -->
       <div id="tabSettings" style="display:none;">
         <div class="section-header">
@@ -630,7 +608,10 @@
               </div>
             </div>
 
-=======
+          </div>
+        </div>
+      </div>
+
       <!-- ===== MODALS ===== -->
 
       <!-- MODAL: Xem chi tiết tài liệu -->
@@ -645,29 +626,120 @@
             <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
             <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
             <button class="btn-primary-sm bg-sky" onclick="askAIAboutDoc()" id="btnAskAI">💬 Hỏi AI về tài liệu này</button>
->>>>>>> feature/chat-ui
           </div>
         </div>
       </div>
 
-<<<<<<< HEAD
+      <!-- MODAL: Đổi tên hội thoại -->
+      <div class="modal-overlay" id="renameChatModal">
+        <div class="modal max-w-sm">
+          <div class="modal-header">
+            <h3>✏️ Đổi tên hội thoại</h3>
+            <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
+          </div>
+          <div class="form-group">
+            <label for="newChatTitle">Tên mới</label>
+            <input type="text" id="newChatTitle" class="form-input" placeholder="Nhập tên hội thoại...">
+          </div>
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
+            <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
+          </div>
+        </div>
+      </div>
 
-<!-- ===== MODALS ===== -->
+      <!-- MODAL: Upload tài liệu -->
+      <div class="modal-overlay" id="uploadDocModal">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>📤 Tải lên tài liệu</h3>
+            <button class="modal-close" onclick="closeModal('uploadDocModal')">✕</button>
+          </div>
 
-<!-- MODAL: Xem chi tiết tài liệu -->
-<div class="modal-overlay" id="docViewerModal">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
-      <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
-    </div>
-    <div id="docViewerContent" class="modal-body-scroll"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
-      <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
-      <button class="btn-primary-sm bg-sky" onclick="askAIAboutDoc()" id="btnAskAI">💬 Hỏi AI về
-        tài liệu này</button>
-    </div>
+          <div class="upload-area" id="uploadDropArea" onclick="document.getElementById('uploadFileInput').click()">
+            <div class="upload-hint-icon">📁</div>
+            <p class="upload-hint-text">Kéo thả file vào đây hoặc <strong>bấm để chọn file</strong></p>
+            <p class="upload-hint-subtext">Chỉ hỗ trợ PDF, tối đa 20MB</p>
+            <input type="file" id="uploadFileInput" accept=".pdf" style="display:none;">
+          </div>
+
+          <div id="uploadFileSelectedBox" class="file-selected-box" style="display:none;">
+            <div>
+              <div class="file-selected-name" id="uploadFileName">—</div>
+              <div class="file-selected-size" id="uploadFileSize">—</div>
+            </div>
+            <button class="btn-icon-danger" onclick="clearSelectedUploadFile()">✕</button>
+          </div>
+
+          <div id="uploadProgressWrap" style="display:none; margin-top:12px;">
+            <div class="upload-progress-text" id="uploadProgressText">Đang tải lên...</div>
+            <div class="upload-progress-bar">
+              <div class="upload-progress-fill" id="uploadProgressFill"></div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('uploadDocModal')">Hủy</button>
+            <button class="btn-primary-sm" id="uploadSubmitBtn" onclick="submitUploadDocument()">Tải lên</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: Quản lý quyền -->
+      <div class="modal-overlay" id="permissionModal">
+        <div class="modal modal-lg">
+          <div class="modal-header">
+            <h3 id="permissionModalTitle">Quản lý Quyền Truy cập</h3>
+            <button class="modal-close" onclick="closeModal('permissionModal')">✕</button>
+          </div>
+          
+          <div class="modal-body">
+            <!-- Section chia sẻ -->
+            <div class="share-section" style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+              <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Chia sẻ tài liệu</h4>
+              <div style="display: flex; gap: 12px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                  <label for="departmentSelect">Chọn phòng ban</label>
+                  <select id="departmentSelect" class="form-input">
+                    <option value="">-- Đang tải danh sách... --</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary" id="btnShareDoc" onclick="shareDocumentPermission()">Chia sẻ</button>
+              </div>
+            </div>
+
+            <!-- Section danh sách đã chia sẻ -->
+            <div>
+              <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Đang chia sẻ cho</h4>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Phòng ban</th>
+                      <th>Ngày chia sẻ</th>
+                      <th>Người chia sẻ</th>
+                      <th style="width: 100px; text-align: center;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="permissionListBody">
+                    <tr><td colspan="4" class="empty-state" style="text-align:center; padding: 20px;">Đang tải dữ liệu...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal('permissionModal')">Đóng</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- kết thúc content fragment -->
+  </main>
+</div>
+</body>
+</html>
   </div>
 </div>
 
