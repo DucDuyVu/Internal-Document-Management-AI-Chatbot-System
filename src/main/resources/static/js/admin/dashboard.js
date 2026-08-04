@@ -221,7 +221,7 @@ async function loadOverviewStats() {
             'statFailedDocs': '0',
             'statOnline': Math.floor(Math.random() * 10) + 5 // Mock
         };
-        
+
         AdminState.overview = {
             totalUsers: usersRes.totalElements || 0,
             totalDocuments: dashboardStats.documentCount || 0,
@@ -233,7 +233,7 @@ async function loadOverviewStats() {
             if (el) {
                 el.classList.remove('skeleton-loader');
                 el.textContent = elements[id];
-                
+
                 if (id === 'statFailedDocs') {
                     const card = el.closest('.kpi-card');
                     if (card) {
@@ -251,7 +251,7 @@ async function loadOverviewStats() {
                 }
             }
         });
-        
+
         // Update user banner info
         const currentUser = typeof getUser !== 'undefined' ? getUser() : null;
         if (currentUser) {
@@ -266,11 +266,11 @@ async function loadOverviewStats() {
         const dateStr = now.toLocaleDateString('vi-VN');
         const currentDateEl = document.getElementById('currentDate');
         const currentDayEl = document.getElementById('currentDay');
-        if(currentDateEl) currentDateEl.textContent = dateStr;
-        if(currentDayEl) currentDayEl.textContent = dayStr;
+        if (currentDateEl) currentDateEl.textContent = dateStr;
+        if (currentDayEl) currentDayEl.textContent = dayStr;
 
         const pendingDocEl = document.getElementById('pendingDocCount');
-        if(pendingDocEl) pendingDocEl.textContent = Math.floor(Math.random() * 5);
+        if (pendingDocEl) pendingDocEl.textContent = Math.floor(Math.random() * 5);
 
 
     } catch (error) {
@@ -510,14 +510,14 @@ async function openAddUserModal() {
 
     const role = document.getElementById('newRole');
     if (role) role.value = 'USER';
-    
+
     // Load danh sách phòng ban
     try {
         const depts = await apiRequest('/api/admin/departments', { method: 'GET' });
         const select = document.getElementById('newDepartmentId');
         if (select) {
             select.innerHTML = '<option value="">-- Trống (Chưa có phòng ban) --</option>';
-            
+
             // Xử lý cả 2 trường hợp List hoặc Pageable
             const dataList = Array.isArray(depts) ? depts : (depts.content || []);
             dataList.forEach(d => {
@@ -608,11 +608,11 @@ function deleteUser(userId, fullName) {
                 await apiRequest(`/api/admin/users/${userId}`, {
                     method: 'DELETE'
                 });
-                
+
                 if (typeof showToast !== 'undefined') {
                     showToast('Xóa người dùng thành công', 'success');
                 }
-                
+
                 loadUsers();
                 logAdminActivity('DELETE_USER', 'USER', userId, { fullName });
             } catch (error) {
@@ -982,42 +982,105 @@ function renderDocumentTable() {
     const docs = AdminState.documents.filtered;
 
     if (!docs || docs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><span>📁</span>Không tìm thấy tài liệu</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:#64748b;"><span>📁</span> Không tìm thấy tài liệu nào</td></tr>';
         return;
     }
 
-    tbody.innerHTML = docs.map((doc, index) => `
+    tbody.innerHTML = docs.map((doc, index) => {
+        let statusHtml = '';
+        if (doc.approvalStatus === 'REJECTED') {
+            statusHtml = '<span class="status-badge status-failed">Duyệt: Từ chối</span>';
+        } else if (doc.approvalStatus === 'PENDING') {
+            statusHtml = '<span class="status-badge status-pending">Duyệt: Chờ duyệt</span>';
+        } else {
+            if (doc.approvalStatus === 'APPROVED') {
+                statusHtml = '<span class="status-badge status-success">Duyệt: Đã duyệt</span>';
+            }
+        }
+
+        if (doc.status === 'COMPLETED' || doc.status === 'SUCCESS') {
+            statusHtml += '<span class="status-badge status-success">AI: Hoàn tất</span>';
+        } else if (doc.status === 'PROCESSING') {
+            statusHtml += '<span class="status-badge status-processing">AI: Đang xử lý</span>';
+        } else if (doc.status === 'FAILED') {
+            statusHtml += '<span class="status-badge status-failed">AI: Lỗi</span>';
+        } else {
+            statusHtml += '<span class="status-badge status-pending">AI: Chờ xử lý</span>';
+        }
+
+        const safeFileName = (doc.fileName || '').replace(/'/g, "\\'");
+
+        return `
         <tr style="cursor:pointer;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-            <td>${(AdminState.documents.page - 1) * AdminState.documents.pageSize + index + 1}</td>
             <td onclick="openDocumentDetail(${doc.id})" title="Click để xem chi tiết">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:1.3rem;">${typeof getFileIcon !== 'undefined' ? getFileIcon(doc.fileType || 'pdf') : '📄'}</span>
-                    <span style="font-weight:500;color:#4f46e5;text-decoration:underline;text-decoration-color:transparent;" onmouseover="this.style.textDecorationColor='#4f46e5'" onmouseout="this.style.textDecorationColor='transparent'">${doc.fileName || '—'}</span>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:1.1rem; color:#ef4444;"><i class="fa-solid fa-file-pdf"></i></span>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <span style="font-weight:600;color:#0f172a;" title="${doc.fileName}">${(doc.fileName && doc.fileName.length > 40) ? doc.fileName.substring(0, 40) + '...' : (doc.fileName || '—')}</span>
+                        <span style="font-size:0.8rem;color:#64748b;">DOC-${String(doc.id).padStart(4, '0')}</span>
+                    </div>
                 </div>
             </td>
-            <td>${doc.departmentName || '—'}</td>
-            <td>${(doc.fileType || 'PDF').toUpperCase()}</td>
-            <td>${doc.fileSize ? (doc.fileSize / 1024 / 1024).toFixed(2) + ' MB' : '—'}</td>
+            <td><div style="font-size:0.9rem;color:#475569;font-weight:500;">${doc.departmentName || '—'}</div></td>
+            <td><div style="font-size:0.9rem;color:#475569;">${doc.fileSize ? (doc.fileSize / 1024 / 1024).toFixed(2) + ' MB' : '—'}</div></td>
             <td>
-                <span class="status-badge ${typeof getStatusClass !== 'undefined' ? getStatusClass(doc.status) : ''}">
-                    ${typeof getStatusLabel !== 'undefined' ? getStatusLabel(doc.status) : doc.status}
-                </span>
-                ${doc.approvalStatus ? `<br><small style="color:gray; font-size: 0.75rem;">(${doc.approvalStatus})</small>` : ''}
-            </td>
-            <td>${doc.chunkCount || 0}</td>
-            <td>${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</td>
-            <td>
-                <div style="display:flex;gap:6px;">
-                    <button class="btn-icon" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết" style="font-size:1rem;">👁️</button>
-                    <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id})" title="Tải xuống" style="font-size:1rem;">⬇️</button>
-                    ${doc.status === 'FAILED' ? `<button class="btn-icon" onclick="event.stopPropagation(); retryDocument(${doc.id})" title="Thử lại" style="font-size:1rem;">🔄</button>` : ''}
-                    ${(doc.status === 'PENDING' || doc.approvalStatus === 'PENDING') ? `<button class="btn-icon" style="color:var(--warning)" onclick="event.stopPropagation(); emergencyApproveDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Duyệt khẩn cấp" style="font-size:1rem;">⚡</button>` : ''}
-                    <button class="btn-icon" onclick="event.stopPropagation(); deleteDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Xoá" style="font-size:1rem;">🗑️</button>
+                <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+                    ${statusHtml}
                 </div>
             </td>
-        </tr>
-    `).join('');
+            <td><div style="font-size:0.9rem;color:#475569;">${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div></td>
+            <td style="text-align:right;">
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="btn-icon" onclick="event.stopPropagation(); typeof viewDocumentInline === 'function' ? viewDocumentInline(${doc.id}) : null" title="Xem trực tiếp">👁️</button>
+                    <button class="btn-icon" onclick="event.stopPropagation(); typeof downloadDocument === 'function' ? downloadDocument(${doc.id}, '${safeFileName}') : null" title="Tải xuống">⬇️</button>
+                    ${doc.status === 'FAILED' ? `
+                    <button class="btn-icon" style="color:#f59e0b;" onclick="event.stopPropagation(); retryDocument(${doc.id})" title="Thử lại xử lý AI">🔄</button>` : ''}
+                    ${(doc.status === 'PENDING' || doc.approvalStatus === 'PENDING') ? `
+                    <button class="btn-icon" style="color:#10b981;" onclick="event.stopPropagation(); emergencyApproveDocument(${doc.id}, '${safeFileName}')" title="Duyệt khẩn cấp">✅</button>` : ''}
+                    <button class="btn-icon" style="color:#ef4444;" onclick="event.stopPropagation(); deleteDocument(${doc.id}, '${safeFileName}')" title="Xóa tài liệu">🗑️</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
 }
+
+function setAdminDocFilter(btnElement) {
+    document.querySelectorAll('#docTypePillFilter .pill-btn').forEach(btn => btn.classList.remove('active'));
+    btnElement.classList.add('active');
+    filterAdminDocuments();
+}
+
+function filterAdminDocuments() {
+    const searchTerm = document.getElementById('docSearchInput')?.value?.toLowerCase() || '';
+    const activePill = document.querySelector('#docTypePillFilter .pill-btn.active');
+    const typeFilter = activePill ? activePill.getAttribute('data-filter') : 'ALL';
+
+    AdminState.documents.filtered = AdminState.documents.data.filter(doc => {
+        const matchesSearch = !searchTerm ||
+            (doc.fileName && doc.fileName.toLowerCase().includes(searchTerm)) ||
+            (doc.departmentName && doc.departmentName.toLowerCase().includes(searchTerm)) ||
+            ('doc-' + String(doc.id).padStart(4, '0')).includes(searchTerm);
+
+        let matchesStatus = true;
+        if (typeFilter !== 'ALL') {
+            if (typeFilter === 'COMPLETED') {
+                matchesStatus = (doc.status === 'COMPLETED' || doc.status === 'SUCCESS');
+            } else if (typeFilter === 'PENDING') {
+                matchesStatus = (doc.status === 'PENDING' || doc.approvalStatus === 'PENDING');
+            } else if (typeFilter === 'PROCESSING') {
+                matchesStatus = (doc.status === 'PROCESSING');
+            } else if (typeFilter === 'FAILED') {
+                matchesStatus = (doc.status === 'FAILED' || doc.approvalStatus === 'REJECTED');
+            }
+        }
+
+        return matchesSearch && matchesStatus;
+    });
+
+    renderDocumentTable();
+}
+
+// Function old filterDocs removed, replaced by filterAdminDocuments
 
 function filterDocs(status, btn) {
     // Update active button
@@ -1081,7 +1144,7 @@ async function viewDocument(docId) {
         }
 
         if (downloadBtn) {
-            downloadBtn.onclick = () => downloadDocument(docId);
+            downloadBtn.onclick = () => downloadDocument(docId, doc.fileName);
         }
 
         if (askBtn) {
@@ -1100,9 +1163,59 @@ async function viewDocument(docId) {
     }
 }
 
-function downloadDocument(docId) {
-    const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
-    window.open(`${API_BASE}/api/documents/${docId}/download?token=${token}`, '_blank');
+async function downloadDocument(docId, fileName) {
+    try {
+        if (typeof showToast !== 'undefined') {
+            showToast('Đang tải tài liệu...', 'info');
+        }
+
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+        const response = await fetch(`${API_BASE}/api/documents/${docId}/download`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || `Lỗi tải xuống: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+
+        let finalFileName = fileName || 'document.pdf';
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition) {
+            let matches = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+            if (matches && matches[1]) {
+                finalFileName = decodeURIComponent(matches[1]);
+            } else {
+                matches = /filename="?([^;"]+)"?/i.exec(disposition);
+                if (matches && matches[1]) {
+                    finalFileName = matches[1];
+                }
+            }
+        }
+
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = finalFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(downloadUrl);
+
+        if (typeof showToast !== 'undefined') {
+            showToast('Tải tài liệu thành công', 'success');
+        }
+    } catch (error) {
+        console.error('Download error:', error);
+        if (typeof showToast !== 'undefined') {
+            showToast(error.message || 'Không thể tải xuống tài liệu', 'error');
+        }
+    }
 }
 
 async function retryDocument(docId) {
@@ -1170,7 +1283,7 @@ function emergencyApproveDocument(docId, fileName) {
 
     if (nameEl) nameEl.textContent = fileName;
     if (reasonEl) reasonEl.value = '';
-    
+
     if (submitBtn) {
         submitBtn.onclick = async () => {
             const reason = reasonEl?.value?.trim();
@@ -1178,7 +1291,7 @@ function emergencyApproveDocument(docId, fileName) {
                 if (typeof showToast !== 'undefined') showToast('Vui lòng nhập lý do duyệt khẩn cấp', 'warning');
                 return;
             }
-            
+
             try {
                 if (typeof apiRequest === 'undefined') throw new Error('apiRequest() không tồn tại');
 
@@ -1193,9 +1306,9 @@ function emergencyApproveDocument(docId, fileName) {
 
                 if (typeof showToast !== 'undefined') showToast('Duyệt khẩn cấp thành công!', 'success');
                 if (typeof closeModal !== 'undefined') closeModal('emergencyApproveModal');
-                
+
                 loadDocuments();
-                
+
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = submitBtnOriginalText;
 
@@ -1414,12 +1527,12 @@ async function loadPermissions() {
 }
 
 function buildPermissionRow(perm) {
-    const deptName   = escapeHtml(perm.departmentName  || 'Tất cả phòng ban');
-    const docTitle   = escapeHtml(perm.documentTitle   || '—');
-    const grantor    = escapeHtml(perm.grantedByName   || '—');
-    const grantedAt  = typeof formatDate !== 'undefined' ? formatDate(perm.createdAt) : perm.createdAt;
+    const deptName = escapeHtml(perm.departmentName || 'Tất cả phòng ban');
+    const docTitle = escapeHtml(perm.documentTitle || '—');
+    const grantor = escapeHtml(perm.grantedByName || '—');
+    const grantedAt = typeof formatDate !== 'undefined' ? formatDate(perm.createdAt) : perm.createdAt;
     // departmentId null (tất cả phòng ban) → truyền 0 cho backend
-    const deptId     = perm.departmentId ?? 0;
+    const deptId = perm.departmentId ?? 0;
 
     return `
         <tr>
@@ -1477,7 +1590,7 @@ async function openShareDocumentModal() {
         const docs = docsResponse.content || docsResponse || [];
         const docSelect = document.getElementById('shareDocId');
         if (docSelect) {
-            docSelect.innerHTML = '<option value="">-- Chọn tài liệu --</option>' + 
+            docSelect.innerHTML = '<option value="">-- Chọn tài liệu --</option>' +
                 docs.map(doc => `<option value="${doc.id}">${doc.fileName}</option>`).join('');
         }
 
@@ -1486,7 +1599,7 @@ async function openShareDocumentModal() {
         const depts = deptsResponse.content || deptsResponse || [];
         const deptSelect = document.getElementById('shareDeptId');
         if (deptSelect) {
-            deptSelect.innerHTML = '<option value="">-- Chọn phòng ban --</option>' + 
+            deptSelect.innerHTML = '<option value="">-- Chọn phòng ban --</option>' +
                 '<option value="0">-- Tất cả phòng ban --</option>' +
                 depts.map(dept => `<option value="${dept.id}">${dept.name}</option>`).join('');
         }
@@ -1519,7 +1632,7 @@ async function submitShareDocument() {
             method: 'POST',
             body: JSON.stringify({ departmentId: parseInt(deptId) })
         });
-        
+
         showToast('Chia sẻ tài liệu thành công!', 'success');
         closeModal('shareDocModal');
         loadPermissions();
@@ -1750,7 +1863,7 @@ async function loadAdminProfile() {
         if (viewDept) {
             viewDept.textContent = response.departmentName || 'Toàn hệ thống';
         }
-        
+
         const avatarEl = document.getElementById('profileAvatar');
         if (avatarEl) {
             if (response.avatarUrl) {
@@ -1761,7 +1874,7 @@ async function loadAdminProfile() {
                 avatarEl.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
             }
         }
-        
+
         // Cập nhật avatar trên Topbar
         const topbarAvatar = document.getElementById('userAvatar');
         if (topbarAvatar) {
@@ -1777,7 +1890,7 @@ async function loadAdminProfile() {
                 topbarAvatar.textContent = (response.fullName || 'A').charAt(0).toUpperCase();
             }
         }
-        
+
         if (viewRole) viewRole.textContent = 'Quản trị viên';
         if (viewCreatedAt) viewCreatedAt.textContent = response.createdAt ? (typeof formatDate !== 'undefined' ? formatDate(response.createdAt) : response.createdAt) : '—';
         if (viewLastLogin) viewLastLogin.textContent = response.lastLogin ? (typeof formatDate !== 'undefined' ? formatDate(response.lastLogin) : response.lastLogin) : '—';
@@ -1859,7 +1972,7 @@ async function loadProfileActivities() {
             // Determine initial page from hash or default to dashboard
             const initialPage = window.location.hash.substring(1) || 'dashboard';
             changeAdminPage(initialPage);
-            
+
             // Update active state of sidebar links
             const currentLink = document.querySelector(`.sidebar-menu a[href="#${initialPage}"]`);
             if (currentLink) {
@@ -1878,7 +1991,7 @@ async function loadProfileActivities() {
                     editUser(editId);
                     // remove query param without reload
                     const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.hash;
-                    window.history.pushState({path:newUrl},'',newUrl);
+                    window.history.pushState({ path: newUrl }, '', newUrl);
                 }, 500);
             }
         });
@@ -2197,7 +2310,7 @@ window.changePassword = changePassword;
 // ===== STUB FUNCTIONS (to be implemented) =====
 async function editUser(userId) {
     let user = AdminState.users.data.find(u => u.id == userId);
-    
+
     // Nếu không tìm thấy trong state hiện tại, gọi API lấy chi tiết
     if (!user) {
         try {
@@ -2208,11 +2321,11 @@ async function editUser(userId) {
             return;
         }
     }
-    
+
     document.getElementById('editUserId').value = user.id;
     document.getElementById('modalEditFullName').value = user.fullName || '';
     document.getElementById('modalEditPhone').value = user.phone || ''; // Cập nhật phone
-    
+
     // Gán role
     const roleSelect = document.getElementById('editRole');
     if (roleSelect) roleSelect.value = user.role || 'USER';
@@ -2233,7 +2346,7 @@ async function submitEditUser() {
 
         if (typeof closeModal !== 'undefined') closeModal('editUserModal');
         if (typeof showToast !== 'undefined') showToast('Cập nhật người dùng thành công!', 'success');
-        
+
         loadUsers();
         logAdminActivity('UPDATE_USER', 'USER', null, { userId, role, departmentId });
     } catch (error) {
@@ -2245,9 +2358,9 @@ async function submitEditUser() {
 async function changeUserDepartment(userId) {
     const user = AdminState.users.data.find(u => u.id === userId);
     if (!user) return;
-    
+
     document.getElementById('changeDeptUserName').value = user.fullName || user.username;
-    
+
     try {
         const depts = await apiRequest('/api/admin/departments', { method: 'GET' });
         const select = document.getElementById('changeDeptSelect');
@@ -2262,14 +2375,14 @@ async function changeUserDepartment(userId) {
     } catch (e) {
         console.error(e);
     }
-    
+
     // Gắn sự kiện submit
     const submitBtn = document.getElementById('btnSubmitChangeDept');
     if (submitBtn) {
-        submitBtn.onclick = async function() {
+        submitBtn.onclick = async function () {
             let departmentId = document.getElementById('changeDeptSelect').value || null;
             if (departmentId === "") departmentId = null;
-            
+
             try {
                 // Gọi API chuyển phòng ban chuẩn
                 await apiRequest(`/api/admin/departments/${userId}/departmentId`, {
@@ -2279,7 +2392,7 @@ async function changeUserDepartment(userId) {
 
                 if (typeof closeModal !== 'undefined') closeModal('changeDepartmentModal');
                 if (typeof showToast !== 'undefined') showToast('Chuyển phòng ban thành công!', 'success');
-                
+
                 loadUsers();
                 logAdminActivity('TRANSFER_DEPT', 'USER', null, { userId, departmentId });
             } catch (error) {

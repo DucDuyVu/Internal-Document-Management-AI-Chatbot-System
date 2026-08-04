@@ -21,7 +21,17 @@ import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.enums.ActionType;
 import com.javaweb.entity.enums.ApprovalStatus;
 import com.javaweb.exception.DocumentNotFoundException;
+import com.javaweb.repository.DocumentRepository;
+import com.javaweb.rag.DocumentProcessingService;
+import com.javaweb.security.CustomUserDetails;
 import com.javaweb.service.DocumentService;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/admin/documents")
@@ -41,20 +51,20 @@ public class AdminDocumentController {
     }
 
     @Autowired
-    private com.javaweb.repository.DocumentRepository documentRepository;
+    private DocumentRepository documentRepository;
 
     @Autowired
-    private com.javaweb.rag.DocumentProcessingService documentProcessingService;
+    private DocumentProcessingService documentProcessingService;
 
     @Autowired
-    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private ApplicationEventPublisher eventPublisher;
 
-    @org.springframework.web.bind.annotation.PutMapping("/{id}/emergency-approve")
+    @PutMapping("/{id}/emergency-approve")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> emergencyApprove(
-            @org.springframework.web.bind.annotation.PathVariable Long id,
-            @org.springframework.web.bind.annotation.RequestBody java.util.Map<String, String> payload,
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.javaweb.security.CustomUserDetails userDetails) {
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         String reason = payload.get("reason");
         if (reason == null || reason.trim().isEmpty()) {
@@ -89,5 +99,47 @@ public class AdminDocumentController {
         documentProcessingService.process(id);
 
         return ResponseEntity.ok("Đã duyệt khẩn cấp tài liệu và đưa vào xử lý AI thành công.");
+    }
+
+    @PutMapping("/{id}/retry")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> retryDocument(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        DocumentEntity document = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy tài liệu id=" + id));
+
+        if (document.getStatus() != com.javaweb.entity.enums.DocumentStatus.FAILED) {
+            return ResponseEntity.badRequest().body("Chỉ có thể thử lại tài liệu bị lỗi (FAILED).");
+        }
+
+        // Khôi phục trạng thái
+        document.setStatus(com.javaweb.entity.enums.DocumentStatus.PENDING);
+        document.setErrorMessage(null);
+        documentRepository.save(document);
+
+        // Gọi lại AI
+        documentProcessingService.process(id);
+
+        return ResponseEntity.ok("Đã đẩy tài liệu vào hàng chờ AI để xử lý lại.");
+    }
+    
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteDocument(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            documentService.deleteDocument(id, userDetails.getUser().getId());
+            return ResponseEntity.ok("Xoá tài liệu thành công.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

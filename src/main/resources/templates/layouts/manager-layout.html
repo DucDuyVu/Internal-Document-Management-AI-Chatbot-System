@@ -7,7 +7,7 @@
   <title layout:title-pattern="$layout_title - $content_title">IDMS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="/css/dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -66,7 +66,7 @@
       <div class="sidebar-divider"></div>
       <p class="nav-section-label">Tác vụ</p>
       <ul class="sidebar-nav">
-        <li id="openApprovalDrawerBtn" style="cursor:pointer; position: relative;">
+        <li class="nav-item" data-tab="tabApprovals" style="position: relative;">
           <span class="nav-icon"><i class="fa-solid fa-check-double text-warning"></i></span>
           <span>Duyệt tài liệu</span>
           <span id="navPendingBadge"
@@ -216,7 +216,7 @@
     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9998; transition: opacity 0.3s ease;">
   </div>
   <div class="drawer" id="approvalDrawer"
-    style="position:fixed; top:0; right:-400px; width:400px; height:100vh; background:#fff; z-index:9999; box-shadow:-4px 0 15px rgba(0,0,0,0.1); transition: right 0.3s ease; display:flex; flex-direction:column;">
+    style="position:fixed; top:0; right:-800px; width:800px; max-width:95vw; height:100vh; background:#fff; z-index:9999; box-shadow:-4px 0 15px rgba(0,0,0,0.1); transition: right 0.3s ease; display:flex; flex-direction:column;">
     <div
       style="padding: 20px; border-bottom: 1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:var(--bg-gray-50);">
       <h3 style="margin:0; font-size:1.1rem; color:#111827;"><i class="fa-solid fa-check-double text-warning"
@@ -254,7 +254,7 @@
       const overlay = document.getElementById('approvalDrawerOverlay');
       const drawer = document.getElementById('approvalDrawer');
       if (overlay && drawer) {
-        drawer.style.right = '-400px';
+        drawer.style.right = '-800px';
         overlay.style.opacity = '0';
         setTimeout(() => {
           overlay.style.display = 'none';
@@ -266,9 +266,9 @@
     document.getElementById('openApprovalDrawerBtn')?.addEventListener('click', openApprovalDrawer);
   </script>
 
-  <script src="/js/common.js?v=3"></script>
-  <script src="/js/auth.js?v=3"></script>
-  <script src="/js/manager/dashboard.js?v=3"></script>
+  <script src="/js/common.js?v=4"></script>
+  <script src="/js/auth.js?v=4"></script>
+  <script src="/js/manager/dashboard.js?v=4"></script>
 
   <!-- JS riêng của từng trang -->
   <th:block layout:fragment="custom-js"></th:block>

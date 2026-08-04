@@ -32,6 +32,13 @@ public class DocumentResponse {
     private LocalDateTime updatedAt;
     private Integer departmentId;
     private String departmentName;
+    private Long uploadedBy;
+    private String uploadedByName;
+    private Long fileSize;
+    private String fileType;
+    private String aiPurpose;
+    private String aiSummary;
+    private String aiTags;
 
     public DocumentResponse() {
     }
@@ -46,7 +53,9 @@ public class DocumentResponse {
             String approvalStatus,
             Integer chunkCount, String errorMessage,
             LocalDateTime createdAt, LocalDateTime updatedAt,
-            Integer departmentId, String departmentName) {
+            Integer departmentId, String departmentName, Long uploadedBy, String uploadedByName,
+            Long fileSize, String fileType,
+            String aiPurpose, String aiSummary, String aiTags) {
         this.id = id;
         this.title = title;
         this.fileName = fileName;
@@ -58,6 +67,45 @@ public class DocumentResponse {
         this.updatedAt = updatedAt;
         this.departmentId = departmentId;
         this.departmentName = departmentName;
+        this.uploadedBy = uploadedBy;
+        this.uploadedByName = uploadedByName;
+        this.fileSize = fileSize;
+        this.fileType = fileType;
+        this.aiPurpose = aiPurpose;
+        this.aiSummary = aiSummary;
+        this.aiTags = aiTags;
+    }
+
+    public Long getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public String getFileType() {
+        return fileType;
+    }
+
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
+    }
+
+    public Long getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public void setUploadedBy(Long uploadedBy) {
+        this.uploadedBy = uploadedBy;
+    }
+
+    public String getUploadedByName() {
+        return uploadedByName;
+    }
+
+    public void setUploadedByName(String uploadedByName) {
+        this.uploadedByName = uploadedByName;
     }
 
     public String getApprovalStatus() {
@@ -74,6 +122,30 @@ public class DocumentResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getAiPurpose() {
+        return aiPurpose;
+    }
+
+    public void setAiPurpose(String aiPurpose) {
+        this.aiPurpose = aiPurpose;
+    }
+
+    public String getAiSummary() {
+        return aiSummary;
+    }
+
+    public void setAiSummary(String aiSummary) {
+        this.aiSummary = aiSummary;
+    }
+
+    public String getAiTags() {
+        return aiTags;
+    }
+
+    public void setAiTags(String aiTags) {
+        this.aiTags = aiTags;
     }
 
     public String getTitle() {

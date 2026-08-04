@@ -53,6 +53,9 @@ public class DocumentEntity {
     @Column(name = "file_name", nullable = false, length = 255)
     private String fileName;
 
+    @Column(name = "title", length = 255)
+    private String title;
+
     @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
 
@@ -74,6 +77,15 @@ public class DocumentEntity {
 
     @Column(name = "version", nullable = false)
     private Integer version = 1;
+    // Mục đích của tài liệu do AI tóm tắt
+    @Column(name = "ai_purpose", columnDefinition = "TEXT")
+    private String aiPurpose;
+    // Nội dung chính của tài liệu do AI tóm tắt
+    @Column(name = "ai_summary", columnDefinition = "TEXT")
+    private String aiSummary;
+    // Từ khóa của tài liệu do AI tóm tắt
+    @Column(name = "ai_tags", length = 255)
+    private String aiTags;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -84,6 +96,5 @@ public class DocumentEntity {
     // Soft delete
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
-
 
 }

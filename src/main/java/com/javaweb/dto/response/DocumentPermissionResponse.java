@@ -17,4 +17,6 @@ public class DocumentPermissionResponse {
     private String departmentName;
     private String grantedByName;
     private LocalDateTime createdAt;
+    private String role;
+    private Boolean isPublicLink;
 }

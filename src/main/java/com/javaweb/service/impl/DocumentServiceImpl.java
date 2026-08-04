@@ -1,5 +1,8 @@
 package com.javaweb.service.impl;
 
+import com.javaweb.entity.DocumentPermissionsEntity;
+import com.javaweb.repository.DocumentPermissionsRepository;
+
 import com.event.AuditEven;
 import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.dto.request.DocumentUploadRequest;
@@ -9,7 +12,9 @@ import com.javaweb.entity.UsersEntity;
 import com.javaweb.entity.enums.ActionType;
 import com.javaweb.entity.enums.ApprovalStatus;
 import com.javaweb.entity.enums.DocumentStatus;
+import com.javaweb.enums.UserRole;
 import com.javaweb.exception.DocumentNotFoundException;
+import com.javaweb.exception.ForbiddenException;
 import com.javaweb.exception.InvalidFileException;
 import com.javaweb.rag.DocumentProcessingService;
 import com.javaweb.repository.DepartmentsRepository;
@@ -26,48 +31,61 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.javaweb.service.StorageService;
+import com.javaweb.service.NotificationService;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.UUID;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class DocumentServiceImpl implements DocumentService {
 
-    private static final String UPLOAD_DIR = "uploads";
     private static final long MAX_FILE_SIZE = 20L * 1024 * 1024; // 20MB
 
     private final DocumentRepository documentRepository;
+
+    private final DocumentPermissionsRepository documentPermissionsRepository;
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingService documentProcessingService;
     private final DepartmentsRepository departmentsRepository;
     private final UsersRepository usersRepository;
+    private final StorageService storageService;
+    private final NotificationService notificationService;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
     public DocumentServiceImpl(DocumentRepository documentRepository,
+            DocumentPermissionsRepository documentPermissionsRepository,
             DocumentChunkRepository documentChunkRepository,
             DocumentProcessingService documentProcessingService,
             DepartmentsRepository departmentsRepository,
-            UsersRepository usersRepository) {
+            UsersRepository usersRepository,
+            StorageService storageService,
+            NotificationService notificationService) {
         this.documentRepository = documentRepository;
+        this.documentPermissionsRepository = documentPermissionsRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
         this.departmentsRepository = departmentsRepository;
         this.usersRepository = usersRepository;
+        this.storageService = storageService;
+        this.notificationService = notificationService;
     }
 
     @Override
     @Transactional
     public DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request, UsersEntity currentUser) {
         validateFile(file);
-        String storedPath = storeFile(file);
+        String storedPath;
+        try {
+            storedPath = storageService.uploadFile(file);
+        } catch (IOException e) {
+            throw new InvalidFileException("Lỗi khi lưu file lên MinIO: " + e.getMessage());
+        }
 
         // --- BẢO MẬT: XỬ LÝ PHÒNG BAN ---
         Integer targetDeptId = request.getDepartmentId();
@@ -81,6 +99,7 @@ public class DocumentServiceImpl implements DocumentService {
         boolean isSameDepartment = currentUser.getDepartment() != null
                 && currentUser.getDepartment().getId().intValue() == targetDeptId;
         boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+        boolean isManager = currentUser.getRole().name().equals("MANAGER");
 
         if (!isSameDepartment && !isAdmin) {
             throw new AccessDeniedException("Bảo mật: Bạn không có quyền tải tài liệu vào phòng ban của người khác!");
@@ -95,8 +114,14 @@ public class DocumentServiceImpl implements DocumentService {
         document.setUploadedBy(currentUser.getId());
 
         // --- LUỒNG PHÊ DUYỆT TÀI LIỆU ---
-        document.setStatus(DocumentStatus.PENDING);
-        document.setApprovalStatus(ApprovalStatus.PENDING); // Bắt buộc Manager duyệt mới chạy AI
+
+        if (isAdmin || isManager) {
+            document.setStatus(DocumentStatus.PROCESSING);
+            document.setApprovalStatus(ApprovalStatus.APPROVED);
+        } else {
+            document.setStatus(DocumentStatus.PENDING);
+            document.setApprovalStatus(ApprovalStatus.PENDING); // Bắt buộc Manager duyệt mới chạy AI
+        }
 
         DocumentEntity saved = documentRepository.save(document);
 
@@ -108,9 +133,16 @@ public class DocumentServiceImpl implements DocumentService {
         auditEvent.setTargetId(saved.getId());
         eventPublisher.publishEvent(auditEvent);
 
-        // KHÔNG gọi pipeline ở đây. Manager sẽ duyệt (qua ManagerDocumentController)
-        // thì pipeline mới chạy
-        // documentProcessingService.process(saved.getId());
+        // Gửi thông báo
+        Long notifyDeptId = targetDeptId != null ? Long.valueOf(targetDeptId) : null;
+        String notifyTitle = (isAdmin || isManager) ? "Tài liệu mới" : "Tài liệu mới chờ duyệt";
+        notificationService.notifySystemAction(currentUser, notifyDeptId, notifyTitle,
+                "vừa tải lên tài liệu: " + file.getOriginalFilename(), isAdmin);
+
+        // Gọi pipeline xử lý AI nếu là ADMIN hoặc MANAGER up, còn User thì chờ Manager duyệt
+        if (isAdmin || isManager) {
+            documentProcessingService.process(saved.getId());
+        }
 
         return toResponse(saved, 0);
     }
@@ -141,19 +173,50 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
-    private String storeFile(MultipartFile file) {
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-            String uniqueName = UUID.randomUUID() + ".pdf";
-            Path targetPath = uploadPath.resolve(uniqueName);
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-            return targetPath.toString();
-        } catch (IOException e) {
-            throw new InvalidFileException("Lỗi khi lưu file: " + e.getMessage());
+    @Override
+    public ResponseInputStream<GetObjectResponse> downloadDocument(Long id, UsersEntity user, String requiredRole) {
+        DocumentEntity document = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy document id=" + id));
+
+        boolean hasAccess = checkDocumentAccess(document, user, requiredRole);
+        if (!hasAccess) {
+            throw new ForbiddenException("Bạn không có quyền " + requiredRole + " tài liệu này!");
         }
+
+        return storageService.downloadFile(document.getFilePath());
+    }
+
+    private boolean checkDocumentAccess(DocumentEntity document, UsersEntity user, String requiredRole) {
+        if (user.getRole() == UserRole.ADMIN) {
+            return true;
+        }
+
+        // Tài liệu dùng chung (departmentId IS NULL) thì ai cũng có quyền
+        if (document.getDepartmentId() == null) {
+            return true;
+        }
+
+        if (user.getDepartment() != null
+                && Long.valueOf(document.getDepartmentId()).equals(user.getDepartment().getId())) {
+            return true;
+        }
+
+        List<DocumentPermissionsEntity> permissions = documentPermissionsRepository
+                .findByDocumentIdWithDetails(document.getId());
+        for (DocumentPermissionsEntity p : permissions) {
+            if (Boolean.TRUE.equals(p.getIsPublicLink()) ||
+                    (p.getPermissionDepartmentId() != null && user.getDepartment() != null
+                            && p.getPermissionDepartmentId().getId().equals(user.getDepartment().getId()))) {
+
+                String role = p.getRole();
+                if ("DOWNLOAD".equals(role)) {
+                    return true;
+                } else if ("VIEW".equals(role) && "VIEW".equals(requiredRole)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private DocumentResponse toResponse(DocumentEntity document, int chunkCount) {
@@ -164,9 +227,16 @@ public class DocumentServiceImpl implements DocumentService {
                     .orElse(null);
         }
 
+        String uploadedByName = null;
+        if (document.getUploadedBy() != null) {
+            uploadedByName = usersRepository.findById(document.getUploadedBy())
+                    .map(com.javaweb.entity.UsersEntity::getFullName)
+                    .orElse(null);
+        }
+
         return new DocumentResponse(
                 document.getId(),
-                document.getFileName(),
+                document.getTitle() != null ? document.getTitle() : document.getFileName(),
                 document.getFileName(),
                 document.getStatus(),
                 document.getApprovalStatus() != null ? document.getApprovalStatus().name() : null, // DUYỆT
@@ -175,12 +245,19 @@ public class DocumentServiceImpl implements DocumentService {
                 document.getCreatedAt(),
                 document.getUpdatedAt(),
                 document.getDepartmentId(),
-                departmentName);
+                departmentName,
+                document.getUploadedBy(),
+                uploadedByName,
+                document.getFileSize(),
+                document.getFileType(),
+                document.getAiPurpose(),
+                document.getAiSummary(),
+                document.getAiTags());
     }
 
     @Override
     public Page<DocumentResponse> getAllDocuments(Pageable pageable) {
-        Page<DocumentEntity> documPage = documentRepository.findAll(pageable);
+        Page<DocumentEntity> documPage = documentRepository.findByDeletedAtIsNull(pageable);
 
         return documPage.map(doc -> {
             Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
@@ -190,7 +267,9 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public List<DocumentResponse> getPendingApprovals(Integer departmentId) {
-        List<DocumentEntity> pendingDocs = documentRepository.findByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(departmentId, ApprovalStatus.PENDING);
+        List<DocumentEntity> pendingDocs = documentRepository.findByDepartmentIdAndApprovalStatusInAndDeletedAtIsNull(
+                departmentId,
+                java.util.Collections.singletonList(ApprovalStatus.PENDING));
         return pendingDocs.stream()
                 .map(doc -> {
                     Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
@@ -206,11 +285,18 @@ public class DocumentServiceImpl implements DocumentService {
         Long deptIdLong = (user.getDepartment() != null) ? user.getDepartment().getId() : null;
         Integer deptIdInt = (deptIdLong != null) ? deptIdLong.intValue() : null;
 
+        // Lấy ID của user đang đăng nhập
+        Long currentId = user.getId();
+        boolean isManager = user.getRole().name().equals("MANAGER") || user.getRole().name().equals("ADMIN");
+
         Page<DocumentEntity> documPage;
         if (deptIdInt != null) {
-            documPage = documentRepository.findVisibleToDepartmentWithSharing(deptIdInt, deptIdLong, pageable);
+            documPage = documentRepository.findVisibleToDepartmentWithSharing(deptIdInt, deptIdLong, currentId,
+                    isManager,
+                    pageable);
         } else {
-            documPage = documentRepository.findVisibleToDepartmentWithSharing(null, null, pageable);
+            documPage = documentRepository.findVisibleToDepartmentWithSharing(null, null, currentId, isManager,
+                    pageable);
         }
 
         return documPage.map(doc -> {

@@ -8,4 +8,6 @@ import lombok.Setter;
 public class ShareDocumentRequest {
 
     private Long departmentId;
+    private String role;
+    private Boolean isPublicLink;
 }

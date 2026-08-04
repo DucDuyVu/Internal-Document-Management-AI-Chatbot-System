@@ -40,8 +40,9 @@ public class DashboardServiceImpl implements DashboardService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         UsersEntity user = usersRepository.findByUserName(username).orElse(null);
-        if (user == null) return null;
-        
+        if (user == null)
+            return null;
+
         Long userId = user.getId();
         Integer deptId = user.getDepartment() != null ? user.getDepartment().getId().intValue() : null;
         Long deptIdLong = user.getDepartment() != null ? user.getDepartment().getId() : null;
@@ -50,27 +51,29 @@ public class DashboardServiceImpl implements DashboardService {
         int viewCount = activityLogsRepository.countByUsersEntityId_IdAndAction(userId, "VIEW_DOCUMENT");
         int searchCount = activityLogsRepository.countByUsersEntityId_IdAndAction(userId, "SEARCH");
         int chatSessionCount = chatSessionsRepository.countByUserChatId_IdAndDeletedAtIsNull(userId);
-        
+
         // Document Count
         Pageable docPageable = PageRequest.of(0, 6);
         Page<DocumentEntity> docPage;
         int documentCount = 0;
-        
+
         if (user.getRole().name().equals("ADMIN")) {
             List<DocumentEntity> allDocs = documentRepository.findByDeletedAtIsNull();
             documentCount = allDocs.size();
             List<DocumentEntity> recentForAdmin = allDocs.stream()
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .limit(6)
-                .collect(Collectors.toList());
+                    .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                    .limit(6)
+                    .collect(Collectors.toList());
             docPage = new org.springframework.data.domain.PageImpl<>(recentForAdmin);
         } else {
-            docPage = documentRepository.findVisibleToDepartmentWithSharing(deptId, deptIdLong, docPageable);
+            boolean isManager = user.getRole().name().equals("MANAGER");
+            docPage = documentRepository.findVisibleToDepartmentWithSharing(deptId, deptIdLong, userId, isManager, docPageable);
             documentCount = (int) docPage.getTotalElements();
         }
 
         // Recent Activities
-        List<ActivityLogsEntity> recentActs = activityLogsRepository.findByUsersEntityId_IdOrderByCreatedAtDesc(userId, PageRequest.of(0, 8));
+        List<ActivityLogsEntity> recentActs = activityLogsRepository.findByUsersEntityId_IdOrderByCreatedAtDesc(userId,
+                PageRequest.of(0, 8));
         List<DashboardActivityDTO> recentActivities = recentActs.stream().map(a -> DashboardActivityDTO.builder()
                 .id(a.getId())
                 .action(a.getAction())
@@ -80,7 +83,8 @@ public class DashboardServiceImpl implements DashboardService {
                 .build()).collect(Collectors.toList());
 
         // Last Login
-        ActivityLogsEntity lastLogin = activityLogsRepository.findFirstByUsersEntityId_IdAndActionOrderByCreatedAtDesc(userId, "LOGIN").orElse(null);
+        ActivityLogsEntity lastLogin = activityLogsRepository
+                .findFirstByUsersEntityId_IdAndActionOrderByCreatedAtDesc(userId, "LOGIN").orElse(null);
 
         // Recent Documents
         List<DashboardDocumentDTO> recentDocuments = docPage.getContent().stream().map(d -> {
@@ -92,21 +96,21 @@ public class DashboardServiceImpl implements DashboardService {
                 }
             }
             return DashboardDocumentDTO.builder()
-                .id(d.getId())
-                .fileName(d.getFileName())
-                .fileType(d.getFileType())
-                .fileSize(d.getFileSize())
-                .status(d.getStatus().name())
-                .createdAt(d.getCreatedAt())
-                .departmentName(deptName)
-                .build();
+                    .id(d.getId())
+                    .fileName(d.getFileName())
+                    .fileType(d.getFileType())
+                    .fileSize(d.getFileSize())
+                    .status(d.getStatus().name())
+                    .createdAt(d.getCreatedAt())
+                    .departmentName(deptName)
+                    .build();
         }).collect(Collectors.toList());
         // Manager info
         boolean isManager = user.getRole() != null && user.getRole().name().equals("MANAGER");
         int managedEmployeeCount = 0;
         String departmentName = "";
         int activeSessionsCount = userSessionsRepository.countByUserIdAndIsRevokedFalse(user);
-        
+
         if (isManager && user.getDepartment() != null) {
             managedEmployeeCount = (int) usersRepository.countByDepartmentId(user.getDepartment().getId());
             departmentName = user.getDepartment().getName();
@@ -124,7 +128,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .managedEmployeeCount(managedEmployeeCount)
                 .departmentName(departmentName)
                 .pendingDocumentCount(0) // TODO: Implement when approval workflow is added
-                .pendingRequestCount(0)  // TODO: Implement when department requests are added
+                .pendingRequestCount(0) // TODO: Implement when department requests are added
                 .activeSessionsCount(activeSessionsCount)
                 .build();
     }

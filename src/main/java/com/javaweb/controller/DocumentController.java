@@ -16,6 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,6 +31,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.util.List;
 
@@ -70,7 +76,7 @@ public class DocumentController {
 
         DocumentUploadRequest request = new DocumentUploadRequest();
         request.setDepartmentId(departmentId);
-        
+
         // Giải pháp lai: Truyền cả request và currentUser xuống Service
         DocumentResponse response = documentService.uploadDocument(file, request, userDetails.getUser());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -109,6 +115,117 @@ public class DocumentController {
         return ResponseEntity.ok(documentService.getDocumentStatus(id));
     }
 
+    /**
+     * Tải xuống tài liệu.
+     */
+    @GetMapping("/{id}/download")
+    public ResponseEntity<?> download(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            ResponseInputStream<GetObjectResponse> inputStream = documentService.downloadDocument(id,
+                    userDetails.getUser(), "DOWNLOAD");
+            GetObjectResponse response = inputStream.response();
+
+            String contentType = response.contentType();
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            DocumentResponse document = documentService.getDocumentStatus(id);
+            String fileName = document.getFileName();
+
+            String encodedFileName = java.net.URLEncoder
+                    .encode(fileName, java.nio.charset.StandardCharsets.UTF_8.toString()).replaceAll("\\+", "%20");
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName)
+                    .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
+                    .body(new InputStreamResource(inputStream));
+        } catch (NoSuchKeyException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Lỗi: Không tìm thấy file vật lý trên hệ thống MinIO.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi máy chủ khi tải file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Xem trực tiếp tài liệu trên trình duyệt.
+     */
+    @GetMapping("/{id}/view")
+    public ResponseEntity<?> view(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            ResponseInputStream<GetObjectResponse> inputStream = documentService.downloadDocument(id,
+                    userDetails.getUser(), "VIEW");
+            GetObjectResponse response = inputStream.response();
+
+            DocumentResponse document = documentService.getDocumentStatus(id);
+            String fileName = document.getFileName();
+
+            String contentType = response.contentType();
+            if (contentType == null || contentType.equals("application/octet-stream")) {
+                if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
+                    contentType = "application/pdf";
+                } else {
+                    contentType = "application/octet-stream";
+                }
+            }
+
+            String encodedFileName = java.net.URLEncoder
+                    .encode(fileName, java.nio.charset.StandardCharsets.UTF_8.toString()).replaceAll("\\+", "%20");
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, 
+                            "inline; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName)
+                    .body(new InputStreamResource(inputStream));
+        } catch (NoSuchKeyException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Lỗi: Không tìm thấy file vật lý trên hệ thống MinIO.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi máy chủ khi xem file: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Xóa tài liệu (dành cho người tạo)
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteMyDocument(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            documentService.deleteDocument(id, userDetails.getUser().getId());
+            return ResponseEntity.ok("Đã thu hồi tài liệu thành công.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     // Trả về danh sách tất cả các quyền (cho Admin Dashboard)
     @GetMapping("/permissions")
     public ResponseEntity<List<DocumentPermissionResponse>> getAllPermissions(
@@ -140,7 +257,7 @@ public class DocumentController {
     public ResponseEntity<DocumentPermissionResponse> shareDocument(@PathVariable Long docId,
             @RequestBody ShareDocumentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        DocumentPermissionResponse result = documentPermissionService.share(docId, request.getDepartmentId(),
+        DocumentPermissionResponse result = documentPermissionService.share(docId, request,
                 userDetails.getUser());
         // status : 201 Created - để FE có thể thêm luôn vào danh sách hiển thị mà không
         // cần gọi lại API GET.

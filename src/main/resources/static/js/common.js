@@ -798,137 +798,413 @@ function getDocStatusBadge(status) {
 }
 
 function renderDocumentDetailModal(doc) {
-    const style = getDocFileStyle(doc.fileType);
-    const statusBadge = getDocStatusBadge(doc.status);
-    const canDownload = doc.canDownload !== false; // default true if field absent
+    const canDownload = doc.canDownload !== false;
     const isCompleted = doc.status === 'COMPLETED';
     const isAdmin = window.location.pathname.includes('/admin/');
+    const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || '');
 
-    // Add keyframe styles if not already added
-    if (!document.getElementById('docModalStyles')) {
+    // Add keyframe styles and global modal styles if not already added
+    if (!document.getElementById('docModalStylesV2')) {
         const styleEl = document.createElement('style');
-        styleEl.id = 'docModalStyles';
+        styleEl.id = 'docModalStylesV2';
         styleEl.textContent = `
             @keyframes fadeInBackdrop { from { opacity:0; } to { opacity:1; } }
             @keyframes slideInModal { from { opacity:0; transform:translateY(-24px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-            @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
-            #docDetailModal .doc-action-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:8px; font-size:0.875rem; font-weight:600; cursor:pointer; border:none; transition:all 0.2s; text-decoration:none; }
-            #docDetailModal .doc-action-btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-            #docDetailModal .doc-info-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f3f4f6; font-size:0.875rem; }
-            #docDetailModal .doc-info-row:last-child { border-bottom:none; }
+            .modal-tab-btn { background:none; border:none; padding:12px 16px; font-size:0.9rem; font-weight:600; color:#64748b; cursor:pointer; border-bottom:3px solid transparent; transition:all 0.2s; display:flex; align-items:center; gap:8px; white-space:nowrap; font-family:inherit; }
+            .modal-tab-btn:hover { color:#4f46e5; }
+            .modal-tab-btn.active { color:#4f46e5; border-bottom-color:#4f46e5; }
+            .modal-tab-content { display:none; padding:24px; animation:fadeInBackdrop 0.3s ease; }
+            .modal-tab-content.active { display:block; }
+            .modal-tab-content.active.flex-layout { display:flex; flex-direction:column; }
+            .timeline-step { display:flex; gap:16px; position:relative; padding-bottom:32px; }
+            .timeline-step::before { content:''; position:absolute; left:15px; top:32px; bottom:0; width:2px; background:#e2e8f0; }
+            .timeline-step:last-child::before { display:none; }
+            .timeline-step:last-child { padding-bottom:0; }
+            .timeline-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; z-index:1; font-size:0.9rem; }
+            .timeline-icon.done { background:#10b981; }
+            .timeline-icon.wait { background:#f59e0b; }
+            .timeline-icon.failed { background:#ef4444; }
+            .timeline-icon.pending { background:#cbd5e1; }
+            .timeline-content { flex:1; padding-top:4px; }
+            .doc-action-btn-v2 { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer; border:none; transition:all 0.2s; text-decoration:none; font-family:inherit; }
+            .doc-action-btn-v2:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
         `;
         document.head.appendChild(styleEl);
     }
 
-    const modalHTML = `
-    <div id="docDetailModal" style="position:fixed;inset:0;z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding:4vh 16px;overflow-y:auto;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);animation:fadeInBackdrop 0.25s ease;">
-        <div style="width:680px;max-width:100%;background:#ffffff;border-radius:16px;box-shadow:0 24px 48px rgba(0,0,0,0.18);overflow:hidden;animation:slideInModal 0.3s cubic-bezier(.16,1,.3,1);">
+    const docIdCode = 'DOC-' + String(doc.id).padStart(4, '0');
+    const uploader = doc.uploadedByName || doc.author || '—';
+    const dept = doc.departmentName || 'Chung';
+    
+    let typeLabel = 'Tài liệu';
+    const fName = (doc.fileName || '').toLowerCase();
+    if (fName.includes('hợp đồng')) typeLabel = 'Hợp đồng';
+    else if (fName.includes('tờ trình')) typeLabel = 'Tờ trình';
+    else if (fName.includes('quyết định')) typeLabel = 'Quyết định';
 
+    let aiStatusBadge = '';
+    let aiPlaceholder = '';
+    if (doc.status === 'COMPLETED') {
+        aiStatusBadge = '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Đã xử lý 100%</span>';
+        aiPlaceholder = 'Không có dữ liệu trích xuất.';
+    } else if (doc.status === 'PROCESSING') {
+        aiStatusBadge = '<span style="background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;"><i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...</span>';
+        aiPlaceholder = 'Hệ thống AI đang tiến hành trích xuất dữ liệu...';
+    } else if (doc.status === 'FAILED') {
+        aiStatusBadge = '<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Lỗi xử lý</span>';
+        aiPlaceholder = 'Quá trình trích xuất gặp lỗi.';
+    } else {
+        aiStatusBadge = '<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Chưa kích hoạt</span>';
+        aiPlaceholder = 'AI sẽ tự động kích hoạt sau khi tài liệu được phê duyệt.';
+    }
+
+    // Dynamic Workflow Variables
+    let wfProgress = '33%';
+    let wfStep2Status = 'Chờ duyệt';
+    let wfStep2Color = '#d97706';
+    let wfStep2IconClass = 'wait';
+    let wfStep2Icon = 'fa-hourglass-half';
+    let wfStep2Desc = 'Yêu cầu quản lý phòng ban xác nhận tính hợp lệ.';
+    
+    let wfStep3Status = 'Chưa bắt đầu';
+    let wfStep3Color = '#64748b';
+    let wfStep3IconClass = 'pending';
+    let wfStep3Icon = 'fa-minus';
+    let wfStep3Desc = 'Hệ thống AI chờ tài liệu được duyệt để trích xuất dữ liệu.';
+
+    if (doc.approvalStatus === 'APPROVED') {
+        wfProgress = '66%';
+        wfStep2Status = 'Đã duyệt';
+        wfStep2Color = '#10b981';
+        wfStep2IconClass = 'done';
+        wfStep2Icon = 'fa-check';
+        wfStep2Desc = 'Quản lý phòng ban đã phê duyệt tài liệu.';
+        
+        wfStep3Status = 'Chờ xử lý';
+        wfStep3Icon = 'fa-hourglass-half';
+        wfStep3IconClass = 'wait';
+        wfStep3Color = '#d97706';
+        wfStep3Desc = 'Đang chờ hệ thống AI tiếp nhận và xử lý.';
+        
+        if (doc.status === 'PROCESSING') {
+            wfProgress = '80%';
+            wfStep3Status = 'Đang xử lý AI...';
+            wfStep3Icon = 'fa-spinner fa-spin';
+        } else if (doc.status === 'COMPLETED') {
+            wfProgress = '100%';
+            wfStep3Status = 'Hoàn tất';
+            wfStep3Color = '#10b981';
+            wfStep3IconClass = 'done';
+            wfStep3Icon = 'fa-check';
+            wfStep3Desc = 'AI đã phân tích và trích xuất dữ liệu thành công.';
+        } else if (doc.status === 'FAILED') {
+            wfProgress = '66%';
+            wfStep3Status = 'Lỗi xử lý';
+            wfStep3Color = '#ef4444';
+            wfStep3IconClass = 'failed';
+            wfStep3Icon = 'fa-xmark';
+            wfStep3Desc = 'Có lỗi xảy ra trong quá trình AI phân tích.';
+        }
+    } else if (doc.approvalStatus === 'REJECTED') {
+        wfProgress = '33%';
+        wfStep2Status = 'Đã từ chối';
+        wfStep2Color = '#ef4444';
+        wfStep2IconClass = 'failed';
+        wfStep2Icon = 'fa-xmark';
+        wfStep2Desc = 'Quản lý đã từ chối tài liệu này.';
+        wfStep3Desc = 'Quy trình đã bị hủy do tài liệu bị từ chối.';
+    }
+
+    const modalHTML = `
+    <div id="docDetailModal" style="position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:2vh 16px;background:rgba(15, 23, 42, 0.6);backdrop-filter:blur(4px);animation:fadeInBackdrop 0.25s ease;">
+        <div style="width:1000px;max-width:100%;height:90vh;max-height:850px;background:#ffffff;border-radius:16px;box-shadow:0 24px 48px rgba(0,0,0,0.18);overflow:hidden;animation:slideInModal 0.3s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;">
+            
             <!-- Header -->
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #f3f4f6;">
-                <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
-                    <div style="width:48px;height:48px;border-radius:12px;background:${style.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <i class="fa-solid ${style.icon}" style="font-size:1.4rem;color:${style.color};"></i>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <div style="display:flex;align-items:flex-start;gap:16px;flex:1;min-width:0;">
+                    <div style="width:56px;height:56px;border-radius:16px;background:#4f46e5;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(79, 70, 229, 0.3);">
+                        <i class="fa-solid fa-file-lines" style="font-size:1.8rem;color:#ffffff;"></i>
                     </div>
                     <div style="min-width:0;">
-                        <div style="font-size:1rem;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px;" title="${escapeHtml(doc.fileName)}">${escapeHtml(doc.fileName)}</div>
-                        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
-                            <span style="background:${style.bg};color:${style.color};padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:700;letter-spacing:0.5px;">${(doc.fileType || 'FILE').toUpperCase()}</span>
-                            <span style="width:6px;height:6px;border-radius:50%;background:${statusBadge.dot};display:inline-block;"></span>
-                            <span style="font-size:0.8rem;font-weight:600;color:${statusBadge.color};">${statusBadge.label}</span>
+                        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
+                            <span style="background:#f1f5f9;color:#475569;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">${docIdCode}</span>
+                            <span style="background:${doc.approvalStatus === 'APPROVED' ? '#dcfce7' : (doc.approvalStatus === 'REJECTED' ? '#fee2e2' : '#fef3c7')};color:${doc.approvalStatus === 'APPROVED' ? '#166534' : (doc.approvalStatus === 'REJECTED' ? '#ef4444' : '#d97706')};padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">${doc.approvalStatus === 'APPROVED' ? 'Đã duyệt' : (doc.approvalStatus === 'REJECTED' ? 'Cần sửa đổi' : 'Chờ duyệt')}</span>
+                            <span style="background:#e0e7ff;color:#4338ca;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">${typeLabel}</span>
+                            <span style="color:#94a3b8;font-size:0.75rem;font-weight:600;text-transform:uppercase;">${doc.fileType || 'APPLICATION/PDF'} • ${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</span>
+                        </div>
+                        <h2 style="font-size:1.4rem;font-weight:800;color:#0f172a;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(doc.fileName)}">${escapeHtml(doc.fileName)}</h2>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('docDetailModal').remove()" style="width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#94a3b8;transition:all 0.2s;flex-shrink:0;" onmouseover="this.style.background='#f1f5f9';this.style.color='#0f172a'">✕</button>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div style="display:flex;padding:0 24px;border-bottom:1px solid #e2e8f0;background:#f8fafc;overflow-x:auto;">
+                <button class="modal-tab-btn active" onclick="switchDocDetailTab('tab-ai-ocr', this)"><i class="fa-solid fa-wand-magic-sparkles"></i> Trích Xuất AI OCR & Tóm Tắt</button>
+                <button class="modal-tab-btn" onclick="switchDocDetailTab('tab-preview', this)"><i class="fa-regular fa-eye"></i> Xem Trước Tài Liệu</button>
+                <button class="modal-tab-btn" onclick="switchDocDetailTab('tab-workflow', this)"><i class="fa-solid fa-code-branch"></i> Nhật Ký Phê Duyệt</button>
+                ${(() => {
+                    try {
+                        const userStr = localStorage.getItem('user');
+                        if (userStr) {
+                            const u = JSON.parse(userStr);
+                            const isSystemAdmin = u.role === 'ADMIN' || (u.roles && u.roles.includes('ROLE_ADMIN'));
+                            const isOwnerManager = (u.role === 'MANAGER' || (u.roles && u.roles.includes('ROLE_MANAGER'))) && doc.departmentId && u.departmentId === doc.departmentId;
+                            if (isSystemAdmin || isOwnerManager || isAdmin) {
+                                return `<button class="modal-tab-btn" onclick="switchDocDetailTab('tab-security', this)"><i class="fa-solid fa-lock"></i> Phân Quyền & Bảo Mật</button>`;
+                            }
+                        }
+                    } catch(e){}
+                    return '';
+                })()}
+            </div>
+
+            <!-- Tabs Content Area -->
+            <div style="flex:1;overflow-y:auto;background:#ffffff;">
+                
+                <!-- TAB 1: AI OCR -->
+                <div id="tab-ai-ocr" class="modal-tab-content active">
+                    <div style="background:linear-gradient(to right, #f3e8ff, #faf5ff);border-radius:12px;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+                        <div style="display:flex;align-items:center;gap:16px;">
+                            <div style="width:40px;height:40px;background:#a855f7;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:1.2rem;">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                            <div>
+                                <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+                                    <span style="font-weight:800;color:#6b21a8;font-size:1rem;">IDMS AI OCR Engine (Gemini 2.5 Flash)</span>
+                                    ${aiStatusBadge}
+                                </div>
+                                <div style="font-size:0.85rem;color:#7e22ce;font-weight:500;">Tự động trích xuất cấu trúc văn bản, nhận diện từ khóa chính và rà soát độ chính xác 99.8%.</div>
+                            </div>
+                        </div>
+                        ${doc.status === 'FAILED' ? `<button onclick="retryOCR(${doc.id})" style="background:#9333ea;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Tải lại kết quả OCR</button>` : ''}
+                    </div>
+
+                    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                        <!-- Left: AI Summary Mockup -->
+                        <div style="flex:2;min-width:300px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:24px;">
+                            <div style="font-size:1rem;font-weight:800;color:#4f46e5;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> BẢN TÓM TẮT TRỌNG TÂM TỪ AI
+                            </div>
+                            
+                            ${doc.status === 'FAILED' && doc.errorMessage ? `
+                            <div style="background:#fee2e2; border-left:4px solid #ef4444; padding:16px; border-radius:8px; margin-bottom:20px; color:#991b1b; font-size:0.95rem;">
+                                <strong><i class="fa-solid fa-triangle-exclamation"></i> Chi tiết lỗi từ hệ thống AI:</strong><br/>
+                                <span style="font-family:monospace; margin-top:8px; display:inline-block; font-size:0.85rem;">${escapeHtml(doc.errorMessage)}</span>
+                            </div>
+                            ` : ''}
+
+                            <ul style="padding-left:16px;margin:0;color:#334155;font-size:0.95rem;line-height:1.7;font-weight:500;">
+                                <li style="margin-bottom:12px;"><b>Mục đích:</b> ${doc.aiPurpose ? escapeHtml(doc.aiPurpose) : aiPlaceholder}</li>
+                                <li style="margin-bottom:12px;"><b>Nội dung chính:</b> ${doc.aiSummary ? escapeHtml(doc.aiSummary) : aiPlaceholder}</li>
+                            </ul>
+                            <div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap;">
+                                ${doc.aiTags ? doc.aiTags.split(' ').filter(t=>t.trim()!=='').map(t => `<span style="background:#e0e7ff;color:#4f46e5;padding:6px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;"><i class="fa-solid fa-tag"></i> ${escapeHtml(t)}</span>`).join('') : `<span style="color:#94a3b8;font-size:0.85rem;font-style:italic;">${aiPlaceholder}</span>`}
+                            </div>
+                        </div>
+
+                        <!-- Right: File Info -->
+                        <div style="flex:1;min-width:250px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;">
+                            <div style="font-size:0.95rem;font-weight:800;color:#475569;text-transform:uppercase;margin-bottom:20px;">THÔNG TIN TỆP TIN</div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:0.9rem;">
+                                <span style="color:#64748b;font-weight:500;">Kích thước:</span>
+                                <span style="color:#0f172a;font-weight:700;">${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:0.9rem;">
+                                <span style="color:#64748b;font-weight:500;">Phòng ban:</span>
+                                <span style="color:#0f172a;font-weight:700;">${escapeHtml(dept)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:0.9rem;">
+                                <span style="color:#64748b;font-weight:500;">Người upload:</span>
+                                <span style="color:#0f172a;font-weight:700;">${escapeHtml(uploader)}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:0.9rem;">
+                                <span style="color:#64748b;font-weight:500;">Ngày tạo:</span>
+                                <span style="color:#0f172a;font-weight:700;">${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:0.9rem;">
+                                <span style="color:#64748b;font-weight:500;">Phiên bản:</span>
+                                <span style="color:#0f172a;font-weight:700;">v${doc.version || 1}.0 (Bản gốc)</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:0.9rem;">
+                                <span style="color:#64748b;font-weight:500;">Cấp bảo mật:</span>
+                                <span style="color:#d97706;font-weight:800;">Nội bộ</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <button onclick="document.getElementById('docDetailModal').remove()" style="width:36px;height:36px;border-radius:50%;border:none;background:#f3f4f6;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#6b7280;transition:all 0.2s;flex-shrink:0;" onmouseover="this.style.background='#e5e7eb';this.style.color='#111827'" onmouseout="this.style.background='#f3f4f6';this.style.color='#6b7280'">✕</button>
-            </div>
 
-            <!-- Preview Area -->
-            <div style="background:${style.gradient};padding:48px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border-bottom:1px solid #f3f4f6;">
-                <div style="width:80px;height:80px;border-radius:20px;background:white;box-shadow:0 8px 24px rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;">
-                    <i class="fa-solid ${style.icon}" style="font-size:2.5rem;color:${style.color};"></i>
-                </div>
-                <div style="font-size:0.8rem;color:#9ca3af;font-weight:500;">
-                    ${isCompleted ? '✅ Đã xử lý & sẵn sàng để hỏi AI' : '⏳ Tài liệu chưa hoàn thành xử lý'}
-                </div>
-                ${doc.errorMessage ? `<div style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:10px 16px;font-size:0.8rem;color:#991b1b;max-width:500px;text-align:center;">⚠️ ${escapeHtml(doc.errorMessage)}</div>` : ''}
-            </div>
-
-            <!-- Body: 2-column info grid -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-                <!-- Left: Thông tin cơ bản -->
-                <div style="padding:20px 24px;border-right:1px solid #f3f4f6;">
-                    <div style="font-size:0.75rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;"><i class="fa-regular fa-file-lines"></i> Thông tin</div>
-                    <div class="doc-info-row">
-                        <span style="color:#6b7280;">Kích thước</span>
-                        <span style="font-weight:600;color:#111827;">${formatFileSize(doc.fileSize)}</span>
-                    </div>
-                    <div class="doc-info-row">
-                        <span style="color:#6b7280;">Phòng ban</span>
-                        <span style="font-weight:600;color:#111827;">${escapeHtml(doc.departmentName || 'Toàn công ty')}</span>
-                    </div>
-                    <div class="doc-info-row">
-                        <span style="color:#6b7280;">Người upload</span>
-                        <span style="font-weight:600;color:#111827;">${escapeHtml(doc.uploaderName || '—')}</span>
-                    </div>
-                    <div class="doc-info-row">
-                        <span style="color:#6b7280;">Ngày tạo</span>
-                        <span style="font-weight:600;color:#111827;">${formatDate(doc.createdAt)}</span>
-                    </div>
-                    <div class="doc-info-row">
-                        <span style="color:#6b7280;">Phiên bản</span>
-                        <span style="font-weight:600;color:#111827;">v${doc.version || 1}</span>
-                    </div>
-                    ${isAdmin ? `<div class="doc-info-row">
-                        <span style="color:#6b7280;">Chunks AI</span>
-                        <span style="font-weight:600;color:#111827;">${doc.chunkCount || 0} đoạn</span>
-                    </div>` : ''}
-                </div>
-
-                <!-- Right: Quyền truy cập -->
-                <div style="padding:20px 24px;">
-                    <div style="font-size:0.75rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;"><i class="fa-solid fa-shield-halved"></i> Quyền truy cập</div>
-                    ${doc.permissionType ? `
-                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:12px;">
-                        <div style="font-size:0.75rem;font-weight:700;color:#92400e;margin-bottom:4px;">
-                            ${doc.permissionType === 'OWNER' ? '👑 Chủ sở hữu' : doc.permissionType === 'EDIT' ? '✏️ Có thể chỉnh sửa' : '👁️ Chỉ xem · được chia sẻ'}
+                <!-- TAB 2: Xem Trước Tài Liệu -->
+                <div id="tab-preview" class="modal-tab-content flex-layout" style="padding:0;height:100%;">
+                    <div style="display:flex;justify-content:space-between;padding:12px 24px;border-bottom:1px solid #e2e8f0;background:#f8fafc;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <button style="background:white;border:1px solid #cbd5e1;border-radius:6px;padding:4px 12px;cursor:pointer;color:#475569;font-weight:600;">&lt; Trang 1 &gt;</button>
                         </div>
-                        ${doc.sharedBy ? `<div style="font-size:0.8rem;color:#78350f;">Chia sẻ bởi: <strong>${escapeHtml(doc.sharedBy)}</strong></div>` : ''}
-                        ${doc.sharedAt ? `<div style="font-size:0.8rem;color:#78350f;">Ngày chia sẻ: ${formatDate(doc.sharedAt)}</div>` : ''}
-                    </div>` : `
-                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-bottom:12px;">
-                        <div style="font-size:0.75rem;font-weight:700;color:#065f46;">👑 Tài liệu của bạn</div>
-                        <div style="font-size:0.8rem;color:#047857;margin-top:2px;">Bạn là chủ sở hữu</div>
-                    </div>`}
-                    ${doc.sharedWithDepartments && doc.sharedWithDepartments.length > 0 ? `
-                    <div style="font-size:0.75rem;color:#6b7280;margin-bottom:6px;">Đã chia sẻ với:</div>
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                        ${doc.sharedWithDepartments.map(d => `<span style="background:#eef2ff;color:#4338ca;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">${escapeHtml(d)}</span>`).join('')}
-                    </div>` : `<div style="font-size:0.8rem;color:#9ca3af;">Chưa chia sẻ với phòng ban nào</div>`}
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <button style="background:white;border:1px solid #cbd5e1;border-radius:6px;width:32px;height:32px;cursor:pointer;color:#475569;font-weight:600;"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                            <span style="font-weight:700;color:#0f172a;font-size:0.9rem;">100%</span>
+                            <button style="background:white;border:1px solid #cbd5e1;border-radius:6px;width:32px;height:32px;cursor:pointer;color:#475569;font-weight:600;"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                        </div>
+                    </div>
+                    <div style="flex:1;background:#e2e8f0;padding:24px;overflow-y:auto;display:flex;justify-content:center;">
+                        <!-- Using API Endpoint to view PDF directly in Modal -->
+                        <iframe src="/api/documents/${doc.id}/view?token=${token}" style="width:100%;max-width:850px;height:100%;min-height:500px;border:none;background:white;box-shadow:0 10px 25px rgba(0,0,0,0.1);border-radius:8px;"></iframe>
+                    </div>
                 </div>
+
+                <!-- TAB 3: Nhật Ký Phê Duyệt -->
+                <div id="tab-workflow" class="modal-tab-content">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #e2e8f0;">
+                        <h3 style="margin:0;font-size:1.1rem;font-weight:800;color:#4f46e5;text-transform:uppercase;"><i class="fa-regular fa-file-lines"></i> TIẾN ĐỘ QUY TRÌNH & NHẬT KÝ</h3>
+                        <span style="font-weight:800;color:#6b21a8;">Tiến độ: ${wfProgress}</span>
+                    </div>
+                    <div style="padding:0 16px;">
+                        <!-- Step 1 -->
+                        <div class="timeline-step">
+                            <div class="timeline-icon done"><i class="fa-solid fa-check"></i></div>
+                            <div class="timeline-content">
+                                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                    <div style="font-weight:800;color:#0f172a;">1. Tải lên hệ thống</div>
+                                    <div style="font-weight:700;color:#10b981;">Hoàn tất</div>
+                                </div>
+                                <div style="color:#64748b;font-size:0.9rem;font-weight:500;">Tác giả ${uploader} đã tải file vào kho lưu trữ bảo mật.</div>
+                            </div>
+                        </div>
+                        <!-- Step 2 -->
+                        <div class="timeline-step">
+                            <div class="timeline-icon ${wfStep2IconClass}"><i class="fa-solid ${wfStep2Icon}"></i></div>
+                            <div class="timeline-content">
+                                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                    <div style="font-weight:800;color:#0f172a;">2. Quản lý phê duyệt</div>
+                                    <div style="font-weight:700;color:${wfStep2Color};">${wfStep2Status}</div>
+                                </div>
+                                <div style="color:#64748b;font-size:0.9rem;font-weight:500;">${wfStep2Desc}</div>
+                            </div>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="timeline-step">
+                            <div class="timeline-icon ${wfStep3IconClass}"><i class="fa-solid ${wfStep3Icon}"></i></div>
+                            <div class="timeline-content">
+                                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                    <div style="font-weight:800;color:#0f172a;">3. AI phân tích & trích xuất</div>
+                                    <div style="font-weight:700;color:${wfStep3Color};">${wfStep3Status}</div>
+                                </div>
+                                <div style="color:#64748b;font-size:0.9rem;font-weight:500;">${wfStep3Desc}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: Phân Quyền & Bảo Mật -->
+                ${(() => {
+                    try {
+                        const userStr = localStorage.getItem('user');
+                        if (userStr) {
+                            const u = JSON.parse(userStr);
+                            const isSystemAdmin = u.role === 'ADMIN' || (u.roles && u.roles.includes('ROLE_ADMIN'));
+                            const isOwnerManager = (u.role === 'MANAGER' || (u.roles && u.roles.includes('ROLE_MANAGER'))) && doc.departmentId && u.departmentId === doc.departmentId;
+                            if (isSystemAdmin || isOwnerManager || isAdmin) {
+                                return `
+                                <div id="tab-security" class="modal-tab-content">
+                                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;margin-bottom:24px;">
+                                        <div style="width:36px;height:36px;border-radius:50%;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.1rem;flex-shrink:0;">
+                                            <i class="fa-solid fa-shield-halved"></i>
+                                        </div>
+                                        <div>
+                                            <div style="font-weight:800;color:#065f46;margin-bottom:4px;font-size:1rem;">👑 Tài liệu thuộc quyền quản lý của bạn</div>
+                                            <div style="color:#047857;font-size:0.9rem;font-weight:500;">Bạn đang có quyền truy cập toàn diện. Bạn có đầy đủ quyền Xem, Tải xuống, Chỉnh sửa phân quyền và Phê duyệt.</div>
+                                        </div>
+                                    </div>
+
+                                    <div style="border:1px solid #e2e8f0;border-radius:16px;padding:24px;">
+                                        <div style="font-weight:700;color:#0f172a;margin-bottom:16px;">Danh sách phòng ban được chia sẻ:</div>
+                                        ${doc.sharedWithDepartments && doc.sharedWithDepartments.length > 0 ? doc.sharedWithDepartments.map(d => `
+                                            <div style="border:1px solid #cbd5e1;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                                <span style="font-weight:600;color:#334155;">${escapeHtml(d)}</span>
+                                                <span style="background:#eef2ff;color:#4f46e5;padding:4px 12px;border-radius:6px;font-weight:700;font-size:0.85rem;">Quyền xem & Đóng góp</span>
+                                            </div>
+                                        `).join('') : `
+                                            <div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;color:#64748b;font-weight:500;">
+                                                Chưa có phòng ban nào được chia sẻ quyền truy cập.
+                                            </div>
+                                        `}
+                                    </div>
+                                </div>
+                                `;
+                            }
+                        }
+                    } catch(e){}
+                    return '';
+                })()}
+
             </div>
 
             <!-- Footer Actions -->
-            <div style="padding:16px 24px;border-top:1px solid #f3f4f6;display:flex;gap:10px;align-items:center;background:#fafafa;">
-                ${isCompleted ? `<button class="doc-action-btn" onclick="askAIAboutDocument(${doc.id}, '${escapeHtml(doc.fileName)}')" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;"><i class="fa-solid fa-robot"></i> Hỏi AI</button>` : ''}
-                ${canDownload ? `<button class="doc-action-btn" onclick="downloadDocumentById(${doc.id})" style="background:#111827;color:white;"><i class="fa-solid fa-download"></i> Tải xuống</button>` : ''}
-                <button class="doc-action-btn" onclick="copyDocumentLink(${doc.id})" style="background:white;color:#374151;border:1px solid #e5e7eb;"><i class="fa-regular fa-copy"></i> Copy link</button>
-                <div style="flex:1;"></div>
-                ${isAdmin ? `<button class="doc-action-btn" onclick="viewDocumentInAdmin(${doc.id})" style="background:white;color:#4f46e5;border:1px solid #4f46e5;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Quản lý</button>` : ''}
+            <div style="padding:16px 24px;border-top:1px solid #e2e8f0;background:#ffffff;display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;gap:12px;">
+                    <button class="doc-action-btn-v2" onclick="viewDocumentInline(${doc.id})" style="background:white;color:#475569;border:1px solid #cbd5e1;"><i class="fa-regular fa-eye"></i> Xem</button>
+                    ${canDownload ? `<button class="doc-action-btn-v2" onclick="downloadDocumentById(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" style="background:white;color:#475569;border:1px solid #cbd5e1;"><i class="fa-solid fa-download"></i> Tải xuống</button>` : ''}
+                    <button class="doc-action-btn-v2" onclick="copyDocumentLink(${doc.id})" style="background:white;color:#475569;border:1px solid #cbd5e1;"><i class="fa-regular fa-copy"></i> Copy link</button>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <!-- Added Approve button for Manager if document is pending -->
+                    ${(() => {
+                        try {
+                            const currentUser = JSON.parse(localStorage.getItem('user'));
+                            const isManagerRole = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_MANAGER');
+                            if (isManagerRole && doc.approvalStatus === 'PENDING') {
+                                return `
+                                    <button class="doc-action-btn-v2" onclick="document.getElementById('docDetailModal').remove(); typeof approveDocument === 'function' ? approveDocument(${doc.id}) : null" style="background:#10b981;color:white;border:none;"><i class="fa-regular fa-circle-check"></i> Phê Duyệt Ngay</button>
+                                `;
+                            }
+                        } catch(e){}
+                        return '';
+                    })()}
+                    <button class="doc-action-btn-v2" onclick="document.getElementById('docDetailModal').remove()" style="background:white;color:#475569;border:1px solid #cbd5e1;">Đóng</button>
+                </div>
             </div>
+
         </div>
     </div>`;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // Click outside to close
-    document.getElementById('docDetailModal').addEventListener('click', function(e) {
-        if (e.target === this) this.remove();
-    });
 }
 
-function downloadDocumentById(docId) {
-    const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : '';
-    window.open(`${API_BASE}/api/documents/${docId}/download?token=${token}`, '_blank');
+window.switchDocDetailTab = function(tabId, btn) {
+    const modal = document.getElementById('docDetailModal');
+    if (!modal) return;
+    
+    // Hide all contents
+    const contents = modal.querySelectorAll('.modal-tab-content');
+    contents.forEach(c => c.classList.remove('active'));
+    
+    // Remove active from buttons
+    const btns = modal.querySelectorAll('.modal-tab-btn');
+    btns.forEach(b => b.classList.remove('active'));
+    
+    // Activate target
+    const target = modal.querySelector('#' + tabId);
+    if (target) target.classList.add('active');
+    if (btn) btn.classList.add('active');
+};
+
+function downloadDocumentById(docId, fileName) {
+    const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || '');
+    const downloadUrl = `${API_BASE}/api/documents/${docId}/download?token=${token}`;
+
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    if (fileName) {
+        a.download = fileName;
+    }
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function viewDocumentInline(docId) {
+    const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || '');
+    window.open(`${API_BASE}/api/documents/${docId}/view?token=${token}`, '_blank');
 }
 
 function copyDocumentLink(docId) {
@@ -938,6 +1214,54 @@ function copyDocumentLink(docId) {
     }).catch(() => {
         if (typeof showToast !== 'undefined') showToast('Không thể copy link', 'error');
     });
+}
+
+window.retryOCR = async function(docId) {
+    if(!confirm("Bạn có chắc chắn muốn chạy lại quá trình phân tích AI (OCR) cho tài liệu này?")) return;
+    
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) throw new Error("Chưa đăng nhập.");
+        const user = JSON.parse(userStr);
+        const roles = user.roles || (user.role ? [user.role] : []);
+        
+        let endpoint = '';
+        if (roles.includes('ROLE_ADMIN') || roles.includes('ADMIN')) {
+            endpoint = `/api/admin/documents/${docId}/retry`;
+        } else if (roles.includes('ROLE_MANAGER') || roles.includes('MANAGER')) {
+            endpoint = `/api/manager/documents/${docId}/retry`;
+        } else {
+            throw new Error("Bạn không có quyền thực hiện chức năng này.");
+        }
+        
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || '');
+        const res = await fetch(endpoint, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const msg = await res.text();
+        if (res.ok) {
+            if (typeof showToast !== 'undefined') showToast("Đã gửi yêu cầu xử lý lại thành công!", "success");
+            else alert("Đã gửi yêu cầu xử lý lại thành công!");
+            
+            const modal = document.getElementById('docDetailModal');
+            if(modal) modal.remove();
+            
+            if (typeof fetchDocuments === 'function') fetchDocuments();
+            else if (typeof fetchUserDocuments === 'function') fetchUserDocuments();
+            else window.location.reload();
+        } else {
+            if (typeof showToast !== 'undefined') showToast(msg || "Lỗi khi gửi yêu cầu", "error");
+            else alert("Lỗi: " + msg);
+        }
+    } catch(e) {
+        console.error(e);
+        if (typeof showToast !== 'undefined') showToast(e.message, "error");
+        else alert(e.message);
+    }
 }
 
 function askAIAboutDocument(docId, fileName) {
@@ -968,6 +1292,7 @@ function viewDocumentInAdmin(docId) {
 // Make globally available
 window.openDocumentDetail = openDocumentDetail;
 window.downloadDocumentById = downloadDocumentById;
+window.viewDocumentInline = viewDocumentInline;
 window.copyDocumentLink = copyDocumentLink;
 window.askAIAboutDocument = askAIAboutDocument;
 window.viewDocumentInAdmin = viewDocumentInAdmin;

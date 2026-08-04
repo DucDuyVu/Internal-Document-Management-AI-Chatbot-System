@@ -3,6 +3,8 @@ package com.javaweb.service;
 import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.dto.request.DocumentUploadRequest;
 import com.javaweb.entity.UsersEntity;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -30,6 +32,7 @@ public interface DocumentService {
      * sẽ ném InvalidFileException (unchecked), bắt ở GlobalExceptionHandler.
      */
     DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request, UsersEntity currentUser);
+
     /**
      * Dùng ở: DocumentController.getStatus() (endpoint polling).
      * Input: id của Document.
@@ -41,7 +44,7 @@ public interface DocumentService {
 
     // Lấy danh sách các tài liệu (Admin)
     Page<DocumentResponse> getAllDocuments(Pageable pageable);
-    
+
     // Lấy danh sách tài liệu chờ duyệt (Manager)
     List<DocumentResponse> getPendingApprovals(Integer departmentId);
 
@@ -51,6 +54,9 @@ public interface DocumentService {
 
     // Xóa tài liệu (Soft delete)
     void deleteDocument(Long id, Long userId);
+
+    // Tải xuống tài liệu
+    ResponseInputStream<GetObjectResponse> downloadDocument(Long id, UsersEntity user, String requiredRole);
 }
 
 /*

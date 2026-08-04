@@ -1,9 +1,9 @@
 /* ==============================================
    login.css – IDMS Đăng nhập
-   Font: Be Vietnam Pro | Design: Split-screen
+   Font: Inter | Design: Split-screen
    ============================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
   --primary:      #4f46e5;
@@ -31,7 +31,7 @@
 html { height: 100%; }
 
 body {
-  font-family: 'Be Vietnam Pro', sans-serif;
+  font-family: 'Inter', sans-serif;
   min-height: 100vh;
   background: var(--bg);
   display: flex;
@@ -184,7 +184,7 @@ body::after {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--white);
-  font-family: 'Be Vietnam Pro', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text);
@@ -219,7 +219,7 @@ body::after {
   cursor: pointer;
   color: var(--text-sub);
   font-size: 0.78rem;
-  font-family: 'Be Vietnam Pro', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
   transition: color var(--transition);
 }
@@ -273,7 +273,7 @@ body::after {
   color: #fff;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Be Vietnam Pro', sans-serif;
+  font-family: 'Inter', sans-serif;
   cursor: pointer;
   display: flex;
   align-items: center;

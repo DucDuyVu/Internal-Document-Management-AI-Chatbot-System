@@ -1,6 +1,5 @@
 package com.javaweb.rag.parser;
 
-import java.io.File;
 import java.io.IOException;
 /**
  * Interface chịu trách nhiệm đọc nội dung từ tài liệu.
@@ -14,13 +13,14 @@ import java.io.IOException;
 public interface DocumentParser {
 
     /**
-     * Đọc toàn bộ nội dung text từ một tài liệu.S
+     * Đọc toàn bộ nội dung text từ một tài liệu.
      *
-     * @param file File cần đọc.
+     * @param fileData Mảng byte của tài liệu.
      * @return Nội dung text của tài liệu.
-     * @throws  IOException Nếu file không đọc được hoặc sai định dạng.
+     * @throws IOException Nếu file không đọc được hoặc sai định dạng.
      */
-    String parse(File file) throws IOException;}
+    String parse(byte[] fileData) throws IOException;
+}
 
 /*
  * ===============================================================

@@ -12,8 +12,14 @@ public interface NotificationService {
     // Gửi thông báo cho toàn bộ Admin
     void notifyAdmins(String title, String message);
 
+    // Gửi thông báo cho toàn bộ Manager của phòng ban
+    void notifyManagers(Long departmentId, String title, String message);
+
     // Gửi thông báo cho toàn bộ User trong phòng ban
     void notifyDepartment(Long departmentId, String title, String message);
+
+    // Gửi thông báo hành động tự động định dạng dựa trên người thực hiện
+    void notifySystemAction(UsersEntity actor, Long targetDeptId, String title, String actionDescription, boolean notifyAllDeptUsers);
 
     // Lấy danh sách thông báo chưa đọc của người dùng
     List<NotificationResponse> getUnreadNotifications(UsersEntity user);

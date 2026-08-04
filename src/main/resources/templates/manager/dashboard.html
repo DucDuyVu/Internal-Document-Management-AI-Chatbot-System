@@ -129,6 +129,22 @@
     .tab-btn:hover { background: var(--bg-gray-100); }
     .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
+    /* ===== Pill Buttons ===== */
+    .pill-btn {
+      padding: 8px 16px;
+      border-radius: 24px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .pill-btn:hover { background: #f8fafc; color: #334155; }
+    .pill-btn.active { background: #4f46e5; color: #ffffff; border-color: #4f46e5; box-shadow: 0 4px 10px rgba(79,70,229,0.2); }
+
     /* ===== Table Card ===== */
     .table-card { overflow: hidden; }
     .table-wrapper { overflow-x: auto; }
@@ -354,8 +370,8 @@
           </div>
         </div>
         <div class="header-action">
-          <button class="btn-primary" onclick="openApprovalDrawer()" style="padding:10px 20px; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
-            <i class="fa-solid fa-check-double"></i> Duyệt tài liệu
+          <button class="btn-primary" onclick="switchTab('tabApprovals')" style="padding:10px 24px; font-size:1.05rem; font-weight: 600; display:flex; align-items:center; gap:10px; border-radius: 12px; background-color: #5b45f1; border: none; box-shadow: 0 4px 12px rgba(91, 69, 241, 0.3); transition: all 0.3s ease;">
+            <i class="fa-solid fa-file-circle-check"></i> Xử Lý <span id="btnPendingCount">0</span> Hồ Sơ Chờ Duyệt
           </button>
         </div>
       </div>
@@ -578,54 +594,51 @@
     </div><!-- kết thúc tabReports -->
 
     <!-- ===== TAB: TÀI LIỆU PHÒNG BAN ===== -->
-    <div id="tabDocuments" class="tab-content" style="display:none;">
-      <div class="section-card">
-        <div class="card-header">
-          <h2><i class="fa-solid fa-folder-open" style="color:#f59e0b;"></i> Tài liệu phòng ban</h2>
-          <span style="color:var(--text-secondary); font-size:0.875rem;" id="deptDocLabel">—</span>
+    <div id="tabDocuments" class="tab-content" style="display:none; padding: 12px;">
+      
+      <!-- New Header -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; flex-wrap:wrap; gap:16px;">
+        <div style="display:flex; gap:16px;">
+          <div style="width:56px;height:56px;background:#4f46e5;border-radius:16px;display:flex;align-items:center;justify-content:center;color:white;font-size:1.8rem;box-shadow:0 4px 12px rgba(79,70,229,0.3);flex-shrink:0;">
+            <i class="fa-solid fa-folder"></i>
+          </div>
+          <div>
+            <h2 style="font-size:1.75rem;font-weight:800;color:#0f172a;margin:0 0 6px 0;">Tài Liệu & Hồ Sơ Lưu Trữ</h2>
+            <p style="color:#64748b;margin:0;font-size:0.95rem;">Kho tài liệu tập trung trích xuất dữ liệu tự động AI và phân quyền bảo mật AES-256</p>
+          </div>
         </div>
-        <div class="card-body">
-          <!-- Summary bar -->
-          <div style="display:flex; gap:24px; align-items:center; margin-bottom:16px; font-size:0.875rem; color:var(--text-secondary);">
-            <span>Tổng số: <strong id="docTotalCount" style="color:var(--text-primary);">0</strong> tài liệu</span>
-            <span style="color:#d1d5db;">|</span>
-            <span style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i>Thất bại: <strong id="docFailedCount">0</strong></span>
-          </div>
+        <div>
+          <input type="file" id="uploadDocInput" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+          <button class="btn-primary" onclick="document.getElementById('uploadDocInput').click()" id="uploadDocBtn" style="background:#4f46e5;border-radius:8px;padding:12px 24px;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:8px;border:none;color:white;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+            <i class="fa-solid fa-plus"></i> Tải lên tài liệu mới
+          </button>
+        </div>
+      </div>
 
-          <!-- Filter bar -->
-          <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px; flex-wrap:wrap;">
-            <div class="search-wrap" style="flex:1; min-width:200px; margin-bottom:0;">
-              <span class="search-icon">🔍</span>
-              <input type="text" id="docSearchInput" placeholder="Tìm kiếm tài liệu...">
-            </div>
-            <select id="docTypeFilter" class="filter-select"
-              style="padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); outline:none; background:var(--bg-gray-50); font-size:0.9rem;">
-              <option value="">Tất cả loại file</option>
-              <option value="pdf">PDF</option>
-              <option value="docx">Word (DOCX)</option>
-              <option value="xlsx">Excel (XLSX)</option>
-              <option value="pptx">PowerPoint</option>
-            </select>
-            <select id="docSortFilter" class="filter-select"
-              style="padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-color); outline:none; background:var(--bg-gray-50); font-size:0.9rem;">
-              <option value="newest">Mới nhất</option>
-              <option value="oldest">Cũ nhất</option>
-              <option value="name">Theo tên</option>
-              <option value="size">Theo kích thước</option>
-            </select>
-            <div style="display:flex; background:var(--bg-gray-100); border-radius:8px; padding:4px; gap:2px;">
-              <button class="tab-btn active" id="btnGridView" onclick="setDocView('grid')" style="padding:5px 10px; border-radius:6px; font-size:1rem;">⊞</button>
-              <button class="tab-btn" id="btnListView" onclick="setDocView('list')" style="padding:5px 10px; border-radius:6px; font-size:1rem;">☰</button>
-            </div>
-          </div>
+      <!-- New Search & Filter Bar -->
+      <div style="display:flex; gap:16px; align-items:center; margin-bottom:24px; flex-wrap:wrap;">
+        <div class="search-wrap" style="flex:1; margin-bottom:0; min-width:300px; position:relative;">
+          <span class="search-icon" style="color:#94a3b8;position:absolute;left:16px;top:50%;transform:translateY(-50%);"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input type="text" id="docSearchInput" oninput="filterUserDocuments()" placeholder="Tìm theo tên tài liệu, tác giả hoặc mã hiệu..." style="width:100%;height:48px;padding:0 16px 0 44px;border-radius:12px;border:1px solid #e2e8f0;font-size:0.95rem;outline:none;background:#ffffff;box-sizing:border-box;box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+        </div>
+        <div class="pill-filters" id="docTypePillFilter" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="pill-btn active" data-filter="" onclick="setDocFilter(this)">Tất cả</button>
+          <button class="pill-btn" data-filter="APPROVAL_PENDING" onclick="setDocFilter(this)">Chờ duyệt</button>
+          <button class="pill-btn" data-filter="PROCESSING" onclick="setDocFilter(this)">AI Đang xử lý</button>
+          <button class="pill-btn" data-filter="SUCCESS" onclick="setDocFilter(this)">Hoàn tất</button>
+          <button class="pill-btn" data-filter="FAILED_OR_REJECTED" onclick="setDocFilter(this)">Lỗi / Cần sửa</button>
+        </div>
+        <select id="docSortFilter" class="filter-select" style="display:none;">
+          <option value="newest">Mới nhất</option>
+        </select>
+      </div>
 
-          <!-- Lưới tài liệu -->
-          <div class="doc-grid" id="docGridView">
-            <div class="doc-card-skeleton"></div>
-            <div class="doc-card-skeleton"></div>
-            <div class="doc-card-skeleton"></div>
-            <div class="doc-card-skeleton"></div>
-          </div>
+      <!-- Lưới tài liệu mới -->
+      <div id="docGridView" style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:24px;">
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
+      </div>
 
           <!-- Danh sách tài liệu -->
           <div class="table-card" id="docListView" style="display:none;">
@@ -656,9 +669,32 @@
             <span class="page-info" id="pageInfo">Trang 1</span>
             <button class="page-btn" id="nextDocPage">Sau ›</button>
           </div>
+    </div><!-- kết thúc tabDocuments -->
+
+    <!-- ===== TAB: TRUNG TÂM PHÊ DUYỆT TÀI LIỆU ===== -->
+    <div id="tabApprovals" class="tab-content" style="display:none;">
+      <div class="section-card-v2" style="margin-bottom:24px; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:48px; height:48px; background:#4f46e5; border-radius:12px; display:flex; align-items:center; justify-content:center; color:white; font-size:1.5rem;">
+              <i class="fa-solid fa-file-signature"></i>
+            </div>
+            <div>
+              <h2 style="margin:0; font-size:1.4rem; font-weight:800; color:#0f172a;">Trung Tâm Phê Duyệt Tài Liệu</h2>
+              <p style="margin:4px 0 0 0; color:#64748b; font-size:0.95rem; font-weight:500;">Xử lý tờ trình, hợp đồng và quyết định ban hành từ các phòng ban</p>
+            </div>
+          </div>
+          <div style="background:#fef9c3; border:1px solid #fef08a; padding:8px 16px; border-radius:24px; display:flex; align-items:center; gap:8px;">
+            <i class="fa-regular fa-clock" style="color:#d97706; font-size:1.1rem;"></i>
+            <span style="color:#b45309; font-weight:700; font-size:0.95rem;">Còn <span id="approvalsTabBadge">0</span> tài liệu chờ bạn duyệt</span>
+          </div>
+        </div>
+        
+        <div id="approvalsListContainer" style="display:flex; flex-direction:column; gap:16px;">
+            <!-- Pending documents will be loaded here by JS -->
         </div>
       </div>
-    </div><!-- kết thúc tabDocuments -->
+    </div><!-- kết thúc tabApprovals -->
 
     <!-- ===== TAB: AI CHATBOT ===== -->
     <div id="tabChat" class="tab-content" style="display:none;">
@@ -1106,6 +1142,25 @@
         <div class="modal-actions">
           <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
           <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Từ chối tài liệu -->
+    <div class="modal-overlay" id="rejectDocModal">
+      <div class="modal" style="max-width:480px;">
+        <div class="modal-header">
+          <h3 id="rejectDocModalTitle">Từ chối tài liệu</h3>
+          <button class="modal-close" onclick="closeModal('rejectDocModal')">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <p style="margin-bottom: 12px; color: var(--text-secondary); font-size: 0.9rem;">Nhập lý do để người upload biết cách chỉnh sửa.</p>
+          <input type="hidden" id="rejectDocId">
+          <textarea id="rejectReason" class="form-input" rows="4" placeholder="Ví dụ: file bị mờ, thiếu trang cuối..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('rejectDocModal')">Hủy</button>
+          <button class="btn-primary-sm bg-danger" onclick="executeReject()">Xác nhận từ chối</button>
         </div>
       </div>
     </div>

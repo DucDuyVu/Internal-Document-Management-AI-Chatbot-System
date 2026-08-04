@@ -5,7 +5,6 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -23,14 +22,14 @@ public class PdfParser implements DocumentParser {
     /**
      * Đọc toàn bộ nội dung text từ file PDF.
      *
-     * @param file File PDF cần đọc.
+     * @param fileData Mảng byte của file PDF.
      * @return Nội dung text của file PDF.
      * @throws IOException Nếu không thể mở hoặc đọc file PDF.
      */
     @Override
-    public String parse(File file) throws IOException {
+    public String parse(byte[] fileData) throws IOException {
         // Mở file PDF bằng PDFBox.
-        try (PDDocument document = Loader.loadPDF(file)) {
+        try (PDDocument document = Loader.loadPDF(fileData)) {
 
             // Đối tượng dùng để trích xuất text từ PDF.
             PDFTextStripper stripper = new PDFTextStripper();

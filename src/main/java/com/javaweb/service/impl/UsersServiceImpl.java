@@ -138,9 +138,7 @@ public class UsersServiceImpl implements UsersService {
 		user.setUpdatedAt(LocalDateTime.now());
 
 		UsersEntity updateUser = usersRepository.save(user); // save thông tin update
-		
-		notificationService.notifyAdmins("Cập nhật thông tin", 
-				"Người dùng " + updateUser.getUserName() + " (" + updateUser.getFullName() + ") vừa cập nhật thông tin hồ sơ cá nhân.");
+		notificationService.notifySystemAction(updateUser, null, "Cập nhật thông tin", "vừa cập nhật thông tin hồ sơ cá nhân.", false);
 
 		ProfileResponse profileResponse = new ProfileResponse();
 		profileResponse.setFullName(updateUser.getFullName());
