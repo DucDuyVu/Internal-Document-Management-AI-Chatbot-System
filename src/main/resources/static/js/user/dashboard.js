@@ -57,6 +57,10 @@ const UserState = {
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', function () {
+    // dashboard.js chỉ chạy trên /user/dashboard
+    // Các trang khác như /user/chat có script riêng (chat.js)
+    if (!window.location.pathname.startsWith('/user/dashboard')) return;
+
     // Kiểm tra đăng nhập bằng hàm từ auth.js
     if (typeof isLoggedIn === 'undefined' || !isLoggedIn()) {
         window.location.href = '/login';
@@ -888,20 +892,23 @@ async function sendChatMessage() {
             await loadChatSessions();
         }
 
-        // Send message
-        const response = await apiRequest(`/api/user/chat-sessions/${UserState.chat.currentSessionId}/messages`, {
+        // Send message - SỬA LẠI: trỏ đúng API của ChatController
+        const response = await apiRequest(`/api/chat/ask`, {
             method: 'POST',
-            body: JSON.stringify({ content: message })
+            body: {
+                sessionId: UserState.chat.currentSessionId,
+                question: message
+            }
         });
 
         // Remove loading
         removeLoadingMessage(loadingMsg);
 
-        // Add AI response
+        // Add AI response - SỬA LẠI: map đúng trường trả về từ ChatAnswerResponse (answer, sources)
         const aiMessage = {
             role: 'ASSISTANT',
-            content: response.content,
-            fileRefs: response.fileRefs,
+            content: response.answer,
+            fileRefs: response.sources,
             createdAt: new Date().toISOString()
         };
 

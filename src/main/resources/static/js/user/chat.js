@@ -42,6 +42,13 @@
 (function () {
   "use strict";
 
+  // Toàn bộ code phải chạy sau DOMContentLoaded để đảm bảo:
+  // 1. Các element (#chat-form, #btn-send...) đã tồn tại trong DOM
+  // 2. addEventListener được đăng ký trước khi user tương tác
+  // Nếu script load sau DOMContentLoaded, readyState === 'complete'
+  //  → gọi init() ngay; nếu chưa xong → chờ event.
+  function init() {
+
   let currentSessionId = null;
 
   const sessionListEl = document.getElementById("session-list");
@@ -54,6 +61,9 @@
   const btnSend = document.getElementById("btn-send");
   const btnNewSession = document.getElementById("btn-new-session");
   const btnDeleteSession = document.getElementById("btn-delete-session");
+
+  // Trang này không phải /user/chat → không có các element → thoát sớm
+  if (!chatForm || !btnNewSession) return;
 
   /**
    * Chặn gửi câu hỏi rỗng tại client — bắt buộc vì backend hiện trả
@@ -259,4 +269,20 @@
     loadSessions();
     updateSendButtonState();
   });
+
+  // Nếu DOMContentLoaded đã fire rồi (script load async/defer)
+  if (document.readyState === "complete" || document.readyState === "interactive") {
+    loadSessions();
+    updateSendButtonState();
+  }
+
+  } // end init()
+
+  // Gọi init() ngay sau khi DOM sẵn sàng
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
 })();

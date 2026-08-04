@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.javaweb.dto.chat.ChatSessionRequest;
 import com.javaweb.dto.chat.ChatSessionResponse;
 import com.javaweb.entity.UsersEntity;
+import com.javaweb.security.CustomUserDetails;
 import com.javaweb.service.ChatMessageService;
 import com.javaweb.service.ChatSessionService;
 
@@ -73,7 +74,7 @@ public class ChatSessionController {
         // Ép kiểu principal về UsersEntity — đây là điểm mấu chốt khác với
         // bản trước: KHÔNG dùng authentication.getName(), vì principal ở
         // đây không phải String/UserDetails nên getName() trả sai giá trị
-        UsersEntity currentUser = (UsersEntity) authentication.getPrincipal();
+        UsersEntity currentUser = getCurrentUser(authentication);
 
         if (request == null) {
             request = new ChatSessionRequest();
@@ -96,7 +97,7 @@ public class ChatSessionController {
     public ResponseEntity<List<ChatSessionResponse>> getSessions() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UsersEntity currentUser = (UsersEntity) authentication.getPrincipal();
+        UsersEntity currentUser = getCurrentUser(authentication);
 
         List<ChatSessionResponse> response = chatSessionService.getSessions(currentUser);
 
@@ -117,7 +118,7 @@ public class ChatSessionController {
     public ResponseEntity<List<ChatMessageHistoryResponse>> getMessages(@PathVariable Long id) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UsersEntity currentUser = (UsersEntity) authentication.getPrincipal();
+        UsersEntity currentUser = getCurrentUser(authentication);
 
         List<ChatMessageHistoryResponse> response = chatMessageService.getMessageHistory(id, currentUser);
 
@@ -137,11 +138,28 @@ public class ChatSessionController {
     public ResponseEntity<Void> deleteSession(@PathVariable Long id) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UsersEntity currentUser = (UsersEntity) authentication.getPrincipal();
+        UsersEntity currentUser = getCurrentUser(authentication);
 
         chatSessionService.deleteSession(id, currentUser);
 
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Helper: lấy UsersEntity từ Authentication.
+     *
+     * JwtAuthenticationFilter set principal = CustomUserDetails (wrap UsersEntity),
+     * KHÔNG phải UsersEntity trực tiếp. Nếu cast thẳng sẽ thấy ClassCastException.
+     */
+    private UsersEntity getCurrentUser(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            return ((CustomUserDetails) principal).getUser();
+        }
+        if (principal instanceof UsersEntity) {
+            return (UsersEntity) principal;
+        }
+        throw new IllegalStateException("Không xác định được user từ SecurityContext: " + principal.getClass());
     }
 }
 
