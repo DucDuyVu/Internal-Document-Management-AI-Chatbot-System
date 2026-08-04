@@ -892,20 +892,23 @@ async function sendChatMessage() {
             await loadChatSessions();
         }
 
-        // Send message
-        const response = await apiRequest(`/api/user/chat-sessions/${UserState.chat.currentSessionId}/messages`, {
+        // Send message - SỬA LẠI
+        const response = await apiRequest(`/api/chat/ask`, {
             method: 'POST',
-            body: JSON.stringify({ content: message })
+            body: {
+                sessionId: UserState.chat.currentSessionId,
+                question: message
+            }
         });
 
         // Remove loading
         removeLoadingMessage(loadingMsg);
 
-        // Add AI response
+        // Add AI response - SỬA LẠI
         const aiMessage = {
             role: 'ASSISTANT',
-            content: response.content,
-            fileRefs: response.fileRefs,
+            content: response.answer,
+            fileRefs: response.sources,
             createdAt: new Date().toISOString()
         };
 

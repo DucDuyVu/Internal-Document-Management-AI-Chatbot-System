@@ -7,6 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import jakarta.servlet.http.HttpServletRequest;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+
 /**
  * Bat exception nem ra tu bat ky Controller nao trong ung dung.
  * Gom xu ly ca auth (BadRequestException) va document (InvalidFileException,
@@ -47,12 +52,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleException(Exception e) {
+    public ResponseEntity<Map<String, String>> handleException(Exception e, HttpServletRequest request) {
         try {
-            java.nio.file.Files.write(java.nio.file.Paths.get("error.log"), 
-                (e.getMessage() + "\n" + java.util.Arrays.toString(e.getStackTrace())).getBytes());
-        } catch (Exception ignored) {}
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("message", "Internal Server Error: " + e.getMessage()));
+            String uri = request != null ? request.getRequestURI() : "unknown";
+            Files.write(Paths.get("error.log"), 
+                ("URI: " + uri + "\n" + e.getMessage() + "\n" + Arrays.toString(e.getStackTrace())).getBytes());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error at " + uri + ": " + e.getMessage()));
+        } catch (Exception ignored) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Internal Server Error: " + e.getMessage()));
+        }
     }
 }
