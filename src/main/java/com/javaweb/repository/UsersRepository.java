@@ -30,7 +30,7 @@ public interface UsersRepository extends JpaRepository<UsersEntity, Long> {
 	long countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(Long departmentId);
 
 	// Tìm xem còn users hoạt động thuộc phòng ban không
-	boolean existsByDepartmentIdAndIsActiveTrue(Long id);
+	boolean existsByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(Long id);
 
 	@Query("SELECT u FROM UsersEntity u WHERE u.deletedAt IS NULL AND " +
 			"(:#{#role == null} = true OR u.role = :role) AND " +

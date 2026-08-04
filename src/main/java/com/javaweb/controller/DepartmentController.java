@@ -12,14 +12,14 @@ import com.javaweb.dto.response.AdminDepartmentResponse;
 import com.javaweb.service.DepartmentsService;
 
 @RestController
-@RequestMapping("/api/departments")
+@RequestMapping({"/api/departments", "/api/user"})
 public class DepartmentController {
 
     @Autowired
     private DepartmentsService departmentsService;
 
     // Lấy tất cả danh sách phòng ban cho người dùng thông thường (USER/MANAGER)
-    @GetMapping
+    @GetMapping({"", "/departments"})
     public ResponseEntity<List<AdminDepartmentResponse>> getAllDepartments() {
         return ResponseEntity.ok(departmentsService.getAllDepartments());
     }

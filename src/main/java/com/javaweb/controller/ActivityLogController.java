@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/activity-logs")
+@RequestMapping({"/api/activity-logs", "/api/user"})
 public class ActivityLogController {
 
     @Autowired
     private AuditLogService auditLogService;
 
-    @GetMapping("/recent")
+    @GetMapping({"/recent", "/activities"})
     public ResponseEntity<List<ActivityLogResponse>> getRecentActivities(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "10") int limit) {
