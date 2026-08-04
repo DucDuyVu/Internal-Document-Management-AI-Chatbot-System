@@ -104,7 +104,7 @@ public class UsersServiceImpl implements UsersService {
 			Integer deptId = Math.toIntExact(user.getDepartment().getId());
 			profileResponse.setManagedEmployeeCount((int) usersRepository.countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(user.getDepartment().getId()));
 			profileResponse.setDepartmentDocumentsCount((int) documentRepository.countByDepartmentIdAndDeletedAtIsNull(deptId));
-			profileResponse.setPendingDocumentCount((int) documentRepository.countByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(deptId, com.javaweb.entity.enums.ApprovalStatus.PENDING));
+			profileResponse.setPendingDocumentCount((int) documentRepository.countByDepartmentIdAndStatusAndDeletedAtIsNull(deptId, com.javaweb.entity.enums.DocumentStatus.PENDING));
 		} else {
 			profileResponse.setManagedEmployeeCount(0);
 			profileResponse.setDepartmentDocumentsCount(0);

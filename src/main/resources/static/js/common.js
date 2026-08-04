@@ -823,6 +823,8 @@ function renderDocumentDetailModal(doc) {
             .timeline-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; z-index:1; font-size:0.9rem; }
             .timeline-icon.done { background:#10b981; }
             .timeline-icon.wait { background:#f59e0b; }
+            .timeline-icon.failed { background:#ef4444; }
+            .timeline-icon.pending { background:#cbd5e1; }
             .timeline-content { flex:1; padding-top:4px; }
             .doc-action-btn-v2 { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer; border:none; transition:all 0.2s; text-decoration:none; font-family:inherit; }
             .doc-action-btn-v2:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
@@ -840,6 +842,79 @@ function renderDocumentDetailModal(doc) {
     else if (fName.includes('tờ trình')) typeLabel = 'Tờ trình';
     else if (fName.includes('quyết định')) typeLabel = 'Quyết định';
 
+    let aiStatusBadge = '';
+    let aiPlaceholder = '';
+    if (doc.status === 'COMPLETED') {
+        aiStatusBadge = '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Đã xử lý 100%</span>';
+        aiPlaceholder = 'Không có dữ liệu trích xuất.';
+    } else if (doc.status === 'PROCESSING') {
+        aiStatusBadge = '<span style="background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;"><i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...</span>';
+        aiPlaceholder = 'Hệ thống AI đang tiến hành trích xuất dữ liệu...';
+    } else if (doc.status === 'FAILED') {
+        aiStatusBadge = '<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Lỗi xử lý</span>';
+        aiPlaceholder = 'Quá trình trích xuất gặp lỗi.';
+    } else {
+        aiStatusBadge = '<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Chưa kích hoạt</span>';
+        aiPlaceholder = 'AI sẽ tự động kích hoạt sau khi tài liệu được phê duyệt.';
+    }
+
+    // Dynamic Workflow Variables
+    let wfProgress = '33%';
+    let wfStep2Status = 'Chờ duyệt';
+    let wfStep2Color = '#d97706';
+    let wfStep2IconClass = 'wait';
+    let wfStep2Icon = 'fa-hourglass-half';
+    let wfStep2Desc = 'Yêu cầu quản lý phòng ban xác nhận tính hợp lệ.';
+    
+    let wfStep3Status = 'Chưa bắt đầu';
+    let wfStep3Color = '#64748b';
+    let wfStep3IconClass = 'pending';
+    let wfStep3Icon = 'fa-minus';
+    let wfStep3Desc = 'Hệ thống AI chờ tài liệu được duyệt để trích xuất dữ liệu.';
+
+    if (doc.approvalStatus === 'APPROVED') {
+        wfProgress = '66%';
+        wfStep2Status = 'Đã duyệt';
+        wfStep2Color = '#10b981';
+        wfStep2IconClass = 'done';
+        wfStep2Icon = 'fa-check';
+        wfStep2Desc = 'Quản lý phòng ban đã phê duyệt tài liệu.';
+        
+        wfStep3Status = 'Chờ xử lý';
+        wfStep3Icon = 'fa-hourglass-half';
+        wfStep3IconClass = 'wait';
+        wfStep3Color = '#d97706';
+        wfStep3Desc = 'Đang chờ hệ thống AI tiếp nhận và xử lý.';
+        
+        if (doc.status === 'PROCESSING') {
+            wfProgress = '80%';
+            wfStep3Status = 'Đang xử lý AI...';
+            wfStep3Icon = 'fa-spinner fa-spin';
+        } else if (doc.status === 'COMPLETED') {
+            wfProgress = '100%';
+            wfStep3Status = 'Hoàn tất';
+            wfStep3Color = '#10b981';
+            wfStep3IconClass = 'done';
+            wfStep3Icon = 'fa-check';
+            wfStep3Desc = 'AI đã phân tích và trích xuất dữ liệu thành công.';
+        } else if (doc.status === 'FAILED') {
+            wfProgress = '66%';
+            wfStep3Status = 'Lỗi xử lý';
+            wfStep3Color = '#ef4444';
+            wfStep3IconClass = 'failed';
+            wfStep3Icon = 'fa-xmark';
+            wfStep3Desc = 'Có lỗi xảy ra trong quá trình AI phân tích.';
+        }
+    } else if (doc.approvalStatus === 'REJECTED') {
+        wfProgress = '33%';
+        wfStep2Status = 'Đã từ chối';
+        wfStep2Color = '#ef4444';
+        wfStep2IconClass = 'failed';
+        wfStep2Icon = 'fa-xmark';
+        wfStep2Desc = 'Quản lý đã từ chối tài liệu này.';
+        wfStep3Desc = 'Quy trình đã bị hủy do tài liệu bị từ chối.';
+    }
+
     const modalHTML = `
     <div id="docDetailModal" style="position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;padding:2vh 16px;background:rgba(15, 23, 42, 0.6);backdrop-filter:blur(4px);animation:fadeInBackdrop 0.25s ease;">
         <div style="width:1000px;max-width:100%;height:90vh;max-height:850px;background:#ffffff;border-radius:16px;box-shadow:0 24px 48px rgba(0,0,0,0.18);overflow:hidden;animation:slideInModal 0.3s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;">
@@ -853,7 +928,7 @@ function renderDocumentDetailModal(doc) {
                     <div style="min-width:0;">
                         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
                             <span style="background:#f1f5f9;color:#475569;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">${docIdCode}</span>
-                            <span style="background:#fef3c7;color:#d97706;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">Chờ duyệt</span>
+                            <span style="background:${doc.approvalStatus === 'APPROVED' ? '#dcfce7' : (doc.approvalStatus === 'REJECTED' ? '#fee2e2' : '#fef3c7')};color:${doc.approvalStatus === 'APPROVED' ? '#166534' : (doc.approvalStatus === 'REJECTED' ? '#ef4444' : '#d97706')};padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">${doc.approvalStatus === 'APPROVED' ? 'Đã duyệt' : (doc.approvalStatus === 'REJECTED' ? 'Cần sửa đổi' : 'Chờ duyệt')}</span>
                             <span style="background:#e0e7ff;color:#4338ca;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;">${typeLabel}</span>
                             <span style="color:#94a3b8;font-size:0.75rem;font-weight:600;text-transform:uppercase;">${doc.fileType || 'APPLICATION/PDF'} • ${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</span>
                         </div>
@@ -868,7 +943,20 @@ function renderDocumentDetailModal(doc) {
                 <button class="modal-tab-btn active" onclick="switchDocDetailTab('tab-ai-ocr', this)"><i class="fa-solid fa-wand-magic-sparkles"></i> Trích Xuất AI OCR & Tóm Tắt</button>
                 <button class="modal-tab-btn" onclick="switchDocDetailTab('tab-preview', this)"><i class="fa-regular fa-eye"></i> Xem Trước Tài Liệu</button>
                 <button class="modal-tab-btn" onclick="switchDocDetailTab('tab-workflow', this)"><i class="fa-solid fa-code-branch"></i> Nhật Ký Phê Duyệt</button>
-                <button class="modal-tab-btn" onclick="switchDocDetailTab('tab-security', this)"><i class="fa-solid fa-lock"></i> Phân Quyền & Bảo Mật</button>
+                ${(() => {
+                    try {
+                        const userStr = localStorage.getItem('user');
+                        if (userStr) {
+                            const u = JSON.parse(userStr);
+                            const isSystemAdmin = u.role === 'ADMIN' || (u.roles && u.roles.includes('ROLE_ADMIN'));
+                            const isOwnerManager = (u.role === 'MANAGER' || (u.roles && u.roles.includes('ROLE_MANAGER'))) && doc.departmentId && u.departmentId === doc.departmentId;
+                            if (isSystemAdmin || isOwnerManager || isAdmin) {
+                                return `<button class="modal-tab-btn" onclick="switchDocDetailTab('tab-security', this)"><i class="fa-solid fa-lock"></i> Phân Quyền & Bảo Mật</button>`;
+                            }
+                        }
+                    } catch(e){}
+                    return '';
+                })()}
             </div>
 
             <!-- Tabs Content Area -->
@@ -884,12 +972,12 @@ function renderDocumentDetailModal(doc) {
                             <div>
                                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
                                     <span style="font-weight:800;color:#6b21a8;font-size:1rem;">IDMS AI OCR Engine (Gemini 2.5 Flash)</span>
-                                    <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Đã xử lý 100%</span>
+                                    ${aiStatusBadge}
                                 </div>
                                 <div style="font-size:0.85rem;color:#7e22ce;font-weight:500;">Tự động trích xuất cấu trúc văn bản, nhận diện từ khóa chính và rà soát độ chính xác 99.8%.</div>
                             </div>
                         </div>
-                        <button style="background:#9333ea;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;">Tải lại kết quả OCR</button>
+                        ${doc.status === 'FAILED' ? `<button onclick="retryOCR(${doc.id})" style="background:#9333ea;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Tải lại kết quả OCR</button>` : ''}
                     </div>
 
                     <div style="display:flex;gap:24px;flex-wrap:wrap;">
@@ -898,12 +986,20 @@ function renderDocumentDetailModal(doc) {
                             <div style="font-size:1rem;font-weight:800;color:#4f46e5;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i> BẢN TÓM TẮT TRỌNG TÂM TỪ AI
                             </div>
+                            
+                            ${doc.status === 'FAILED' && doc.errorMessage ? `
+                            <div style="background:#fee2e2; border-left:4px solid #ef4444; padding:16px; border-radius:8px; margin-bottom:20px; color:#991b1b; font-size:0.95rem;">
+                                <strong><i class="fa-solid fa-triangle-exclamation"></i> Chi tiết lỗi từ hệ thống AI:</strong><br/>
+                                <span style="font-family:monospace; margin-top:8px; display:inline-block; font-size:0.85rem;">${escapeHtml(doc.errorMessage)}</span>
+                            </div>
+                            ` : ''}
+
                             <ul style="padding-left:16px;margin:0;color:#334155;font-size:0.95rem;line-height:1.7;font-weight:500;">
-                                <li style="margin-bottom:12px;"><b>Mục đích:</b> ${doc.aiPurpose ? escapeHtml(doc.aiPurpose) : 'Đang phân tích mục đích tài liệu...'}</li>
-                                <li style="margin-bottom:12px;"><b>Nội dung chính:</b> ${doc.aiSummary ? escapeHtml(doc.aiSummary) : 'Hệ thống AI đang trích xuất nội dung chính...'}</li>
+                                <li style="margin-bottom:12px;"><b>Mục đích:</b> ${doc.aiPurpose ? escapeHtml(doc.aiPurpose) : aiPlaceholder}</li>
+                                <li style="margin-bottom:12px;"><b>Nội dung chính:</b> ${doc.aiSummary ? escapeHtml(doc.aiSummary) : aiPlaceholder}</li>
                             </ul>
                             <div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap;">
-                                ${doc.aiTags ? doc.aiTags.split(' ').filter(t=>t.trim()!=='').map(t => `<span style="background:#e0e7ff;color:#4f46e5;padding:6px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;"><i class="fa-solid fa-tag"></i> ${escapeHtml(t)}</span>`).join('') : '<span style="color:#94a3b8;font-size:0.85rem;font-style:italic;">Đang phân tích từ khóa...</span>'}
+                                ${doc.aiTags ? doc.aiTags.split(' ').filter(t=>t.trim()!=='').map(t => `<span style="background:#e0e7ff;color:#4f46e5;padding:6px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;"><i class="fa-solid fa-tag"></i> ${escapeHtml(t)}</span>`).join('') : `<span style="color:#94a3b8;font-size:0.85rem;font-style:italic;">${aiPlaceholder}</span>`}
                             </div>
                         </div>
 
@@ -959,8 +1055,8 @@ function renderDocumentDetailModal(doc) {
                 <!-- TAB 3: Nhật Ký Phê Duyệt -->
                 <div id="tab-workflow" class="modal-tab-content">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #e2e8f0;">
-                        <h3 style="margin:0;font-size:1.1rem;font-weight:800;color:#4f46e5;text-transform:uppercase;"><i class="fa-regular fa-file-lines"></i> TIẾN ĐỘ QUY TRÌNH PHÊ DUYỆT & NHẬT KÝ CHỮ KÝ SỐ</h3>
-                        <span style="font-weight:800;color:#6b21a8;">Tiến độ: 66%</span>
+                        <h3 style="margin:0;font-size:1.1rem;font-weight:800;color:#4f46e5;text-transform:uppercase;"><i class="fa-regular fa-file-lines"></i> TIẾN ĐỘ QUY TRÌNH & NHẬT KÝ</h3>
+                        <span style="font-weight:800;color:#6b21a8;">Tiến độ: ${wfProgress}</span>
                     </div>
                     <div style="padding:0 16px;">
                         <!-- Step 1 -->
@@ -968,7 +1064,7 @@ function renderDocumentDetailModal(doc) {
                             <div class="timeline-icon done"><i class="fa-solid fa-check"></i></div>
                             <div class="timeline-content">
                                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                                    <div style="font-weight:800;color:#0f172a;">1. Soạn thảo & Khởi tạo tải lên</div>
+                                    <div style="font-weight:800;color:#0f172a;">1. Tải lên hệ thống</div>
                                     <div style="font-weight:700;color:#10b981;">Hoàn tất</div>
                                 </div>
                                 <div style="color:#64748b;font-size:0.9rem;font-weight:500;">Tác giả ${uploader} đã tải file vào kho lưu trữ bảo mật.</div>
@@ -976,55 +1072,70 @@ function renderDocumentDetailModal(doc) {
                         </div>
                         <!-- Step 2 -->
                         <div class="timeline-step">
-                            <div class="timeline-icon done"><i class="fa-solid fa-check"></i></div>
+                            <div class="timeline-icon ${wfStep2IconClass}"><i class="fa-solid ${wfStep2Icon}"></i></div>
                             <div class="timeline-content">
                                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                                    <div style="font-weight:800;color:#0f172a;">2. Thẩm định AI OCR & Rà soát pháp lý</div>
-                                    <div style="font-weight:700;color:#10b981;">Đã thông qua</div>
+                                    <div style="font-weight:800;color:#0f172a;">2. Quản lý phê duyệt</div>
+                                    <div style="font-weight:700;color:${wfStep2Color};">${wfStep2Status}</div>
                                 </div>
-                                <div style="color:#64748b;font-size:0.9rem;font-weight:500;">AI Gemini 2.5 quét rủi ro và xác nhận đạt chuẩn 99.8%.</div>
+                                <div style="color:#64748b;font-size:0.9rem;font-weight:500;">${wfStep2Desc}</div>
                             </div>
                         </div>
                         <!-- Step 3 -->
                         <div class="timeline-step">
-                            <div class="timeline-icon wait"><i class="fa-solid fa-hourglass-half"></i></div>
+                            <div class="timeline-icon ${wfStep3IconClass}"><i class="fa-solid ${wfStep3Icon}"></i></div>
                             <div class="timeline-content">
                                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                                    <div style="font-weight:800;color:#0f172a;">3. Ký số & Phê duyệt Ban Giám Đốc</div>
-                                    <div style="font-weight:700;color:#d97706;">Chờ duyệt</div>
+                                    <div style="font-weight:800;color:#0f172a;">3. AI phân tích & trích xuất</div>
+                                    <div style="font-weight:700;color:${wfStep3Color};">${wfStep3Status}</div>
                                 </div>
-                                <div style="color:#64748b;font-size:0.9rem;font-weight:500;">Yêu cầu quản lý xác nhận cấp thẩm quyền trước khi phát hành toàn hệ thống.</div>
+                                <div style="color:#64748b;font-size:0.9rem;font-weight:500;">${wfStep3Desc}</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- TAB 4: Phân Quyền & Bảo Mật -->
-                <div id="tab-security" class="modal-tab-content">
-                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;margin-bottom:24px;">
-                        <div style="width:36px;height:36px;border-radius:50%;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.1rem;flex-shrink:0;">
-                            <i class="fa-solid fa-shield-halved"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight:800;color:#065f46;margin-bottom:4px;font-size:1rem;">👑 Tài liệu thuộc quyền quản lý của bạn</div>
-                            <div style="color:#047857;font-size:0.9rem;font-weight:500;">Bạn đang có quyền truy cập toàn diện. Bạn có đầy đủ quyền Xem, Tải xuống, Chỉnh sửa phân quyền và Phê duyệt.</div>
-                        </div>
-                    </div>
+                ${(() => {
+                    try {
+                        const userStr = localStorage.getItem('user');
+                        if (userStr) {
+                            const u = JSON.parse(userStr);
+                            const isSystemAdmin = u.role === 'ADMIN' || (u.roles && u.roles.includes('ROLE_ADMIN'));
+                            const isOwnerManager = (u.role === 'MANAGER' || (u.roles && u.roles.includes('ROLE_MANAGER'))) && doc.departmentId && u.departmentId === doc.departmentId;
+                            if (isSystemAdmin || isOwnerManager || isAdmin) {
+                                return `
+                                <div id="tab-security" class="modal-tab-content">
+                                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;display:flex;align-items:flex-start;gap:16px;margin-bottom:24px;">
+                                        <div style="width:36px;height:36px;border-radius:50%;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;color:#10b981;font-size:1.1rem;flex-shrink:0;">
+                                            <i class="fa-solid fa-shield-halved"></i>
+                                        </div>
+                                        <div>
+                                            <div style="font-weight:800;color:#065f46;margin-bottom:4px;font-size:1rem;">👑 Tài liệu thuộc quyền quản lý của bạn</div>
+                                            <div style="color:#047857;font-size:0.9rem;font-weight:500;">Bạn đang có quyền truy cập toàn diện. Bạn có đầy đủ quyền Xem, Tải xuống, Chỉnh sửa phân quyền và Phê duyệt.</div>
+                                        </div>
+                                    </div>
 
-                    <div style="border:1px solid #e2e8f0;border-radius:16px;padding:24px;">
-                        <div style="font-weight:700;color:#0f172a;margin-bottom:16px;">Danh sách phòng ban được chia sẻ:</div>
-                        ${doc.sharedWithDepartments && doc.sharedWithDepartments.length > 0 ? doc.sharedWithDepartments.map(d => `
-                            <div style="border:1px solid #cbd5e1;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                                <span style="font-weight:600;color:#334155;">${escapeHtml(d)}</span>
-                                <span style="background:#eef2ff;color:#4f46e5;padding:4px 12px;border-radius:6px;font-weight:700;font-size:0.85rem;">Quyền xem & Đóng góp</span>
-                            </div>
-                        `).join('') : `
-                            <div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;color:#64748b;font-weight:500;">
-                                Chưa có phòng ban nào được chia sẻ quyền truy cập.
-                            </div>
-                        `}
-                    </div>
-                </div>
+                                    <div style="border:1px solid #e2e8f0;border-radius:16px;padding:24px;">
+                                        <div style="font-weight:700;color:#0f172a;margin-bottom:16px;">Danh sách phòng ban được chia sẻ:</div>
+                                        ${doc.sharedWithDepartments && doc.sharedWithDepartments.length > 0 ? doc.sharedWithDepartments.map(d => `
+                                            <div style="border:1px solid #cbd5e1;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                                <span style="font-weight:600;color:#334155;">${escapeHtml(d)}</span>
+                                                <span style="background:#eef2ff;color:#4f46e5;padding:4px 12px;border-radius:6px;font-weight:700;font-size:0.85rem;">Quyền xem & Đóng góp</span>
+                                            </div>
+                                        `).join('') : `
+                                            <div style="border:1px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center;color:#64748b;font-weight:500;">
+                                                Chưa có phòng ban nào được chia sẻ quyền truy cập.
+                                            </div>
+                                        `}
+                                    </div>
+                                </div>
+                                `;
+                            }
+                        }
+                    } catch(e){}
+                    return '';
+                })()}
 
             </div>
 
@@ -1103,6 +1214,54 @@ function copyDocumentLink(docId) {
     }).catch(() => {
         if (typeof showToast !== 'undefined') showToast('Không thể copy link', 'error');
     });
+}
+
+window.retryOCR = async function(docId) {
+    if(!confirm("Bạn có chắc chắn muốn chạy lại quá trình phân tích AI (OCR) cho tài liệu này?")) return;
+    
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) throw new Error("Chưa đăng nhập.");
+        const user = JSON.parse(userStr);
+        const roles = user.roles || (user.role ? [user.role] : []);
+        
+        let endpoint = '';
+        if (roles.includes('ROLE_ADMIN') || roles.includes('ADMIN')) {
+            endpoint = `/api/admin/documents/${docId}/retry`;
+        } else if (roles.includes('ROLE_MANAGER') || roles.includes('MANAGER')) {
+            endpoint = `/api/manager/documents/${docId}/retry`;
+        } else {
+            throw new Error("Bạn không có quyền thực hiện chức năng này.");
+        }
+        
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || '');
+        const res = await fetch(endpoint, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const msg = await res.text();
+        if (res.ok) {
+            if (typeof showToast !== 'undefined') showToast("Đã gửi yêu cầu xử lý lại thành công!", "success");
+            else alert("Đã gửi yêu cầu xử lý lại thành công!");
+            
+            const modal = document.getElementById('docDetailModal');
+            if(modal) modal.remove();
+            
+            if (typeof fetchDocuments === 'function') fetchDocuments();
+            else if (typeof fetchUserDocuments === 'function') fetchUserDocuments();
+            else window.location.reload();
+        } else {
+            if (typeof showToast !== 'undefined') showToast(msg || "Lỗi khi gửi yêu cầu", "error");
+            else alert("Lỗi: " + msg);
+        }
+    } catch(e) {
+        console.error(e);
+        if (typeof showToast !== 'undefined') showToast(e.message, "error");
+        else alert(e.message);
+    }
 }
 
 function askAIAboutDocument(docId, fileName) {

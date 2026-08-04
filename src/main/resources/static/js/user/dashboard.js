@@ -365,122 +365,99 @@ function renderUserDocuments() {
         } else {
         gridView.innerHTML = docs.map(doc => {
                 const style = getDocStyle(doc.fileType);
-                const isFailed = doc.status === 'FAILED' || doc.approvalStatus === 'REJECTED';
-                const isPending = doc.approvalStatus === 'PENDING';
-                const cannotShare = isFailed || isPending;
                 
-                let cardStyle = "cursor:pointer;";
-                if (isFailed) {
-                    cardStyle = "cursor:pointer; border: 1px solid #fca5a5; background-color: #fef2f2;";
-                }
-                
-                const isOwner = doc.uploadedBy && currentUser && doc.uploadedBy === currentUser.id;
-
-                if (isOwner) {
-                    return `
-                    <div class="doc-card" style="border: 1px solid #e5e7eb; background-color: #ffffff; padding: 16px; border-radius: 12px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <div style="width:48px;height:48px;border-radius:12px;background:${style.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                <i class="fa-solid ${style.icon}" style="font-size:1.4rem;color:${style.color};"></i>
-                            </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <h4 style="margin: 0; font-size:1rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${doc.fileName}">${doc.fileName}</h4>
-                                <div style="font-size:0.8rem; color:#9ca3af; margin-top: 2px;">${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
-                            </div>
-                        </div>
-                        
-                        <div style="position: relative; padding: 12px 0;">
-                            <!-- Progress line -->
-                            <div style="position: absolute; top: 20px; left: 15%; right: 15%; height: 2px; background: #e5e7eb; z-index: 1;"></div>
-                            
-                            <div style="display: flex; justify-content: space-between; position: relative; z-index: 2; font-size: 0.8rem; font-weight: 600; color: #6b7280;">
-                                <div style="background: white; padding: 0 4px; color: #b45309;">Tải lên</div>
-                                <div style="background: white; padding: 0 4px; color: ${doc.approvalStatus === 'APPROVED' ? '#b45309' : (doc.approvalStatus === 'REJECTED' ? '#991b1b' : '#6b7280')};">Duyệt</div>
-                                <div style="background: white; padding: 0 4px; color: ${doc.status === 'COMPLETED' ? '#166534' : (doc.status === 'FAILED' ? '#991b1b' : '#6b7280')};">Xử lý AI</div>
-                            </div>
-                        </div>
-
-                        ${doc.approvalStatus === 'PENDING' ? `
-                        <div style="background: #fef3c7; color: #92400e; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-regular fa-clock"></i> Chờ manager duyệt · Chỉ mình bạn xem được
-                        </div>` : ''}
-
-                        ${doc.approvalStatus === 'REJECTED' ? `
-                        <div style="background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px;">
-                            <div><i class="fa-solid fa-triangle-exclamation"></i> Bị từ chối</div>
-                            <div style="font-size: 0.8rem;">Lý do: ${doc.errorMessage || 'Không có lý do cụ thể'}</div>
-                        </div>` : ''}
-
-                        ${(doc.approvalStatus === 'APPROVED' && doc.status === 'FAILED') ? `
-                        <div style="background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px;">
-                            <div><i class="fa-solid fa-triangle-exclamation"></i> Lỗi xử lý AI</div>
-                            <div style="font-size: 0.8rem;">Hãy liên hệ Quản lý để thử lại.</div>
-                        </div>` : ''}
-
-                        <div style="display: flex; gap: 8px; margin-top: auto;">
-                            <button style="flex: 1; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: #ffffff; color: #374151; border: 1px solid #d1d5db;" onclick="event.stopPropagation(); viewDocumentInline(${doc.id})" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#ffffff'">
-                                Xem
-                            </button>
-                            ${(doc.approvalStatus === 'PENDING' || doc.approvalStatus === 'REJECTED') ? `
-                            <button style="flex: 1; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: #ffffff; color: #ef4444; border: 1px solid #fca5a5;" onclick="deleteUserDocument(${doc.id})" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='#ffffff'">
-                                <i class="fa-solid fa-trash-can"></i> Thu hồi
-                            </button>` : ''}
-                        </div>
-                    </div>`;
-                }
-
                 let combinedStatusClass = '';
                 let combinedStatusLabel = '';
+                let badgeBg = '#f1f5f9';
+                let badgeColor = '#475569';
                 
                 if (doc.approvalStatus === 'PENDING') {
                     combinedStatusClass = 'status-pending';
                     combinedStatusLabel = 'Chờ duyệt';
+                    badgeBg = '#fef3c7';
+                    badgeColor = '#d97706';
                 } else if (doc.approvalStatus === 'REJECTED') {
                     combinedStatusClass = 'status-failed';
-                    combinedStatusLabel = 'Đã từ chối';
+                    combinedStatusLabel = 'Từ chối';
+                    badgeBg = '#fee2e2';
+                    badgeColor = '#ef4444';
                 } else {
                     if (doc.status === 'PENDING') {
                         combinedStatusClass = 'status-processing';
                         combinedStatusLabel = 'AI Đang xử lý';
+                        badgeBg = '#e0e7ff';
+                        badgeColor = '#4338ca';
                     } else if (doc.status === 'FAILED') {
                         combinedStatusClass = 'status-failed';
-                        combinedStatusLabel = 'Lỗi xử lý';
+                        combinedStatusLabel = 'Lỗi AI';
+                        badgeBg = '#fee2e2';
+                        badgeColor = '#ef4444';
                     } else {
                         combinedStatusClass = 'status-success';
                         combinedStatusLabel = 'Hoàn tất';
+                        badgeBg = '#dcfce7';
+                        badgeColor = '#166534';
                     }
                 }
 
-                return `
-                <div class="doc-card-v2 ${combinedStatusClass}" style="position: relative; background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease;">
-                    <div style="position:absolute; top:16px; left:16px;">
-                        <div class="badge ${combinedStatusClass}">${combinedStatusLabel}</div>
-                    </div>
-                    
-                    <button class="doc-menu-btn" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})" title="Xem chi tiết" style="position:absolute; top:12px; right:12px; background:transparent; border:none; color:#9ca3af; cursor:pointer; font-size:1.2rem;">
-                        <i class="fa-solid fa-ellipsis"></i>
-                    </button>
+                const isOwner = doc.uploadedBy && currentUser && doc.uploadedBy === currentUser.id;
+                
+                let actionBtnHtml = '';
+                
+                if (combinedStatusClass === 'status-processing') {
+                    actionBtnHtml = `<button style="background:transparent;border:none;color:#94a3b8;font-weight:700;font-size:0.95rem;cursor:not-allowed;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;" disabled>
+                            <i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý
+                        </button>`;
+                } else if (combinedStatusClass === 'status-failed') {
+                    actionBtnHtml = `
+                        <div style="display:flex; gap:8px;">
+                            ${isOwner ? `<button style="background:transparent;border:none;color:#ef4444;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); deleteUserDocument(${doc.id})"><i class="fa-solid fa-trash-can"></i> Thu hồi</button>` : ''}
+                            <button style="background:transparent;border:none;color:#ef4444;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})">
+                                <i class="fa-regular fa-circle-xmark"></i> Xem lỗi
+                            </button>
+                        </div>`;
+                } else if (combinedStatusClass === 'status-pending') {
+                    actionBtnHtml = `
+                        <div style="display:flex; gap:8px;">
+                            ${isOwner ? `<button style="background:transparent;border:none;color:#ef4444;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); deleteUserDocument(${doc.id})"><i class="fa-solid fa-trash-can"></i> Thu hồi</button>` : ''}
+                            <button style="background:transparent;border:none;color:#d97706;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})">
+                                <i class="fa-regular fa-eye"></i> Xem chi tiết
+                            </button>
+                        </div>`;
+                } else {
+                    actionBtnHtml = `
+                        <div style="display:flex; gap:8px;">
+                            <button style="background:transparent;border:none;color:#4f46e5;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')">
+                                <i class="fa-solid fa-download"></i> Tải xuống
+                            </button>
+                            <button style="background:transparent;border:none;color:#4f46e5;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})">
+                                <i class="fa-regular fa-eye"></i> Xem
+                            </button>
+                        </div>`;
+                }
 
-                    <div style="display:flex; flex-direction:column; align-items:center; margin-top: 24px; margin-bottom: 16px;">
-                        <div style="width:64px;height:64px;border-radius:16px;background:${style.bg};display:flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
-                            <i class="fa-solid ${style.icon}" style="font-size:2rem;color:${style.color};"></i>
+                return `
+                <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); transition:all 0.2s; min-height:180px;" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,0.06)'; this.style.borderColor='#cbd5e1'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.02)'; this.style.borderColor='#e2e8f0'; this.style.transform='translateY(0)'">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="width:44px;height:44px;background:${style.bg};color:${style.color};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;">
+                            <i class="fa-solid ${style.icon}"></i>
                         </div>
-                        <h4 class="doc-title" title="${doc.fileName}" style="text-align:center; font-size:1.05rem; margin-bottom:4px; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; font-weight: 600; color: #111827;">${doc.fileName}</h4>
-                        <div style="font-size:0.8rem;color:#6b7280;text-align:center;">
-                            ${(doc.fileType ? doc.fileType.split('/').pop() : 'FILE').toUpperCase()} • ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}
+                        <div class="badge ${combinedStatusClass}" style="background:${badgeBg};color:${badgeColor};padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:700;white-space:nowrap;">${combinedStatusLabel}</div>
+                    </div>
+                    
+                    <div style="flex:1; cursor:pointer;" onclick="openDocumentDetail(${doc.id})">
+                        <h3 style="font-size:1.05rem;font-weight:700;color:#0f172a;margin:0 0 8px 0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;" title="${doc.fileName}">${doc.fileName}</h3>
+                        <div style="font-size:0.8rem;color:#64748b;font-weight:500;margin-bottom:4px;">
+                            ID: <strong style="color:#475569;">DOC-${String(doc.id).padStart(4, '0')}</strong> &bull; Ngày: ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}
                         </div>
-                        <div style="font-size:0.85rem;color:#4f46e5;font-weight:600;text-align:center;margin-top:4px;">
-                            <i class="fa-solid fa-user"></i> ${doc.uploadedByName || 'Người dùng'} &bull; <i class="fa-solid fa-building"></i> ${doc.departmentName || 'Tất cả phòng ban'}
+                        <div style="font-size:0.8rem;color:#64748b;font-weight:500;">
+                            Tác giả: <strong style="color:#475569;">${doc.uploadedByName || 'Bạn'}</strong>
                         </div>
                     </div>
                     
-                    <div style="display:flex; gap: 8px; margin-top: auto;">
-                        <button class="btn-card" style="flex: 1; justify-content: center; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')">
-                            <i class="fa-solid fa-download"></i> Tải xuống
-                        </button>
-                        <button class="btn-card" style="flex: 1; justify-content: center; background: #ffffff; color: #374151; border: 1px solid #d1d5db; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;" onclick="event.stopPropagation(); viewDocumentInline(${doc.id})">
-                            Xem
-                        </button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:12px; border-top:1px solid #f1f5f9;">
+                        <span style="font-size:0.85rem;color:#94a3b8;font-weight:600;">${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</span>
+                        ${actionBtnHtml}
                     </div>
                 </div>`;
             }).join('');
@@ -527,12 +504,31 @@ function renderUserDocuments() {
 
 function filterUserDocuments() {
     const searchTerm = document.getElementById('docSearchInput')?.value?.toLowerCase() || '';
-    const typeFilter = document.getElementById('docTypeFilter')?.value || '';
+    
+    // Lấy giá trị filter từ Pill Buttons (nếu có)
+    const activePill = document.querySelector('#docTypePillFilter .pill-btn.active');
+    const typeFilter = activePill ? activePill.getAttribute('data-filter') : '';
+    
     const sortFilter = document.getElementById('docSortFilter')?.value || 'newest';
 
     UserState.documents.filtered = UserState.documents.data.filter(doc => {
-        const matchesSearch = !searchTerm || doc.fileName?.toLowerCase().includes(searchTerm);
-        const matchesType = !typeFilter || doc.fileType === typeFilter;
+        const matchesSearch = !searchTerm || 
+            doc.fileName?.toLowerCase().includes(searchTerm) || 
+            ('doc-' + String(doc.id).padStart(4, '0')).includes(searchTerm) || 
+            (doc.uploadedByName || '').toLowerCase().includes(searchTerm);
+            
+        let matchesType = true;
+        if (typeFilter) {
+            let combinedStatus = '';
+            if (doc.approvalStatus === 'PENDING') combinedStatus = 'APPROVAL_PENDING';
+            else if (doc.approvalStatus === 'REJECTED') combinedStatus = 'FAILED_OR_REJECTED';
+            else {
+                if (doc.status === 'PENDING' || doc.status === 'PROCESSING') combinedStatus = 'PROCESSING';
+                else if (doc.status === 'FAILED') combinedStatus = 'FAILED_OR_REJECTED';
+                else combinedStatus = 'SUCCESS';
+            }
+            matchesType = (combinedStatus === typeFilter);
+        }
         return matchesSearch && matchesType;
     });
 
@@ -554,6 +550,15 @@ function filterUserDocuments() {
 
     renderUserDocuments();
 }
+
+window.setDocFilter = function(btn) {
+    const pills = document.querySelectorAll('#docTypePillFilter .pill-btn');
+    if (pills) {
+        pills.forEach(el => el.classList.remove('active'));
+    }
+    btn.classList.add('active');
+    filterUserDocuments();
+};
 
 function setDocView(view) {
     UserState.documents.view = view;

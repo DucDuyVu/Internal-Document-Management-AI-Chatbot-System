@@ -34,7 +34,8 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
                      "AND (d.departmentId = :departmentId OR d.departmentId IS NULL " +
                      "     OR (p IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
                      "     OR (p IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
-                     "AND (d.approvalStatus = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId))" +
+                     "AND (d.approvalStatus = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId))"
+                     +
                      "ORDER BY d.createdAt DESC")
        Page<DocumentEntity> findVisibleToDepartmentWithSharing(
                      @Param("departmentId") Integer departmentId,
@@ -50,7 +51,8 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
                      "AND (d.departmentId = :departmentId OR d.departmentId IS NULL " +
                      "     OR (p IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
                      "     OR (p IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
-                     "AND (d.approvalStatus = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId))" +
+                     "AND (d.approvalStatus = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId))"
+                     +
                      "AND LOWER(d.fileName) LIKE LOWER(CONCAT('%', :search, '%')) " +
                      "ORDER BY d.createdAt DESC")
        Page<DocumentEntity> searchVisibleToDepartmentWithPermissions(
@@ -71,10 +73,13 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
         * Admin xem toàn bộ (kể cả tài liệu riêng của mọi phòng ban), chưa xoá mềm.
         */
        List<DocumentEntity> findByDeletedAtIsNull();
+
        Page<DocumentEntity> findByDeletedAtIsNull(Pageable pageable);
 
-       List<DocumentEntity> findByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(Integer departmentId,
-                     ApprovalStatus approvalStatus);
+
+
+       List<DocumentEntity> findByDepartmentIdAndApprovalStatusInAndDeletedAtIsNull(Integer departmentId,
+                     List<ApprovalStatus> approvalStatuses);
 
        long countByUploadedByAndDeletedAtIsNull(Long uploadedBy);
 

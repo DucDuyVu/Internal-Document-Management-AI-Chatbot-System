@@ -100,6 +100,31 @@ public class AdminDocumentController {
 
         return ResponseEntity.ok("Đã duyệt khẩn cấp tài liệu và đưa vào xử lý AI thành công.");
     }
+
+    @PutMapping("/{id}/retry")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> retryDocument(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        DocumentEntity document = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy tài liệu id=" + id));
+
+        if (document.getStatus() != com.javaweb.entity.enums.DocumentStatus.FAILED) {
+            return ResponseEntity.badRequest().body("Chỉ có thể thử lại tài liệu bị lỗi (FAILED).");
+        }
+
+        // Khôi phục trạng thái
+        document.setStatus(com.javaweb.entity.enums.DocumentStatus.PENDING);
+        document.setErrorMessage(null);
+        documentRepository.save(document);
+
+        // Gọi lại AI
+        documentProcessingService.process(id);
+
+        return ResponseEntity.ok("Đã đẩy tài liệu vào hàng chờ AI để xử lý lại.");
+    }
+    
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteDocument(

@@ -4,6 +4,55 @@
 
 <head>
   <title>Hệ thống quản lý tài liệu</title>
+  <style>
+    /* ===== Pill Buttons ===== */
+    .pill-btn {
+      padding: 8px 16px;
+      border-radius: 24px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .pill-btn:hover { background: #f8fafc; color: #334155; }
+    .pill-btn.active { background: #4f46e5; color: #ffffff; border-color: #4f46e5; box-shadow: 0 4px 10px rgba(79,70,229,0.2); }
+
+    /* ===== Status Badges ===== */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .status-pending { background: #fef08a; color: #a16207; }
+    .status-processing { background: #dbeafe; color: #1d4ed8; }
+    .status-success { background: #dcfce7; color: #166534; }
+    .status-failed { background: #fee2e2; color: #991b1b; }
+
+    /* ===== Icon Buttons ===== */
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+    }
+    .btn-icon:hover { background: #f1f5f9; color: #0f172a; }
+  </style>
 </head>
 
 <body>
@@ -316,51 +365,66 @@
     </div>
 
     <!-- ===== TAB: TÀI LIỆU ===== -->
-    <div id="tabDocuments" style="display:none;">
-      <div class="section-card">
-        <div class="card-header">
-          <h2>📁 Quản lý tài liệu</h2>
-          <button class="btn-primary-sm" onclick="switchTab('tabUpload')">📤 Upload PDF mới</button>
+    <div id="tabDocuments" style="display:none; padding: 12px;">
+      
+      <!-- New Header -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; flex-wrap:wrap; gap:16px;">
+        <div style="display:flex; gap:16px;">
+          <div style="width:56px;height:56px;background:var(--primary);border-radius:16px;display:flex;align-items:center;justify-content:center;color:white;font-size:1.8rem;box-shadow:0 4px 12px rgba(79,70,229,0.3);flex-shrink:0;">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <div>
+            <h2 style="font-size:1.75rem;font-weight:800;color:var(--text-primary);margin:0 0 6px 0;">Quản trị Tài liệu Toàn cục</h2>
+            <p style="color:var(--text-secondary);margin:0;font-size:0.95rem;">Quản lý tập trung mọi tài liệu, quá trình phân tích AI và trạng thái phê duyệt</p>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="search-wrap">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="docSearchInput" placeholder="Tìm kiếm tài liệu...">
-          </div>
-          <div class="tab-bar" id="docStatusTabs">
-            <button class="tab-btn active" onclick="filterDocs('ALL', this)">Tất cả</button>
-            <button class="tab-btn" onclick="filterDocs('COMPLETED', this)">✅ Hoàn thành</button>
-            <button class="tab-btn" onclick="filterDocs('PENDING', this)">⏳ Chờ xử lý</button>
-            <button class="tab-btn" onclick="filterDocs('PROCESSING', this)">⚙️ Đang xử lý</button>
-            <button class="tab-btn" onclick="filterDocs('FAILED', this)">❌ Lỗi</button>
-          </div>
-          <div class="table-card">
-            <div class="table-wrapper">
-              <table class="modern-table">
-                <thead>
-                  <tr>
-                    <th>STT</th>
-                    <th>Tên tài liệu</th>
-                    <th>Phòng ban</th>
-                    <th>Loại</th>
-                    <th>Kích thước</th>
-                    <th>Trạng thái</th>
-                    <th>Chunks</th>
-                    <th>Ngày upload</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody id="docTableBody">
-                  <tr>
-                    <td colspan="9" class="empty-state"><span>📁</span>Đang tải tài liệu...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="pagination" id="docPagination"></div>
+        <div>
+          <button class="btn-primary" onclick="switchTab('tabUpload')" style="background:var(--primary);border-radius:8px;padding:12px 24px;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:8px;border:none;color:white;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary)'">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Upload PDF mới
+          </button>
         </div>
       </div>
+
+      <!-- New Search & Filter Bar -->
+      <div style="display:flex; gap:16px; align-items:center; margin-bottom:24px; flex-wrap:wrap;">
+        <div class="search-wrap" style="flex:1; margin-bottom:0; min-width:300px; position:relative;">
+          <span class="search-icon" style="color:var(--text-muted);position:absolute;left:16px;top:50%;transform:translateY(-50%);"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input type="text" id="docSearchInput" oninput="filterAdminDocuments()" placeholder="Tìm theo tên tài liệu, người dùng, phòng ban..." style="width:100%;height:48px;padding:0 16px 0 44px;border-radius:12px;border:1px solid var(--border-color);font-size:0.95rem;outline:none;background:#ffffff;box-sizing:border-box;box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+        </div>
+        <div class="pill-filters" id="docTypePillFilter" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="pill-btn active" data-filter="ALL" onclick="setAdminDocFilter(this)">Tất cả</button>
+          <button class="pill-btn" data-filter="COMPLETED" onclick="setAdminDocFilter(this)">Hoàn tất</button>
+          <button class="pill-btn" data-filter="PENDING" onclick="setAdminDocFilter(this)">Chờ xử lý</button>
+          <button class="pill-btn" data-filter="PROCESSING" onclick="setAdminDocFilter(this)">AI Đang xử lý</button>
+          <button class="pill-btn" data-filter="FAILED" onclick="setAdminDocFilter(this)">Lỗi / Từ chối</button>
+        </div>
+      </div>
+
+      <!-- Danh sách tài liệu -->
+      <div class="table-card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Tên tài liệu</th>
+                <th>Phòng ban</th>
+                <th>Kích thước</th>
+                <th>Trạng thái</th>
+                <th>Ngày upload</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="docTableBody">
+              <tr>
+                <td colspan="6" class="empty-state"><span>📁</span>Đang tải tài liệu...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination" id="docPagination" style="margin-top:24px;"></div>
     </div>
 
     <!-- ===== TAB: PHÂN QUYỀN ===== -->

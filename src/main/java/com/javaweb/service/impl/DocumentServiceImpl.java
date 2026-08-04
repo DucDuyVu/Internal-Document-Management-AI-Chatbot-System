@@ -1,5 +1,8 @@
 package com.javaweb.service.impl;
 
+import com.javaweb.entity.DocumentPermissionsEntity;
+import com.javaweb.repository.DocumentPermissionsRepository;
+
 import com.event.AuditEven;
 import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.dto.request.DocumentUploadRequest;
@@ -9,7 +12,9 @@ import com.javaweb.entity.UsersEntity;
 import com.javaweb.entity.enums.ActionType;
 import com.javaweb.entity.enums.ApprovalStatus;
 import com.javaweb.entity.enums.DocumentStatus;
+import com.javaweb.enums.UserRole;
 import com.javaweb.exception.DocumentNotFoundException;
+import com.javaweb.exception.ForbiddenException;
 import com.javaweb.exception.InvalidFileException;
 import com.javaweb.rag.DocumentProcessingService;
 import com.javaweb.repository.DepartmentsRepository;
@@ -41,6 +46,8 @@ public class DocumentServiceImpl implements DocumentService {
     private static final long MAX_FILE_SIZE = 20L * 1024 * 1024; // 20MB
 
     private final DocumentRepository documentRepository;
+
+    private final DocumentPermissionsRepository documentPermissionsRepository;
     private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessingService documentProcessingService;
     private final DepartmentsRepository departmentsRepository;
@@ -52,6 +59,7 @@ public class DocumentServiceImpl implements DocumentService {
     private ApplicationEventPublisher eventPublisher;
 
     public DocumentServiceImpl(DocumentRepository documentRepository,
+            DocumentPermissionsRepository documentPermissionsRepository,
             DocumentChunkRepository documentChunkRepository,
             DocumentProcessingService documentProcessingService,
             DepartmentsRepository departmentsRepository,
@@ -59,6 +67,7 @@ public class DocumentServiceImpl implements DocumentService {
             StorageService storageService,
             NotificationService notificationService) {
         this.documentRepository = documentRepository;
+        this.documentPermissionsRepository = documentPermissionsRepository;
         this.documentChunkRepository = documentChunkRepository;
         this.documentProcessingService = documentProcessingService;
         this.departmentsRepository = departmentsRepository;
@@ -90,6 +99,7 @@ public class DocumentServiceImpl implements DocumentService {
         boolean isSameDepartment = currentUser.getDepartment() != null
                 && currentUser.getDepartment().getId().intValue() == targetDeptId;
         boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+        boolean isManager = currentUser.getRole().name().equals("MANAGER");
 
         if (!isSameDepartment && !isAdmin) {
             throw new AccessDeniedException("Bảo mật: Bạn không có quyền tải tài liệu vào phòng ban của người khác!");
@@ -104,8 +114,8 @@ public class DocumentServiceImpl implements DocumentService {
         document.setUploadedBy(currentUser.getId());
 
         // --- LUỒNG PHÊ DUYỆT TÀI LIỆU ---
-        
-        if (isAdmin) {
+
+        if (isAdmin || isManager) {
             document.setStatus(DocumentStatus.PROCESSING);
             document.setApprovalStatus(ApprovalStatus.APPROVED);
         } else {
@@ -125,12 +135,12 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Gửi thông báo
         Long notifyDeptId = targetDeptId != null ? Long.valueOf(targetDeptId) : null;
-        String notifyTitle = isAdmin ? "Tài liệu mới" : "Tài liệu mới chờ duyệt";
-        notificationService.notifySystemAction(currentUser, notifyDeptId, notifyTitle, 
+        String notifyTitle = (isAdmin || isManager) ? "Tài liệu mới" : "Tài liệu mới chờ duyệt";
+        notificationService.notifySystemAction(currentUser, notifyDeptId, notifyTitle,
                 "vừa tải lên tài liệu: " + file.getOriginalFilename(), isAdmin);
 
-        // Gọi pipeline xử lý AI nếu là ADMIN up, còn User thì chờ Manager duyệt
-        if (isAdmin) {
+        // Gọi pipeline xử lý AI nếu là ADMIN hoặc MANAGER up, còn User thì chờ Manager duyệt
+        if (isAdmin || isManager) {
             documentProcessingService.process(saved.getId());
         }
 
@@ -164,12 +174,49 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public ResponseInputStream<GetObjectResponse> downloadDocument(Long id, UsersEntity user) {
+    public ResponseInputStream<GetObjectResponse> downloadDocument(Long id, UsersEntity user, String requiredRole) {
         DocumentEntity document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy document id=" + id));
 
-        // Cần thêm logic kiểm tra quyền (Authorization) ở đây nếu cần thiết
+        boolean hasAccess = checkDocumentAccess(document, user, requiredRole);
+        if (!hasAccess) {
+            throw new ForbiddenException("Bạn không có quyền " + requiredRole + " tài liệu này!");
+        }
+
         return storageService.downloadFile(document.getFilePath());
+    }
+
+    private boolean checkDocumentAccess(DocumentEntity document, UsersEntity user, String requiredRole) {
+        if (user.getRole() == UserRole.ADMIN) {
+            return true;
+        }
+
+        // Tài liệu dùng chung (departmentId IS NULL) thì ai cũng có quyền
+        if (document.getDepartmentId() == null) {
+            return true;
+        }
+
+        if (user.getDepartment() != null
+                && Long.valueOf(document.getDepartmentId()).equals(user.getDepartment().getId())) {
+            return true;
+        }
+
+        List<DocumentPermissionsEntity> permissions = documentPermissionsRepository
+                .findByDocumentIdWithDetails(document.getId());
+        for (DocumentPermissionsEntity p : permissions) {
+            if (Boolean.TRUE.equals(p.getIsPublicLink()) ||
+                    (p.getPermissionDepartmentId() != null && user.getDepartment() != null
+                            && p.getPermissionDepartmentId().getId().equals(user.getDepartment().getId()))) {
+
+                String role = p.getRole();
+                if ("DOWNLOAD".equals(role)) {
+                    return true;
+                } else if ("VIEW".equals(role) && "VIEW".equals(requiredRole)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private DocumentResponse toResponse(DocumentEntity document, int chunkCount) {
@@ -180,9 +227,16 @@ public class DocumentServiceImpl implements DocumentService {
                     .orElse(null);
         }
 
+        String uploadedByName = null;
+        if (document.getUploadedBy() != null) {
+            uploadedByName = usersRepository.findById(document.getUploadedBy())
+                    .map(com.javaweb.entity.UsersEntity::getFullName)
+                    .orElse(null);
+        }
+
         return new DocumentResponse(
                 document.getId(),
-                document.getFileName(),
+                document.getTitle() != null ? document.getTitle() : document.getFileName(),
                 document.getFileName(),
                 document.getStatus(),
                 document.getApprovalStatus() != null ? document.getApprovalStatus().name() : null, // DUYỆT
@@ -193,8 +247,12 @@ public class DocumentServiceImpl implements DocumentService {
                 document.getDepartmentId(),
                 departmentName,
                 document.getUploadedBy(),
+                uploadedByName,
                 document.getFileSize(),
-                document.getFileType());
+                document.getFileType(),
+                document.getAiPurpose(),
+                document.getAiSummary(),
+                document.getAiTags());
     }
 
     @Override
@@ -209,8 +267,9 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public List<DocumentResponse> getPendingApprovals(Integer departmentId) {
-        List<DocumentEntity> pendingDocs = documentRepository
-                .findByDepartmentIdAndApprovalStatusAndDeletedAtIsNull(departmentId, ApprovalStatus.PENDING);
+        List<DocumentEntity> pendingDocs = documentRepository.findByDepartmentIdAndApprovalStatusInAndDeletedAtIsNull(
+                departmentId,
+                java.util.Collections.singletonList(ApprovalStatus.PENDING));
         return pendingDocs.stream()
                 .map(doc -> {
                     Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
