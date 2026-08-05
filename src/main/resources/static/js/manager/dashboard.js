@@ -1007,10 +1007,11 @@ async function openChatSession(sessionId) {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const session = await apiRequest(`/api/user/chat-sessions/${sessionId}`);
+        const messages = await apiRequest(`/api/user/chat-sessions/${sessionId}/messages`);
+        const sessionInfo = UserState.chat.sessions.find(s => s.id === sessionId) || {};
 
         UserState.chat.currentSessionId = sessionId;
-        UserState.chat.messages = session.messages || [];
+        UserState.chat.messages = messages || [];
 
         const emptyState = document.getElementById('chatEmptyState');
         const active = document.getElementById('chatActive');
@@ -1019,8 +1020,8 @@ async function openChatSession(sessionId) {
 
         if (emptyState) emptyState.style.display = 'none';
         if (active) active.style.display = 'flex';
-        if (title) title.textContent = session.title || 'Cuộc hội thoại';
-        if (meta) meta.textContent = `${session.messageCount || 0} tin nhắn`;
+        if (title) title.textContent = sessionInfo.title || 'Cuộc hội thoại';
+        if (meta) meta.textContent = `${sessionInfo.messageCount || messages.length || 0} tin nhắn`;
 
         renderChatMessages();
         renderChatSessionList();
@@ -1316,10 +1317,20 @@ async function executeDeleteChatSession() {
 }
 
 function askAIAboutDocument(docName) {
+    if (typeof switchTab !== 'undefined') {
+        const tabEl = document.querySelector('[data-tab="tabChat"]');
+        if (tabEl) {
+            switchTab('tabChat', tabEl);
+            if (typeof loadManagerTabData === 'function') loadManagerTabData('tabChat');
+        }
+    }
     const input = document.getElementById('chatInput');
     if (input) {
         input.value = `Cho tôi biết nội dung chính của tài liệu "${docName}"`;
         input.focus();
+    }
+    if (typeof closeModal !== 'undefined') {
+        closeModal('docViewerModal');
     }
 }
 

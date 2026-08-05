@@ -298,6 +298,13 @@ function updateUserUI(user) {
         }
     }
 
+    // Update Dropdown Data
+    const dropdownUserName = document.getElementById("dropdownUserName");
+    if (dropdownUserName) dropdownUserName.textContent = displayName;
+    
+    const dropdownUserEmail = document.getElementById("dropdownUserEmail");
+    if (dropdownUserEmail) dropdownUserEmail.textContent = user.email || user.username || "Chưa cập nhật email";
+
     // Update Sidebar
     const sideName = document.getElementById("sidebarName");
     if (sideName) sideName.textContent = displayName;

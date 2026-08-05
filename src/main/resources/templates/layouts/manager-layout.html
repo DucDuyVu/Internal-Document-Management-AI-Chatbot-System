@@ -159,10 +159,45 @@
           </div>
 
           <span class="role-badge manager" id="topRoleBadge">Quản lý</span>
-          <div class="user-pill" onclick="document.querySelector('[data-tab=\'tabProfile\']').click();"
-            style="cursor:pointer; display:flex; align-items:center; gap:8px;">
-            <span id="userFullName" style="color:white; font-size:0.875rem; font-weight:500;"></span>
-            <div class="user-avatar" id="userAvatar">U</div>
+          <div style="position: relative;">
+            <div class="user-pill" onclick="if(typeof toggleDropdown === 'function') toggleDropdown(event, 'managerDropdownHeader');"
+              style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+              <div class="user-avatar" id="userAvatar">U</div>
+              <span id="userFullName" style="color: white; font-size: 0.875rem; font-weight: 500"></span>
+              <i class="fa-solid fa-chevron-down" style="color: white; font-size: 0.75rem; margin-left: 4px;"></i>
+            </div>
+
+            <!-- Dropdown Menu -->
+            <div id="managerDropdownHeader" class="dropdown-menu"
+              style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 240px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; z-index: 1000; overflow: hidden; padding: 0;">
+              
+              <div style="padding: 16px; border-bottom: 1px solid #e2e8f0;">
+                <div id="dropdownUserName" style="font-weight: 600; color: #1e293b; font-size: 0.95rem;">Người Dùng</div>
+                <div id="dropdownUserEmail" style="color: #64748b; font-size: 0.8rem; margin-top: 4px;"></div>
+              </div>
+              
+              <div style="padding: 8px 0;">
+                <a href="#" onclick="const tab=document.querySelector('[data-tab=\'tabProfile\']'); if(tab) tab.click(); if(typeof toggleDropdown === 'function') toggleDropdown(null, 'managerDropdownHeader'); return false;" 
+                   style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: #475569; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;">
+                  <i class="fa-regular fa-user" style="color: #6366f1; width: 16px; text-align: center;"></i>
+                  Hồ sơ cá nhân
+                </a>
+                
+                <a href="#" onclick="const tab=document.querySelector('[data-tab=\'tabChat\']'); if(tab) tab.click(); if(typeof toggleDropdown === 'function') toggleDropdown(null, 'managerDropdownHeader'); return false;" 
+                   style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: #475569; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;">
+                  <i class="fa-solid fa-wand-magic-sparkles" style="color: #8b5cf6; width: 16px; text-align: center;"></i>
+                  AI Chatbot
+                </a>
+              </div>
+              
+              <div style="padding: 8px 0; border-top: 1px solid #e2e8f0;">
+                <a href="#" id="logoutBtnTop" 
+                   style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: #ef4444; text-decoration: none; font-size: 0.9rem; transition: background 0.2s;">
+                  <i class="fa-solid fa-arrow-right-from-bracket" style="width: 16px; text-align: center;"></i>
+                  Đăng xuất
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </header>

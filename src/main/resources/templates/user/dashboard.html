@@ -75,17 +75,17 @@
         <div class="quick-grid">
           <div class="quick-card"
             onclick="switchTab('tabChat', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabChat');">
-            <div class="quick-card-icon"><i class="fa-solid fa-robot"></i></div>
+            <div class="quick-card-icon" style="color: #a78bfa;"><i class="fa-solid fa-robot"></i></div>
             <span>Hỏi AI ngay</span>
           </div>
           <div class="quick-card"
             onclick="switchTab('tabDocuments', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabDocuments');">
-            <div class="quick-card-icon"><i class="fa-solid fa-folder-open"></i></div>
+            <div class="quick-card-icon" style="color: #60a5fa;"><i class="fa-solid fa-folder-open"></i></div>
             <span>Tài liệu của tôi</span>
           </div>
           <div class="quick-card"
             onclick="switchTab('tabSearch', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabSearch');">
-            <div class="quick-card-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <div class="quick-card-icon" style="color: #34d399;"><i class="fa-solid fa-magnifying-glass"></i></div>
             <span>Tìm kiếm</span>
           </div>
         </div>
@@ -99,35 +99,35 @@
         </div>
         <div class="stat-grid">
           <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-file-lines"></i></div>
+            <div class="stat-icon" style="color: #6366f1; background: #eef2ff;"><i class="fa-solid fa-file-lines"></i></div>
             <div>
               <div class="stat-label">Tài liệu phòng ban</div>
               <div class="stat-value skeleton-loader" id="statDocCount">—</div>
-              <div class="stat-change">Có thể truy cập</div>
+              <div class="stat-change" style="color: #818cf8;">Có thể truy cập</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-comments"></i></div>
+            <div class="stat-icon" style="color: #f472b6; background: #fdf2f8;"><i class="fa-solid fa-comments"></i></div>
             <div>
               <div class="stat-label">Phiên Chat AI</div>
               <div class="stat-value skeleton-loader" id="statChatCount">—</div>
-              <div class="stat-change">Tổng hội thoại</div>
+              <div class="stat-change" style="color: #f472b6;">Tổng hội thoại</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-eye"></i></div>
+            <div class="stat-icon" style="color: #fbbf24; background: #fffbeb;"><i class="fa-solid fa-eye"></i></div>
             <div>
               <div class="stat-label">Tài liệu đã xem</div>
               <div class="stat-value skeleton-loader" id="statViewCount">—</div>
-              <div class="stat-change">Tổng lượt xem</div>
+              <div class="stat-change" style="color: #fbbf24;">Tổng lượt xem</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <div class="stat-icon" style="color: #34d399; background: #ecfdf5;"><i class="fa-solid fa-magnifying-glass"></i></div>
             <div>
               <div class="stat-label">Lượt tìm kiếm</div>
               <div class="stat-value skeleton-loader" id="statSearchCount">—</div>
-              <div class="stat-change">Tổng số lần</div>
+              <div class="stat-change" style="color: #34d399;">Tổng số lần</div>
             </div>
           </div>
         </div>
@@ -191,18 +191,13 @@
           </div>
         </div>
         <div>
-          <input type="file" id="uploadDocInput" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
-          <button class="btn-primary" onclick="document.getElementById('uploadDocInput').click()" id="uploadDocBtn"
-            style="background:#4f46e5;border-radius:8px;padding:12px 24px;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:8px;border:none;color:white;cursor:pointer;transition:all 0.2s;"
-            onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Tải lên tài liệu mới
-          </button>
+          <!-- Nút Tải lên đã bị xóa theo yêu cầu -->
         </div>
       </div>
 
       <!-- Summary bar -->
       <div id="docSummaryBar"
-        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; font-size: 0.9rem; color: #4b5563; background: white; padding: 12px 20px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; font-size: 0.95rem; color: var(--text-secondary); background: var(--glass-bg); backdrop-filter: blur(10px); padding: 16px 24px; border-radius: var(--radius-lg); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
         <div>
           <strong>Tổng số:</strong> <span id="docTotalCount" style="color:#111827; font-weight:600;">0</span> tài liệu
           <span style="color:#d1d5db; margin:0 8px;">|</span>
@@ -217,7 +212,7 @@
           <span class="search-icon"
             style="color:#94a3b8;position:absolute;left:16px;top:50%;transform:translateY(-50%);"><i
               class="fa-solid fa-magnifying-glass"></i></span>
-          <input type="text" id="docSearchInput" placeholder="Tìm theo tên tài liệu..."
+          <input type="text" id="docSearchInput" placeholder="Lọc nhanh theo tên file..."
             style="width:100%;height:48px;padding:0 16px 0 44px;border-radius:12px;border:1px solid #e2e8f0;font-size:0.95rem;outline:none;background:#ffffff;box-sizing:border-box;box-shadow:0 2px 4px rgba(0,0,0,0.02);">
         </div>
         <div class="pill-filters" id="docTypePillFilter"
@@ -241,27 +236,7 @@
             <option value="pptx">PowerPoint</option>
           </select>
         </div>
-
-        <div
-          style="position:relative; display:flex; align-items:center; background:white; border:1px solid #e5e7eb; border-radius:8px; padding-left:12px;">
-          <i class="fa-solid fa-arrow-down-short-wide" style="color:#9ca3af; font-size:0.875rem;"></i>
-          <select id="docSortFilter" class="filter-select"
-            style="border:none; box-shadow:none; padding-left:8px; height: 100%;">
-            <option value="newest">Mới nhất</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="name">Theo tên</option>
-            <option value="size">Theo kích thước</option>
-          </select>
-        </div>
-
-        <button class="btn btn-primary" onclick="openUploadModal()">+ Tải lên</button>
-
-        <div class="view-toggle" style="display:flex; background:#f3f4f6; border-radius:8px; padding:4px;">
-          <button class="view-btn active" id="btnGridView" onclick="setDocView('grid')" title="Xem dạng lưới"
-            style="padding:6px 12px; border-radius:6px; cursor:pointer; border:none; transition:all 0.2s; font-size:1.1rem;">⊞</button>
-          <button class="view-btn" id="btnListView" onclick="setDocView('list')" title="Xem dạng danh sách"
-            style="padding:6px 12px; border-radius:6px; cursor:pointer; border:none; transition:all 0.2s; font-size:1.1rem;">☰</button>
-        </div>
+      </div>
 
         <!-- Lưới tài liệu mới -->
         <div id="docGridView" style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:24px;">
@@ -303,7 +278,7 @@
       </div><!-- kết thúc tabDocuments -->
 
       <!-- ===== TAB: AI CHATBOT ===== -->
-      <div id="tabChat" style="display:none;">
+      <div id="tabChat" class="tab-content" style="display:none;">
         <div class="chat-full-layout">
 
           <!-- Bảng bên trái: Danh sách phiên chat -->
@@ -372,14 +347,14 @@
       <!-- ===== TAB: TÌM KIẾM TÀI LIỆU ===== -->
       <div id="tabSearch" style="display:none;">
         <div class="section-header">
-          <h2>🔍 Tìm kiếm tài liệu</h2>
+          <h2><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary);"></i> Tra cứu nội dung bằng AI</h2>
         </div>
 
         <div class="search-hero">
           <div class="search-hero-input-wrap">
-            <span class="search-hero-icon">🔍</span>
+            <span class="search-hero-icon"><i class="fa-solid fa-robot"></i></span>
             <input type="text" id="globalSearchInput" class="search-hero-input"
-              placeholder="Tìm kiếm tài liệu bằng từ khóa (Vector Search)...">
+              placeholder="Nhập nội dung bạn đang tìm hoặc đặt câu hỏi (VD: Quy định nghỉ phép thai sản 2026?)...">
             <button class="search-hero-btn" onclick="performSearch()">Tìm kiếm</button>
           </div>
           <div class="search-filters-row">
@@ -397,10 +372,9 @@
 
         <div id="searchResults">
           <div class="search-hint">
-            <div class="search-hint-icon">🔍</div>
-            <p>Nhập từ khóa để tìm kiếm tài liệu trong phòng ban của bạn.</p>
-            <p class="search-hint-subtext">Hệ thống sử dụng Vector Search để tìm kiếm ngữ
-              nghĩa.</p>
+            <div class="search-hint-icon"><i class="fa-solid fa-robot" style="color: var(--primary); opacity: 0.5;"></i></div>
+            <p>Nhập từ khóa hoặc câu hỏi để AI tìm kiếm nội dung trong các tài liệu.</p>
+            <p class="search-hint-subtext">Hệ thống sẽ đọc hiểu nội dung toàn bộ văn bản để trả về kết quả chính xác nhất.</p>
           </div>
         </div>
 
@@ -912,63 +886,6 @@
 
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('permissionModal')">Đóng</button>
-    </div>
-  </div>
-</div>
-
-</div>
-=======
-<!-- MODAL: Đổi tên hội thoại -->
-<div class="modal-overlay" id="renameChatModal">
-  <div class="modal max-w-sm">
-    <div class="modal-header">
-      <h3>✏️ Đổi tên hội thoại</h3>
-      <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
-    </div>
-    <div class="form-group">
-      <label for="newChatTitle">Tên mới</label>
-      <input type="text" id="newChatTitle" class="form-input" placeholder="Nhập tên hội thoại...">
-    </div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
-      <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Upload tài liệu -->
-<div class="modal-overlay" id="uploadDocModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>📤 Tải lên tài liệu</h3>
-      <button class="modal-close" onclick="closeModal('uploadDocModal')">✕</button>
-    </div>
-
-    <div class="upload-area" id="uploadDropArea" onclick="document.getElementById('uploadFileInput').click()">
-      <div class="upload-hint-icon">📁</div>
-      <p class="upload-hint-text">Kéo thả file vào đây hoặc <strong>bấm để chọn file</strong></p>
-      <p class="upload-hint-subtext">Chỉ hỗ trợ PDF, tối đa 20MB</p>
-      <input type="file" id="uploadFileInput" accept=".pdf" style="display:none;">
-    </div>
-
-    <div id="uploadFileSelectedBox" class="file-selected-box" style="display:none;">
-      <div>
-        <div class="file-selected-name" id="uploadFileName">—</div>
-        <div class="file-selected-size" id="uploadFileSize">—</div>
-      </div>
-      <button class="btn-icon-danger" onclick="clearSelectedUploadFile()">✕</button>
-    </div>
-
-    <div id="uploadProgressWrap" style="display:none; margin-top:12px;">
-      <div class="upload-progress-text" id="uploadProgressText">Đang tải lên...</div>
-      <div class="upload-progress-bar">
-        <div class="upload-progress-fill" id="uploadProgressFill"></div>
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal('uploadDocModal')">Hủy</button>
-      <button class="btn-primary-sm" id="uploadSubmitBtn" onclick="submitUploadDocument()">Tải lên</button>
     </div>
   </div>
 </div>

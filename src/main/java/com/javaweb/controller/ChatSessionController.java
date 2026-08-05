@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.javaweb.dto.chat.ChatMessageHistoryResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 /**
  * ChatSessionController — REST Controller xử lý các request liên quan đến
  * vòng đời chat session (tạo, liệt kê, xoá mềm).
@@ -143,6 +144,25 @@ public class ChatSessionController {
         chatSessionService.deleteSession(id, currentUser);
 
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Đổi tên chat session của user đang đăng nhập.
+     *
+     * Được gọi từ: PUT /api/user/chat-sessions/{id}
+     */
+    @PutMapping({"/sessions/{id}", "/chat-sessions/{id}"})
+    public ResponseEntity<ChatSessionResponse> renameSession(
+            @PathVariable Long id,
+            @RequestBody(required = false) ChatSessionRequest request) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UsersEntity currentUser = getCurrentUser(authentication);
+
+        String newTitle = (request != null) ? request.getTitle() : null;
+        ChatSessionResponse response = chatSessionService.renameSession(id, newTitle, currentUser);
+
+        return ResponseEntity.ok(response);
     }
 
     /**

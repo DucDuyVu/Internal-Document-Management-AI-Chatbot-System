@@ -619,7 +619,7 @@
       <div style="display:flex; gap:16px; align-items:center; margin-bottom:24px; flex-wrap:wrap;">
         <div class="search-wrap" style="flex:1; margin-bottom:0; min-width:300px; position:relative;">
           <span class="search-icon" style="color:#94a3b8;position:absolute;left:16px;top:50%;transform:translateY(-50%);"><i class="fa-solid fa-magnifying-glass"></i></span>
-          <input type="text" id="docSearchInput" oninput="filterUserDocuments()" placeholder="Tìm theo tên tài liệu, tác giả hoặc mã hiệu..." style="width:100%;height:48px;padding:0 16px 0 44px;border-radius:12px;border:1px solid #e2e8f0;font-size:0.95rem;outline:none;background:#ffffff;box-sizing:border-box;box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+          <input type="text" id="docSearchInput" oninput="filterUserDocuments()" placeholder="Lọc nhanh theo tên file, tác giả..." style="width:100%;height:48px;padding:0 16px 0 44px;border-radius:12px;border:1px solid #e2e8f0;font-size:0.95rem;outline:none;background:#ffffff;box-sizing:border-box;box-shadow:0 2px 4px rgba(0,0,0,0.02);">
         </div>
         <div class="pill-filters" id="docTypePillFilter" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <button class="pill-btn active" data-filter="" onclick="setDocFilter(this)">Tất cả</button>
@@ -757,14 +757,14 @@
     <div id="tabSearch" class="tab-content" style="display:none;">
       <div class="section-card">
         <div class="card-header">
-          <h2><i class="fa-solid fa-magnifying-glass" style="color:var(--primary);"></i> Tìm kiếm tài liệu</h2>
+          <h2><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary);"></i> Tra cứu nội dung bằng AI</h2>
         </div>
         <div class="card-body">
           <div class="search-hero">
             <div class="search-hero-input-wrap">
-              <span class="search-hero-icon">🔍</span>
+              <span class="search-hero-icon"><i class="fa-solid fa-robot"></i></span>
               <input type="text" id="searchHeroInput" class="search-hero-input"
-                placeholder="Tìm kiếm tài liệu bằng từ khóa...">
+                placeholder="Nhập nội dung bạn đang tìm hoặc đặt câu hỏi (VD: Quy trình xin nghỉ phép năm 2026?)...">
               <button class="search-hero-btn" onclick="performSearch()">Tìm kiếm</button>
             </div>
             <div class="search-filters-row">
@@ -781,9 +781,9 @@
           </div>
           <div id="searchResults">
             <div class="search-hint">
-              <div class="search-hint-icon">🔍</div>
-              <p>Nhập từ khóa để tìm kiếm tài liệu trong phòng ban của bạn.</p>
-              <p class="search-hint-subtext">Hệ thống sử dụng Vector Search để tìm kiếm ngữ nghĩa.</p>
+              <div class="search-hint-icon"><i class="fa-solid fa-robot" style="color: var(--primary); opacity: 0.5;"></i></div>
+              <p>Nhập từ khóa hoặc câu hỏi để AI tìm kiếm nội dung trong các tài liệu.</p>
+              <p class="search-hint-subtext">Hệ thống sẽ đọc hiểu nội dung toàn bộ văn bản để trả về kết quả chính xác nhất.</p>
             </div>
           </div>
         </div>
