@@ -76,6 +76,9 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
 
        Page<DocumentEntity> findByDeletedAtIsNull(Pageable pageable);
 
+       @Query("SELECT COUNT(d) FROM DocumentEntity d WHERE d.uploadedBy = :userId AND d.approvalStatus = 'APPROVED' AND d.deletedAt IS NULL")
+       long countApprovedByUserId(@Param("userId") Long userId);
+
 
 
        List<DocumentEntity> findByDepartmentIdAndApprovalStatusInAndDeletedAtIsNull(Integer departmentId,

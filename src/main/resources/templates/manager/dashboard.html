@@ -369,9 +369,13 @@
             Phòng ban: <strong id="msDeptNameHeader" style="color:var(--primary);">—</strong>
           </div>
         </div>
-        <div class="header-action">
-          <button class="btn-primary" onclick="switchTab('tabApprovals')" style="padding:10px 24px; font-size:1.05rem; font-weight: 600; display:flex; align-items:center; gap:10px; border-radius: 12px; background-color: #5b45f1; border: none; box-shadow: 0 4px 12px rgba(91, 69, 241, 0.3); transition: all 0.3s ease;">
+        <div class="header-action" style="display: flex; flex-direction: column; gap: 12px; align-items: flex-end; min-width: 250px;">
+          <button class="btn-primary" onclick="switchTab('tabApprovals')" style="width: 100%; justify-content: center; padding:12px 24px; font-size:1rem; font-weight: 700; display:flex; align-items:center; gap:10px; border-radius: 14px; background-color: #5b45f1; border: none; box-shadow: 0 4px 12px rgba(91, 69, 241, 0.3); transition: all 0.2s ease; color: white; cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
             <i class="fa-solid fa-file-circle-check"></i> Xử Lý <span id="btnPendingCount">0</span> Hồ Sơ Chờ Duyệt
+          </button>
+          
+          <button class="btn-secondary" onclick="switchTab('tabReports')" style="width: 100%; justify-content: center; padding:12px 24px; font-size:1rem; font-weight: 700; display:flex; align-items:center; gap:10px; border-radius: 14px; background-color: #334155; border: 1px solid #475569; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: all 0.2s ease; color: white; cursor: pointer;" onmouseover="this.style.backgroundColor='#475569'; this.style.transform='translateY(-2px)'" onmouseout="this.style.backgroundColor='#334155'; this.style.transform='translateY(0)'">
+            <i class="fa-solid fa-arrow-trend-up" style="color: #10b981; font-size: 1.1rem;"></i> Báo Cáo Phân Tích Chi Tiết
           </button>
         </div>
       </div>
@@ -550,23 +554,12 @@
             </select>
           </div>
 
-          <div class="table-card">
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nhân viên</th>
-                    <th>Liên hệ</th>
-                    <th>Trạng thái</th>
-                    <th style="text-align:right;">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody id="employeeTableBody">
-                  <tr>
-                    <td colspan="4" class="empty-state"><span>👥</span>Đang tải dữ liệu...</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="employee-grid-container" style="margin-top:20px; min-height: 400px;">
+            <div id="employeeGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;">
+              <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                <span style="font-size: 2rem; display: block; margin-bottom: 8px;">👥</span>
+                Đang tải dữ liệu...
+              </div>
             </div>
           </div>
 
@@ -579,16 +572,112 @@
     </div><!-- kết thúc tabEmployees -->
 
     <!-- ===== TAB: BÁO CÁO ===== -->
-    <div id="tabReports" class="tab-content" style="display:none;">
-      <div class="section-card">
-        <div class="card-header">
-          <h2><i class="fa-solid fa-chart-pie" style="color:#6366f1;"></i> Báo cáo</h2>
+    <div id="tabReports" class="tab-content" style="display:none; padding: 12px;">
+      
+      <!-- Header -->
+      <div class="report-header">
+        <div class="report-title-area">
+          <div class="report-icon-box">
+            <i class="fa-solid fa-chart-pie"></i>
+          </div>
+          <div class="report-title">
+            <h2>Báo Cáo & Phân Tích <span style="background:#e0e7ff; color:#4f46e5; padding:2px 8px; border-radius:12px; font-size:0.75rem; vertical-align:middle; margin-left:8px;">Nâng Cao</span></h2>
+            <span>Tổng hợp chỉ số tài liệu, hiệu suất, phân tích AI & xuất báo cáo</span>
+          </div>
         </div>
-        <div class="card-body" style="text-align:center; padding:60px 24px;">
-          <div style="font-size:3rem; color:#94a3b8; margin-bottom:16px;"><i class="fa-solid fa-chart-column"></i></div>
-          <h3 style="font-size:1.25rem; font-weight:600; color:#334155; margin-bottom:8px;">Tính năng đang phát triển</h3>
-          <p style="color:#64748b; margin-bottom:24px;">Hệ thống báo cáo nâng cao đang được hoàn thiện. Vui lòng quay lại sau.</p>
-          <button class="btn-primary" onclick="switchTab('tabManager', null)">Quay lại Tổng quan</button>
+        <div class="report-filters">
+
+          <select class="report-filter-select">
+            <option>30 ngày qua</option>
+          </select>
+          <button class="btn-export"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
+        </div>
+      </div>
+
+      <!-- Stat Grid -->
+      <div class="report-stat-grid">
+        <div class="report-stat-card">
+          <div class="report-stat-header">
+            <span>Tổng tài liệu xử lý</span>
+            <div class="report-stat-icon-small" style="background:#e0e7ff; color:#4f46e5;"><i class="fa-solid fa-file-lines"></i></div>
+          </div>
+          <div class="report-stat-value">
+            <span id="repTotalDocs">0</span>
+            <span class="report-stat-trend trend-up"><i class="fa-solid fa-arrow-trend-up"></i></span>
+          </div>
+          <span class="report-stat-desc">Tổng số tài liệu hệ thống</span>
+        </div>
+        
+        <div class="report-stat-card">
+          <div class="report-stat-header">
+            <span>Tài liệu hợp lệ</span>
+            <div class="report-stat-icon-small" style="background:#dcfce7; color:#10b981;"><i class="fa-solid fa-check-circle"></i></div>
+          </div>
+          <div class="report-stat-value">
+            <span id="repApprovalRate">0%</span>
+            <span class="report-stat-trend trend-up"><i class="fa-solid fa-arrow-trend-up"></i></span>
+          </div>
+          <span class="report-stat-desc">Tỷ lệ duyệt tài liệu chuẩn</span>
+        </div>
+
+        <div class="report-stat-card">
+          <div class="report-stat-header">
+            <span>Thời gian xử lý TB</span>
+            <div class="report-stat-icon-small" style="background:#fef3c7; color:#f59e0b;"><i class="fa-solid fa-clock"></i></div>
+          </div>
+          <div class="report-stat-value">
+            <span id="repAvgTime">0 giờ</span>
+            <span class="report-stat-trend trend-down" style="background:#dcfce7; color:#166534;"><i class="fa-solid fa-arrow-trend-down"></i></span>
+          </div>
+          <span class="report-stat-desc">So với quy trình thủ công</span>
+        </div>
+
+        <div class="report-stat-card" style="border: 1px solid #fbcfe8; background: #fdf2f8;">
+          <div class="report-stat-header">
+            <span style="color:#be185d;">Tiết kiệm bằng AI</span>
+            <div class="report-stat-icon-small" style="background:#fce7f3; color:#db2777;"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+          </div>
+          <div class="report-stat-value" style="color:#9d174d;">
+            <span id="repAiSaved">0 giờ</span>
+            <span style="font-size:0.8rem; background:#fbcfe8; color:#9d174d; padding:2px 6px; border-radius:12px; margin-left:auto;">OCR & Tag</span>
+          </div>
+          <span class="report-stat-desc" style="color:#be185d;">Ước tính giờ công tiết kiệm</span>
+        </div>
+      </div>
+
+      <!-- AI Banner -->
+      <div class="report-ai-banner">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="icon"><i class="fa-solid fa-robot"></i></div>
+          <div>
+            <h4 style="margin:0; font-size:1.05rem; font-weight:700; color:#312e81;">Trợ lý AI IDMS - Tóm Tắt & Phân Tích Điều Hành</h4>
+            <p style="margin:0; font-size:0.85rem; color:#4f46e5;">Sử dụng mô hình Gemini để tự động tổng hợp báo cáo và đưa ra khuyến nghị quản lý.</p>
+          </div>
+        </div>
+        <button class="btn-primary" style="background: linear-gradient(90deg, #8b5cf6, #d946ef); border:none; box-shadow:0 4px 12px rgba(217, 70, 239, 0.3);">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> AI Phân Tích Báo Cáo
+        </button>
+      </div>
+
+      <!-- Charts -->
+      <div class="report-charts-grid">
+        <div class="report-chart-card" style="grid-column: span 2;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div>
+              <h3 style="font-size:1.1rem; margin-top:0; margin-bottom:4px; color:var(--text-primary);">Xu Hướng Phát Hành & Phê Duyệt Tài Liệu</h3>
+              <p style="margin:0; font-size:0.85rem; color:var(--text-secondary);">Thống kê số lượng tài liệu khởi tạo và đã duyệt theo ngày</p>
+            </div>
+            <span style="background: #eef2ff; color: #4f46e5; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Đồng bộ Thời Gian Thực</span>
+          </div>
+          <div style="position: relative; height: 280px; width: 100%;">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+        <div class="report-chart-card">
+          <h3 style="font-size:1.1rem; margin-top:0; margin-bottom:20px; color:var(--text-primary);">Thống Kê Trạng Thái Xử Lý</h3>
+          <div style="position: relative; height: 280px; width: 100%;">
+            <canvas id="typeChart"></canvas>
+          </div>
         </div>
       </div>
     </div><!-- kết thúc tabReports -->
@@ -813,7 +902,7 @@
             <div class="settings-profile-grid">
               <div class="profile-info-list">
                 <div class="profile-info-row">
-                  <div class="profile-info-item">
+                  <div class="profile-info-item" style="display:none;">
                     <span class="profile-info-label">Tên đăng nhập</span>
                     <span class="profile-info-value" id="viewUsername">—</span>
                   </div>
@@ -838,8 +927,8 @@
                     <span class="profile-info-value" id="viewDept">—</span>
                   </div>
                   <div class="profile-info-item">
-                    <span class="profile-info-label">Vai trò</span>
-                    <span class="profile-info-value" id="viewRole">—</span>
+                    <span class="profile-info-label">Chức danh</span>
+                    <span class="profile-info-value"><span id="viewJobTitle" style="color:var(--primary); font-weight:600;">—</span></span>
                   </div>
                 </div>
                 <div class="profile-info-row">
@@ -850,6 +939,14 @@
                   <div class="profile-info-item">
                     <span class="profile-info-label">Đăng nhập lần cuối</span>
                     <span class="profile-info-value" id="viewLastLogin">—</span>
+                  </div>
+                </div>
+                <div class="profile-info-row" style="margin-top: 12px; border-top: 1px dashed var(--border-color); padding-top: 16px;">
+                  <div class="profile-info-item" style="width: 100%;">
+                    <span class="profile-info-label">Chữ ký cá nhân (Phê duyệt tài liệu)</span>
+                    <div id="viewSignature" style="margin-top: 12px; min-height: 80px; width: fit-content; min-width: 200px; padding: 12px; border: 1px dashed var(--border-color); border-radius: 8px; background: #f8fafc; display: flex; align-items: center; justify-content: center; font-style: italic; color: #94a3b8; font-size: 0.9rem;">
+                      Chưa thiết lập chữ ký
+                    </div>
                   </div>
                 </div>
               </div>
@@ -881,6 +978,26 @@
             </div>
             <div class="settings-form">
               <div class="form-row">
+                <div class="form-group" style="display:none;">
+                  <label>Tên đăng nhập</label>
+                  <input type="text" id="editUsername" class="form-input" placeholder="Tên đăng nhập">
+                </div>
+                <div class="form-group" style="width: 100%;">
+                  <label>Email <i class="fa-solid fa-lock" style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                  <input type="text" id="editEmail" class="form-input" disabled style="background:#f1f5f9; color:#64748b; cursor:not-allowed;">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Phòng ban <i class="fa-solid fa-lock" style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                  <input type="text" id="editDept" class="form-input" disabled style="background:#f1f5f9; color:#64748b; cursor:not-allowed;">
+                </div>
+                <div class="form-group">
+                  <label>Chức danh <i class="fa-solid fa-lock" style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                  <input type="text" id="editJobTitle" class="form-input" disabled style="background:#f1f5f9; color:#64748b; cursor:not-allowed;" placeholder="Chưa cập nhật chức danh">
+                </div>
+              </div>
+              <div class="form-row">
                 <div class="form-group">
                   <label>Họ và tên</label>
                   <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
@@ -904,6 +1021,40 @@
                       </label>
                       <input type="file" id="editAvatarUrl" class="form-input" accept="image/jpeg, image/png, image/webp" style="display:none;" onchange="previewAvatar(event)">
                       <div style="font-size:0.75rem; color:#64748b; margin-top:8px;">Định dạng: JPG, PNG, WEBP. Tối đa 5MB.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-row" style="margin-top: 16px;">
+                <div class="form-group" style="width:100%;">
+                  <label>Chữ ký cá nhân (Tự vẽ hoặc tải ảnh lên)</label>
+                  <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                    
+                    <div style="display:flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+                        <!-- Canvas Area -->
+                        <div style="position:relative;">
+                            <canvas id="signaturePad" width="350" height="150" style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #fff; cursor: crosshair; touch-action: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);"></canvas>
+                            <div style="position: absolute; bottom: 8px; right: 8px; display:flex; gap: 8px;">
+                                <button type="button" class="btn-secondary-sm" onclick="clearSignature()" style="padding: 6px 12px; font-size: 0.75rem; background: #f1f5f9; color: #ef4444; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; font-weight: 500;"><i class="fa-solid fa-eraser"></i> Xóa ký lại</button>
+                            </div>
+                        </div>
+
+                        <!-- Preview / Upload Area -->
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <div id="signaturePreviewContainer" style="width: 150px; height: 80px; border-radius: 8px; background: #f8fafc; border: 1px dashed #cbd5e1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                                <img id="signaturePreviewImg" src="" style="max-width:90%; max-height:90%; object-fit:contain; display:none;">
+                                <span id="signaturePreviewInitials" style="font-size:0.8rem; color:#94a3b8; font-style:italic; text-align:center;">Chữ ký<br>hiện tại</span>
+                            </div>
+                            
+                            <label for="editSignatureUrl" class="btn btn-outline" style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:0.75rem; padding:8px 12px; width:100%;">
+                                <i class="fa-solid fa-upload"></i> Hoặc tải ảnh lên
+                            </label>
+                            <input type="file" id="editSignatureUrl" class="form-input" accept="image/png, image/webp" style="display:none;" onchange="previewSignature(event)">
+                        </div>
+                    </div>
+
+                    <div style="font-size:0.8rem; color:#64748b; margin-top:4px;">
+                        <i class="fa-solid fa-circle-info" style="color:var(--primary); margin-right:4px;"></i> Ký trực tiếp bằng chuột/cảm ứng vào khung bên trái, hoặc tải ảnh PNG nền trong suốt lên.
                     </div>
                   </div>
                 </div>
@@ -1079,11 +1230,35 @@
         </div>
         <form id="employeeForm">
           <input type="hidden" id="empId" name="id">
+          
+          <!-- Read-only Info Block -->
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; gap: 16px; align-items: center;">
+            <!-- Avatar -->
+            <div id="roAvatar" style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.08);">
+                -
+            </div>
+            
+            <!-- Info -->
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                    <div id="roEmail" style="font-size: 1.05rem; font-weight: 700; color: #1e293b; word-break: break-all;">-</div>
+                    <i class="fa-solid fa-lock" style="font-size: 0.75em; color: #94a3b8;" title="Email đăng nhập không thể thay đổi"></i>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <span id="roStatus" style="font-size: 0.7rem; padding: 3px 8px; border-radius: 12px; font-weight: 600; background: #dcfce7; color: #166534;">-</span>
+                    <span id="roRole" style="font-size: 0.7rem; padding: 3px 8px; border-radius: 12px; font-weight: 600; background: #e0e7ff; color: #4338ca;">-</span>
+                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <i class="fa-solid fa-building" style="opacity: 0.7;"></i> <span id="roDepartment">-</span>
+                    </span>
+                </div>
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="empFullName">Họ và tên <span style="color:red;">*</span></label>
             <input type="text" id="empFullName" name="fullName" class="form-input" required placeholder="Nhập họ tên nhân viên">
           </div>
-          <div class="form-group">
+          <div class="form-group" style="display:none;">
             <label for="empEmail">Email</label>
             <input type="email" id="empEmail" name="email" class="form-input" placeholder="Nhập email">
           </div>
@@ -1211,7 +1386,14 @@
         </div>
       </div>
     </div>
-
   </div>
+
+  <th:block layout:fragment="custom-js">
+    <!-- Thêm thư viện PDF.js cho tính năng Kéo thả chữ ký -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
+  </th:block>
 </body>
 </html>

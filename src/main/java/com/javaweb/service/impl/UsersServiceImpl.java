@@ -83,6 +83,8 @@ public class UsersServiceImpl implements UsersService {
 		profileResponse.setUserId(user.getId());
 		profileResponse.setRole(user.getRole().name());
 		profileResponse.setAvatarUrl(user.getAvatarURL());
+		profileResponse.setSignatureUrl(user.getSignatureUrl());
+		profileResponse.setJobTitle(user.getJobTitle());
 
 		if (user.getDepartment() != null) {
 			profileResponse.setDepartmentName(user.getDepartment().getName());
@@ -135,6 +137,15 @@ public class UsersServiceImpl implements UsersService {
 		if (updateProfileRequest.getAvatarUrl() != null && !updateProfileRequest.getAvatarUrl().trim().isEmpty()) {
 			user.setAvatarURL(updateProfileRequest.getAvatarUrl());
 		}
+		
+		if (updateProfileRequest.getSignatureUrl() != null && !updateProfileRequest.getSignatureUrl().trim().isEmpty()) {
+			user.setSignatureUrl(updateProfileRequest.getSignatureUrl());
+		}
+
+		if (updateProfileRequest.getJobTitle() != null && !updateProfileRequest.getJobTitle().trim().isEmpty()) {
+			user.setJobTitle(updateProfileRequest.getJobTitle());
+		}
+
 		user.setUpdatedAt(LocalDateTime.now());
 
 		UsersEntity updateUser = usersRepository.save(user); // save thông tin update
@@ -148,6 +159,8 @@ public class UsersServiceImpl implements UsersService {
 		profileResponse.setEmail(updateUser.getEmail());
 		profileResponse.setRole(updateUser.getRole().name());
 		profileResponse.setAvatarUrl(updateUser.getAvatarURL());
+		profileResponse.setSignatureUrl(updateUser.getSignatureUrl());
+		profileResponse.setJobTitle(updateUser.getJobTitle());
 		profileResponse.setCreatedAt(updateUser.getCreatedAt());
 
 		userSessionsRepository.findFirstByUserIdOrderByCreatedAtDesc(updateUser)
@@ -285,10 +298,15 @@ public class UsersServiceImpl implements UsersService {
 			if (user.getRole() != null) {
 				response.setRole(user.getRole().name());
 			}
-			response.setActive(user.isActive());
 			if (user.getDepartment() != null) {
 				response.setDepartmentName(user.getDepartment().getName());
 			}
+			response.setActive(user.isActive());
+			
+			// Map document counts
+			response.setUploadedFilesCount(documentRepository.countByUploadedByAndDeletedAtIsNull(user.getId()));
+			response.setApprovedFilesCount(documentRepository.countApprovedByUserId(user.getId()));
+			
 			return response;
 		});
 	}

@@ -44,6 +44,12 @@ public class UsersEntity {
 	@Column(name = "avatar_url")
 	private String avatarURL;
 
+	@Column(name = "signature_url")
+	private String signatureUrl;
+
+	@Column(name = "job_title")
+	private String jobTitle;
+
 	@Column(name = "email")
 	private String email;
 

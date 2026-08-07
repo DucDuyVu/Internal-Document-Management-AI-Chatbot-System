@@ -152,6 +152,35 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         ChatSessionsEntity saved = chatSessionsRepository.save(session);
         return mapToResponse(saved);
     }
+
+    private ChatSessionResponse mapToResponse(ChatSessionsEntity entity) {
+        return new ChatSessionResponse(
+            entity.getId(),
+            entity.getTitle(),
+            entity.getCreatedAt(),
+            entity.getUpdatedAt()
+        );
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<com.javaweb.dto.chat.AdminChatSessionResponse> getAllSessionsForAdmin(org.springframework.data.domain.Pageable pageable) {
+        return chatSessionsRepository.findAll(pageable).map(session -> {
+            com.javaweb.dto.chat.AdminChatSessionResponse response = new com.javaweb.dto.chat.AdminChatSessionResponse();
+            response.setId(session.getId());
+            response.setTitle(session.getTitle());
+            response.setCreatedAt(session.getCreatedAt());
+            response.setUpdatedAt(session.getUpdatedAt());
+            if (session.getUserChatId() != null) {
+                response.setUserName(session.getUserChatId().getFullName() != null ? session.getUserChatId().getFullName() : session.getUserChatId().getUserName());
+            }
+            if (session.getChatMessageEntities() != null) {
+                response.setMessageCount((long) session.getChatMessageEntities().size());
+            } else {
+                response.setMessageCount(0L);
+            }
+            return response;
+        });
+    }
 }
 
 /*

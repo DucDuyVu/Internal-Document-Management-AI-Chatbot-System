@@ -191,7 +191,9 @@
           </div>
         </div>
         <div>
-          <!-- Nút Tải lên đã bị xóa theo yêu cầu -->
+          <button class="btn-primary" onclick="openModal('uploadDocModal')" style="background:#4f46e5;border-radius:8px;padding:10px 20px;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:8px;border:none;color:white;cursor:pointer;transition:all 0.2s;box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);" onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Tải lên tài liệu
+          </button>
         </div>
       </div>
 
@@ -410,7 +412,7 @@
 
                 <div class="profile-info-list">
                   <div class="profile-info-row">
-                    <div class="profile-info-item">
+                    <div class="profile-info-item" style="display:none;">
                       <span class="profile-info-label">Tên đăng nhập</span>
                       <span class="profile-info-value" id="viewUsername">—</span>
                     </div>
@@ -435,8 +437,8 @@
                       <span class="profile-info-value" id="viewDept">—</span>
                     </div>
                     <div class="profile-info-item">
-                      <span class="profile-info-label">Vai trò</span>
-                      <span class="profile-info-value" id="viewRole">—</span>
+                      <span class="profile-info-label">Chức danh</span>
+                      <span class="profile-info-value"><span id="viewJobTitle" style="color:var(--primary); font-weight:600;">—</span></span>
                     </div>
                   </div>
                   <div class="profile-info-row">
@@ -485,9 +487,25 @@
               <div class="settings-form">
                 <div class="form-row">
                   <div class="form-group">
+                    <label>Email <i class="fa-solid fa-lock" style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                    <input type="email" id="editEmail" class="form-input" style="background:#f1f5f9; color:#64748b; cursor:not-allowed;" disabled>
+                  </div>
+                  <div class="form-group">
+                    <label>Phòng ban <i class="fa-solid fa-lock" style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                    <input type="text" id="editDepartment" class="form-input" style="background:#f1f5f9; color:#64748b; cursor:not-allowed;" disabled>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Chức danh <i class="fa-solid fa-lock" style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                    <input type="text" id="editJobTitle" class="form-input" style="background:#f1f5f9; color:#64748b; cursor:not-allowed;" disabled>
+                  </div>
+                  <div class="form-group">
                     <label>Họ và tên</label>
                     <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
                   </div>
+                </div>
+                <div class="form-row">
                   <div class="form-group">
                     <label>Số điện thoại</label>
                     <input type="tel" id="editPhone" class="form-input" placeholder="Nhập số điện thoại">

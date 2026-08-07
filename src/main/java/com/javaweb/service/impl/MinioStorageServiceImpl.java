@@ -38,7 +38,20 @@ public class MinioStorageServiceImpl implements StorageService {
                 .build();
 
         s3Client.putObject(
-                putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+                putObjectRequest, RequestBody.fromBytes(file.getBytes()));
+        return fileName;
+    }
+
+    @Override
+    public String overwriteFile(String fileName, byte[] content, String contentType) throws IOException {
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .contentType(contentType)
+                .build();
+
+        s3Client.putObject(
+                putObjectRequest, RequestBody.fromBytes(content));
         return fileName;
     }
 

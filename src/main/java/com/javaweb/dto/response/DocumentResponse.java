@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * DTO trả về cho client sau khi upload hoặc khi polling trạng thái tài liệu.
@@ -39,6 +40,7 @@ public class DocumentResponse {
     private String aiPurpose;
     private String aiSummary;
     private String aiTags;
+    private List<String> sharedWithDepartments;
 
     public DocumentResponse() {
     }
@@ -55,7 +57,8 @@ public class DocumentResponse {
             LocalDateTime createdAt, LocalDateTime updatedAt,
             Integer departmentId, String departmentName, Long uploadedBy, String uploadedByName,
             Long fileSize, String fileType,
-            String aiPurpose, String aiSummary, String aiTags) {
+            String aiPurpose, String aiSummary, String aiTags,
+            List<String> sharedWithDepartments) {
         this.id = id;
         this.title = title;
         this.fileName = fileName;
@@ -74,6 +77,7 @@ public class DocumentResponse {
         this.aiPurpose = aiPurpose;
         this.aiSummary = aiSummary;
         this.aiTags = aiTags;
+        this.sharedWithDepartments = sharedWithDepartments;
     }
 
     public Long getFileSize() {
@@ -146,6 +150,14 @@ public class DocumentResponse {
 
     public void setAiTags(String aiTags) {
         this.aiTags = aiTags;
+    }
+
+    public List<String> getSharedWithDepartments() {
+        return sharedWithDepartments;
+    }
+
+    public void setSharedWithDepartments(List<String> sharedWithDepartments) {
+        this.sharedWithDepartments = sharedWithDepartments;
     }
 
     public String getTitle() {

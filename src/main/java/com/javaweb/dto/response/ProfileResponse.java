@@ -23,6 +23,10 @@ public class ProfileResponse {
 		
 		private String avatarUrl;
 
+		private String signatureUrl;
+
+		private String jobTitle;
+
 		private String departmentName;
 
 		private LocalDateTime createdAt;

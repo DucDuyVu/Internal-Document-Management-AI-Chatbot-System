@@ -188,6 +188,10 @@ function loadTabData(tabId) {
         case 'tabLogs':
             loadAuditLogs();
             break;
+        case 'tabReports':
+            loadAdminReports();
+            loadDepartmentsForFilter('adminRepDeptFilter');
+            break;
         case 'tabProfile':
             loadAdminProfile();
             break;
@@ -1739,11 +1743,14 @@ async function loadAuditLogs() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/admin/audit-logs?page=${AdminState.logs.page - 1}&size=${AdminState.logs.pageSize}`);
+        // Gọi API lấy log gần đây (thay vì API phân trang chưa có)
+        const response = await apiRequest(`/api/activity-logs/recent?limit=100`);
 
-        AdminState.logs.data = response.content || response;
-        AdminState.logs.total = response.totalElements || response.length;
+        // Lưu toàn bộ data
+        AdminState.logs.data = response || [];
+        AdminState.logs.total = AdminState.logs.data.length;
         AdminState.logs.filtered = [...AdminState.logs.data];
+        AdminState.logs.page = 1;
 
         renderAuditLogs();
 
@@ -1752,6 +1759,7 @@ async function loadAuditLogs() {
         if (typeof showToast !== 'undefined') {
             showToast('Không thể tải nhật ký hoạt động', 'error');
         }
+        document.getElementById('logList').innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger);">Lỗi khi tải dữ liệu.</td></tr>';
     }
 }
 
@@ -1760,42 +1768,105 @@ function renderAuditLogs() {
     if (!container) return;
 
     const logs = AdminState.logs.filtered;
+    const page = AdminState.logs.page;
+    const pageSize = AdminState.logs.pageSize;
 
     if (!logs || logs.length === 0) {
-        container.innerHTML = '<li class="activity-item"><div class="activity-dot indigo"></div><div class="activity-info"><p>Không có nhật ký nào</p><span>—</span></div></li>';
+        container.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">Không tìm thấy nhật ký nào phù hợp.</td></tr>';
         return;
     }
 
     const actionColors = {
-        'LOGIN': 'indigo',
-        'LOGOUT': 'indigo',
-        'UPLOAD_DOCUMENT': 'green',
-        'DELETE_DOCUMENT': 'red',
-        'CREATE_USER': 'sky',
-        'LOCK_USER': 'amber',
-        'UNLOCK_USER': 'green',
-        'SHARE_DOCUMENT': 'sky',
-        'CHANGE_PERMISSION': 'amber',
-        'CREATE_DEPARTMENT': 'green',
-        'UPDATE_DEPARTMENT': 'sky',
-        'DELETE_DEPARTMENT': 'red'
+        'LOGIN': { bg: '#e0e7ff', color: '#4f46e5' },
+        'LOGOUT': { bg: '#f1f5f9', color: '#64748b' },
+        'UPLOAD_DOCUMENT': { bg: '#dcfce7', color: '#166534' },
+        'DELETE_DOCUMENT': { bg: '#fee2e2', color: '#991b1b' },
+        'CREATE_USER': { bg: '#e0f2fe', color: '#0369a1' },
+        'LOCK_USER': { bg: '#fef3c7', color: '#b45309' },
+        'UNLOCK_USER': { bg: '#dcfce7', color: '#166534' },
+        'SHARE_DOCUMENT': { bg: '#e0f2fe', color: '#0369a1' },
+        'CHANGE_PERMISSION': { bg: '#fef3c7', color: '#b45309' },
+        'CREATE_DEPARTMENT': { bg: '#dcfce7', color: '#166534' },
+        'UPDATE_DEPARTMENT': { bg: '#e0f2fe', color: '#0369a1' },
+        'DELETE_DEPARTMENT': { bg: '#fee2e2', color: '#991b1b' }
     };
 
-    container.innerHTML = logs.map(log => `
-        <li class="activity-item">
-            <div class="activity-dot ${actionColors[log.action] || 'indigo'}"></div>
-            <div class="activity-info">
-                <p><strong>${log.userName || 'Hệ thống'}</strong> - ${getActionLabel(log.action)}</p>
-                <span>${typeof formatDate !== 'undefined' ? formatDate(log.createdAt) : log.createdAt} | ${log.targetType || ''} #${log.targetId || ''}</span>
-                ${log.metadata ? `<span style="display:block;font-size:0.72rem;color:#9ca3af;">${typeof log.metadata === 'string' ? log.metadata : JSON.stringify(log.metadata)}</span>` : ''}
-            </div>
-        </li>
-    `).join('');
+    const targetTranslations = {
+        'USER_SESSION': 'Phiên đăng nhập',
+        'DOCUMENT': 'Tài liệu',
+        'USER': 'Người dùng',
+        'DEPARTMENT': 'Phòng ban',
+        'SYSTEM': 'Hệ thống'
+    };
 
+    // Tính toán phân trang client-side
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, logs.length);
+    const paginatedLogs = logs.slice(startIndex, endIndex);
+
+    container.innerHTML = paginatedLogs.map(log => {
+        const style = actionColors[log.actionType || log.action] || { bg: '#f1f5f9', color: '#64748b' };
+        const actionLabel = typeof getActionLabel !== 'undefined' ? getActionLabel(log.actionType || log.action) : (log.actionType || log.action);
+        const time = typeof formatDate !== 'undefined' ? formatDate(log.createdAt) : log.createdAt;
+        
+        // Dịch Đối tượng (Target)
+        const rawTarget = log.targetType || '';
+        const translatedTarget = targetTranslations[rawTarget] || rawTarget;
+        const targetDisplay = translatedTarget ? `${translatedTarget} ${log.targetId ? '(ID: ' + log.targetId + ')' : ''}` : '—';
+
+        // Xử lý Chi tiết (Details)
+        let details = '';
+        if (log.metadata) {
+            if (typeof log.metadata === 'object') {
+                details = Object.entries(log.metadata).map(([k, v]) => `${k}: ${v}`).join(', ');
+            } else {
+                details = log.metadata;
+            }
+        } else if (log.description) {
+            details = log.description;
+        }
+
+        // Fallback chi tiết nếu trống
+        if (!details || details.trim() === '') {
+            if (log.action === 'LOGIN') details = 'Đăng nhập thành công';
+            else if (log.action === 'LOGOUT') details = 'Đăng xuất khỏi hệ thống';
+            else if (log.action === 'UPLOAD_DOCUMENT') details = 'Tải lên tài liệu mới';
+            else details = 'Không có thông tin thêm';
+        }
+
+        return `
+            <tr style="border-bottom: 1px solid var(--border-light); transition: background-color 0.2s;">
+                <td style="padding: 12px 16px; color: var(--text-secondary); font-size: 0.85rem;">
+                    ${time}
+                </td>
+                <td style="padding: 12px 16px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:28px; height:28px; border-radius:50%; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.7rem;">
+                            ${(log.userFullName || log.userName || log.userEmail || 'S')[0].toUpperCase()}
+                        </div>
+                        <span style="font-weight: 500; color: var(--text-primary);">${log.userFullName || log.userName || log.userEmail || 'Hệ thống'}</span>
+                    </div>
+                </td>
+                <td style="padding: 12px 16px;">
+                    <span style="background: ${style.bg}; color: ${style.color}; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;">
+                        ${actionLabel}
+                    </span>
+                </td>
+                <td style="padding: 12px 16px; color: var(--text-secondary); font-size: 0.85rem;">
+                    ${targetDisplay}
+                </td>
+                <td style="padding: 12px 16px; color: var(--text-secondary); font-size: 0.85rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title='${details}'>
+                    ${details}
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    const totalPages = Math.ceil(logs.length / pageSize);
     if (typeof updatePagination !== 'undefined') {
-        updatePagination('logPagination', AdminState.logs.page, Math.ceil(AdminState.logs.total / AdminState.logs.pageSize));
-    } else {
-        updateAdminPagination('logPagination', AdminState.logs.page, Math.ceil(AdminState.logs.total / AdminState.logs.pageSize));
+        updatePagination('logPagination', page, totalPages);
+    } else if (typeof updateAdminPagination !== 'undefined') {
+        updateAdminPagination('logPagination', page, totalPages);
     }
 }
 
@@ -1803,12 +1874,19 @@ function filterLogs() {
     const searchTerm = document.getElementById('logSearch')?.value?.toLowerCase() || '';
 
     AdminState.logs.filtered = AdminState.logs.data.filter(log => {
+        const userStr = (log.userFullName || log.userName || log.userEmail || '').toLowerCase();
+        const actionStr = (log.actionType || log.action || '').toLowerCase();
+        const targetStr = (log.targetType || '').toLowerCase();
+        const detailsStr = (log.description || '').toLowerCase();
+
         return !searchTerm ||
-            log.userName?.toLowerCase().includes(searchTerm) ||
-            log.action?.toLowerCase().includes(searchTerm) ||
-            log.targetType?.toLowerCase().includes(searchTerm);
+            userStr.includes(searchTerm) ||
+            actionStr.includes(searchTerm) ||
+            targetStr.includes(searchTerm) ||
+            detailsStr.includes(searchTerm);
     });
 
+    AdminState.logs.page = 1; // Reset to page 1 on filter
     renderAuditLogs();
 }
 
@@ -2233,7 +2311,7 @@ function changeAdminPage(paginationId, direction) {
             break;
         case 'logPagination':
             state = AdminState.logs;
-            loadFunction = loadAuditLogs;
+            loadFunction = renderAuditLogs;
             break;
         default:
             return;
@@ -2404,6 +2482,136 @@ async function changeUserDepartment(userId) {
 
     if (typeof openModal !== 'undefined') openModal('changeDepartmentModal');
 }
+
+
+// =============================================
+// ADMIN GLOBAL REPORTS
+// =============================================
+let adminDeptChartInstance = null;
+
+async function loadAdminReports() {
+    try {
+        const deptId = document.getElementById('adminRepDeptFilter')?.value || '';
+        
+        // Fetch both global stats and admin-specific report stats
+        const [dashboardStats, reportStats] = await Promise.all([
+            apiRequest('/api/dashboard/stats'),
+            apiRequest('/api/admin/reports/stats')
+        ]);
+        
+        if (!reportStats) return;
+
+        // Update UI
+        const setEl = (id, val) => {
+            const el = document.getElementById(id);
+            if(el) el.textContent = val;
+        };
+        
+        setEl('adminRepTotalDocs', reportStats.totalDocuments || 0);
+        setEl('adminRepApprovalRate', `${reportStats.approvalRate ? reportStats.approvalRate.toFixed(1) : 0}%`);
+        setEl('adminRepTotalChats', dashboardStats.chatSessionCount || 0);
+        setEl('adminRepAiSaved', `${reportStats.aiTimeSavedHours ? reportStats.aiTimeSavedHours.toFixed(1) : 0} giờ`);
+
+        // Render Chart
+        renderAdminChart(reportStats);
+    } catch (error) {
+        console.error("Lỗi khi tải báo cáo Admin:", error);
+    }
+}
+
+function renderAdminChart(stats) {
+    const ctx = document.getElementById('adminDeptChart');
+    if (!ctx) return;
+
+    if (adminDeptChartInstance) {
+        adminDeptChartInstance.destroy();
+    }
+
+    if (!stats.departmentLabels || stats.departmentLabels.length === 0) {
+        return; // Không có dữ liệu
+    }
+
+    adminDeptChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: stats.departmentLabels,
+            datasets: [
+                {
+                    label: 'Tổng tài liệu',
+                    data: stats.deptTotalDocs,
+                    backgroundColor: '#6366f1', // Xanh lam
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.8
+                },
+                {
+                    label: 'Đã duyệt',
+                    data: stats.deptApprovedDocs,
+                    backgroundColor: '#10b981', // Xanh ngọc
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.8
+                },
+                {
+                    label: 'Chờ duyệt',
+                    data: stats.deptPendingDocs,
+                    backgroundColor: '#f59e0b', // Cam
+                    borderRadius: 4,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: { family: "'Inter', sans-serif", size: 13 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#1e293b',
+                    bodyColor: '#475569',
+                    borderColor: '#e2e8f0',
+                    borderWidth: 1,
+                    padding: 12,
+                    boxPadding: 6,
+                    titleFont: { family: "'Inter', sans-serif", size: 14, weight: 'bold' },
+                    bodyFont: { family: "'Inter', sans-serif", size: 13 }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { family: "'Inter', sans-serif" }, color: '#64748b' }
+                },
+                y: {
+                    border: { display: false },
+                    grid: { color: '#f1f5f9' },
+                    ticks: { font: { family: "'Inter', sans-serif" }, color: '#94a3b8' }
+                }
+            }
+        }
+    });
+}
+
+// Gắn sự kiện cho filter phòng ban trong tab báo cáo
+document.addEventListener('DOMContentLoaded', () => {
+    const adminRepDeptFilter = document.getElementById('adminRepDeptFilter');
+    if (adminRepDeptFilter) {
+        adminRepDeptFilter.addEventListener('change', loadAdminReports);
+    }
+});
 
 
 // ===== INITIALIZE =====

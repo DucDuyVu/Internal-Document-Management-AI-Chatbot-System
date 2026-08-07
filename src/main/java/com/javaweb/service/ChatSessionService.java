@@ -54,4 +54,6 @@ public interface ChatSessionService {
      *     tin nhắn.
      */
     void deleteSession(Long sessionId, UsersEntity currentUser);
+
+    org.springframework.data.domain.Page<com.javaweb.dto.chat.AdminChatSessionResponse> getAllSessionsForAdmin(org.springframework.data.domain.Pageable pageable);
 }
