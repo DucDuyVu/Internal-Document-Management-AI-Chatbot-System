@@ -3,8 +3,7 @@ package com.javaweb.service;
 import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.dto.request.DocumentUploadRequest;
 import com.javaweb.entity.UsersEntity;
-import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import java.io.InputStream;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -56,7 +55,7 @@ public interface DocumentService {
     void deleteDocument(Long id, Long userId);
 
     // Tải xuống tài liệu
-    ResponseInputStream<GetObjectResponse> downloadDocument(Long id, UsersEntity user, String requiredRole);
+    InputStream downloadDocument(Long id, UsersEntity user, String requiredRole);
 }
 
 /*

@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,5 +31,16 @@ public class SearchController {
 
         GlobalSearchResponse response = searchService.searchGlobal(query, currentUser);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping({"", "/search"})
+    public ResponseEntity<GlobalSearchResponse> searchGlobalPost(
+            @RequestBody java.util.Map<String, String> request,
+            Authentication authentication) {
+        String query = request.get("query");
+        if (query == null) {
+            query = request.get("q");
+        }
+        return searchGlobal(query != null ? query : "", authentication);
     }
 }

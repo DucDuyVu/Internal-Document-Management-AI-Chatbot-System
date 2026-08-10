@@ -170,6 +170,57 @@ function setupUserEventListeners() {
     });
 }
 
+// ===== NOTEBOOKLM CITATION POPOVER =====
+function initCitationPopover() {
+    if (document.getElementById('citation-popover')) return;
+    const popover = document.createElement('div');
+    popover.id = 'citation-popover';
+    popover.className = 'citation-popover';
+    popover.innerHTML = `
+        <div class='citation-popover-title'><i class='fa-solid fa-file-lines'></i> <span id='citation-popover-title-text'></span></div>
+        <div id='citation-popover-excerpt' class='citation-popover-excerpt'></div>
+    `;
+    document.body.appendChild(popover);
+}
+
+window.showCitationPopover = function(element, title, excerpt) {
+    const popover = document.getElementById('citation-popover');
+    if (!popover) return;
+    document.getElementById('citation-popover-title-text').textContent = title;
+    document.getElementById('citation-popover-excerpt').textContent = '"' + excerpt + '"';
+    
+    // Position it
+    const rect = element.getBoundingClientRect();
+    popover.style.display = 'block';
+    const popoverHeight = popover.offsetHeight;
+    
+    popover.style.left = Math.max(10, rect.left - 130) + 'px';
+    popover.style.top = (rect.top - popoverHeight - 10) + 'px';
+    
+    // If it goes off top, show below
+    if (rect.top - popoverHeight - 10 < 0) {
+        popover.style.top = (rect.bottom + 10) + 'px';
+    }
+    
+    requestAnimationFrame(() => {
+        popover.classList.add('visible');
+    });
+};
+
+window.hideCitationPopover = function() {
+    const popover = document.getElementById('citation-popover');
+    if (popover) {
+        popover.classList.remove('visible');
+        setTimeout(() => {
+            if (!popover.classList.contains('visible')) {
+                popover.style.display = 'none';
+            }
+        }, 200);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', initCitationPopover);
+
 function loadUserTabData(tabId) {
     switch (tabId) {
         case 'tabHome':
@@ -1044,49 +1095,74 @@ function renderChatMessages() {
         return;
     }
 
-    container.innerHTML = messages.map(msg => `
+    container.innerHTML = messages.map(msg => {
+        const refs = msg.fileRefs || msg.sources;
+        return `
         <div class="chat-message ${msg.role === 'USER' ? 'user' : 'assistant'}">
             <div class="chat-message-avatar">
                 ${msg.role === 'USER' ? '👤' : '🤖'}
             </div>
             <div class="chat-message-content">
-                <div class="chat-message-text">${formatMessageContent(msg.content)}</div>
-                ${msg.fileRefs ? renderFileRefs(msg.fileRefs) : ''}
+                <div class="chat-message-text">${formatMessageContent(msg.content, refs)}</div>
                 <div class="chat-message-time">${typeof formatDate !== 'undefined' ? formatDate(msg.createdAt) : msg.createdAt}</div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
 }
 
-function formatMessageContent(content) {
+function formatMessageContent(content, sources) {
     if (!content) return '';
-    // Convert markdown-like syntax
-    return content
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        .replace(/`(.*?)`/g, '<code>$1</code>')
-        .replace(/\n/g, '<br>');
+    if (typeof marked === "undefined") {
+        return content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
+    
+    let rawHtml = marked.parse(content);
+    let cleanHtml = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['data-index'] });
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = cleanHtml;
+    
+    function processTextNodes(node) {
+        if (node.nodeType === 1) { // Element
+            const tag = node.tagName.toLowerCase();
+            if (["code", "pre", "a"].includes(tag)) return;
+            Array.from(node.childNodes).forEach(processTextNodes);
+        } else if (node.nodeType === 3) { // Text
+            if (/\[(\d+)\]/.test(node.nodeValue)) {
+                const spanWrapper = document.createElement('span');
+                const escapedText = node.nodeValue; 
+                
+                spanWrapper.innerHTML = escapedText.replace(/\[(\d+)\]/g, function(m, numStr) {
+                    const num = parseInt(numStr, 10);
+                    if (sources && sources[num]) {
+                        const source = sources[num];
+                        const title = source.fileName || "Tài liệu";
+                        const excerpt = source.excerpt || "";
+                        const t = title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const e = excerpt.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        return '<span class="citation-badge" data-index="' + num + '" ' +
+                            'onmouseenter="showCitationPopover(this, \'' + t + '\', \'' + e + '\')" ' +
+                            'onmouseleave="hideCitationPopover()">' + (num + 1) + '</span>';
+                    }
+                    return m;
+                });
+                node.replaceWith(...spanWrapper.childNodes);
+            }
+        }
+    }
+    Array.from(tempDiv.childNodes).forEach(processTextNodes);
+    return tempDiv.innerHTML;
 }
 
-function renderFileRefs(refs) {
-    if (!refs || refs.length === 0) return '';
 
-    return `
-        <div class="chat-file-refs">
-            <div style="font-size:0.78rem;font-weight:600;color:#4f46e5;margin-bottom:4px;">📚 Nguồn tham khảo:</div>
-            ${refs.map(ref => `
-                <div class="chat-file-ref" onclick="viewUserDocument(${ref.documentId})" style="cursor:pointer;">
-                    📄 ${ref.documentName || 'Tài liệu'} - Trang ${ref.pageNumber || '—'}
-                    ${ref.excerpt ? `<div style="font-size:0.72rem;color:#6b7280;margin-top:2px;">"${ref.excerpt.substring(0, 100)}..."</div>` : ''}
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
 
 async function sendChatMessage() {
     const input = document.getElementById('chatInput');

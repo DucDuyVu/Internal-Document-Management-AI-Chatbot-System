@@ -35,11 +35,15 @@ public class DashboardServiceImpl implements DashboardService {
     private final DepartmentsRepository departmentsRepository;
     private final com.javaweb.repository.UserSessionsRepository userSessionsRepository;
 
-    @Override
     public DashboardDataResponse getDashboardStats() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-        UsersEntity user = usersRepository.findByUserName(username).orElse(null);
+        UsersEntity user = null;
+        Object principal = auth.getPrincipal();
+        if (principal instanceof com.javaweb.security.CustomUserDetails) {
+            user = ((com.javaweb.security.CustomUserDetails) principal).getUser();
+        } else if (principal instanceof UsersEntity) {
+            user = (UsersEntity) principal;
+        }
         if (user == null)
             return null;
 

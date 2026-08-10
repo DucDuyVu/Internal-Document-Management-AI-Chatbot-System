@@ -20,6 +20,7 @@ import com.javaweb.dto.response.DocumentResponse;
 import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.enums.ActionType;
 import com.javaweb.entity.enums.ApprovalStatus;
+import com.javaweb.entity.enums.DocumentStatus;
 import com.javaweb.exception.DocumentNotFoundException;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.rag.DocumentProcessingService;
@@ -80,6 +81,7 @@ public class AdminDocumentController {
 
         // Đổi trạng thái và lưu
         document.setApprovalStatus(ApprovalStatus.APPROVED);
+        document.setStatus(DocumentStatus.PROCESSING);
         documentRepository.save(document);
 
         // Ghi log Audit Event
@@ -110,12 +112,12 @@ public class AdminDocumentController {
         DocumentEntity document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy tài liệu id=" + id));
 
-        if (document.getStatus() != com.javaweb.entity.enums.DocumentStatus.FAILED) {
+        if (document.getStatus() != DocumentStatus.FAILED) {
             return ResponseEntity.badRequest().body("Chỉ có thể thử lại tài liệu bị lỗi (FAILED).");
         }
 
         // Khôi phục trạng thái
-        document.setStatus(com.javaweb.entity.enums.DocumentStatus.PENDING);
+        document.setStatus(DocumentStatus.PROCESSING);
         document.setErrorMessage(null);
         documentRepository.save(document);
 

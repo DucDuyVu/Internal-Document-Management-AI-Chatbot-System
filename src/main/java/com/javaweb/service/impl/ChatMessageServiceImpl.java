@@ -39,10 +39,8 @@ import com.javaweb.dto.chat.SourceRefResponse;
 @Service
 public class ChatMessageServiceImpl implements ChatMessageService {
 
-    // Giới hạn độ dài excerpt lưu vào DB — chunk gốc có thể dài hàng
-    // nghìn ký tự, nhưng excerpt chỉ cần đủ để client hiển thị preview
-    // "câu trả lời này trích từ đoạn nào", không cần nguyên văn cả chunk
-    private static final int EXCERPT_MAX_LENGTH = 500;
+    // Giới hạn độ dài excerpt lưu vào DB - cho phép hiển thị thẻ trích dẫn ngắn gọn (NotebookLM style)
+    private static final int EXCERPT_MAX_LENGTH = 150;
 
     private final ChatMessageRepository chatMessageRepository;
     private final ChatSessionsRepository chatSessionsRepository;
@@ -113,7 +111,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
      */
     @Override
     public ChatMessageEntity saveAssistantMessage(ChatSessionsEntity session, String answer,
-                                                   List<SourceInfo> sources) {
+                                                   List<com.javaweb.dto.chat.SourceRefResponse> sources) {
 
         ChatMessageEntity message = new ChatMessageEntity();
         message.setSessionId(session);
@@ -128,7 +126,7 @@ public class ChatMessageServiceImpl implements ChatMessageService {
 
         // Với mỗi nguồn trích dẫn, lưu 1 dòng message_file_refs trỏ về
         // đúng dòng ASSISTANT vừa tạo ở trên (KHÔNG phải dòng USER)
-        for (SourceInfo source : sources) {
+        for (com.javaweb.dto.chat.SourceRefResponse source : sources) {
 
             // Phải findById thật (không dùng getReferenceById) vì cần
             // đọc content thật để cắt excerpt - getReferenceById chỉ tạo
@@ -163,21 +161,22 @@ public class ChatMessageServiceImpl implements ChatMessageService {
     
 
     /**
-     * Cắt content chunk về độ dài tối đa EXCERPT_MAX_LENGTH.
+     * Cắt content chunk về độ dài tối đa EXCERPT_MAX_LENGTH (150 ký tự), cắt an toàn ở khoảng trắng.
      *
      * Dùng ở đâu: saveAssistantMessage(), ngay trước khi set vào
      * MessageFileRefsEntity.excerpt.
      * Input: content thật của chunk (có thể dài hàng nghìn ký tự).
      * Output: chuỗi đã cắt, thêm "..." nếu bị cắt bớt.
-     * Lưu ý: không cắt giữa từ một cách máy móc - chấp nhận cắt cứng tại
-     * đúng vị trí EXCERPT_MAX_LENGTH, vì đây chỉ là preview hiển thị,
-     * không phải nội dung dùng lại cho AI xử lý tiếp.
      */
     private String buildExcerpt(String content) {
         if (content == null || content.length() <= EXCERPT_MAX_LENGTH) {
             return content;
         }
-        return content.substring(0, EXCERPT_MAX_LENGTH) + "...";
+        int cutIdx = EXCERPT_MAX_LENGTH;
+        while (cutIdx < content.length() && !Character.isWhitespace(content.charAt(cutIdx))) {
+            cutIdx++;
+        }
+        return content.substring(0, Math.min(cutIdx, content.length())) + "...";
     }
 
     /**

@@ -37,7 +37,7 @@ public class DocumentEntity {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, columnDefinition = "documentstatus")
     private DocumentStatus status = DocumentStatus.PENDING;
 
     @Enumerated(EnumType.STRING)

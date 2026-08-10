@@ -9,8 +9,7 @@ import com.javaweb.rag.parser.DocumentParser;
 import com.javaweb.repository.DocumentChunkRepository;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.service.StorageService;
-import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -24,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.google.common.util.concurrent.RateLimiter;
 
 /**
  * DocumentProcessingService
@@ -62,6 +62,9 @@ import java.util.Optional;
 public class DocumentProcessingService {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentProcessingService.class);
+
+    // Giới hạn 1.5 request/giây (tức 90 request/phút) cho TOÀN BỘ luồng chạy song song
+    private static final RateLimiter rateLimiter = RateLimiter.create(1.5);
 
     private final DocumentRepository documentRepository;
     private final DocumentChunkRepository documentChunkRepository;
@@ -144,9 +147,11 @@ public class DocumentProcessingService {
         markAsProcessing(document);
 
         try {
-            ResponseInputStream<GetObjectResponse> inputStream = storageService.downloadFile(document.getFilePath());
+            InputStream inputStream = storageService.downloadFile(document.getFilePath());
             byte[] fileData = inputStream.readAllBytes();
-            String content = documentParser.parse(fileData);
+            
+            // Lọc bỏ ký tự null-byte \u0000 sinh ra từ quá trình parse PDF để tránh lỗi Postgres
+            String content = documentParser.parse(fileData).replace("\u0000", "");
 
             // Xử lý AI OCR (Tóm tắt, Mục đích, Tags)
             extractAiSummary(content, document);
@@ -215,7 +220,29 @@ public class DocumentProcessingService {
 
         for (int i = 0; i < chunkTexts.size(); i++) {
             String text = chunkTexts.get(i);
-            float[] embedding = embeddingService.embedDocument(text);
+            float[] embedding = null;
+            int retries = 0;
+            
+            while (retries < 3) {
+                try {
+                    embedding = embeddingService.embedDocument(text);
+                    // Dùng RateLimiter thay vì Thread.sleep cố định để điều phối mượt mà giữa các thread
+                    rateLimiter.acquire();
+                    break;
+                } catch (org.springframework.web.client.HttpClientErrorException.TooManyRequests e) {
+                    retries++;
+                    log.warn("Bị giới hạn API Gemini (429 Too Many Requests), chờ 21 giây trước khi thử lại... (Chunk {}, Lần {})", i, retries);
+                    try {
+                        Thread.sleep(21000);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            
+            if (embedding == null) {
+                throw new RuntimeException("Lỗi vượt quá API Rate Limit của Gemini sau 3 lần thử lại. Chunk index: " + i);
+            }
 
             DocumentChunkEntity chunk = new DocumentChunkEntity();
             chunk.setDocumentId(documentId);

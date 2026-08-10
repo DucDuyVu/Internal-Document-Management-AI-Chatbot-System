@@ -18,11 +18,11 @@ import com.javaweb.entity.DocumentChunkEntity;
  *     đọc chunk() để lấy content, documentId, chunkId.
  *
  * @param chunk      đoạn văn bản + metadata (document_id, content, page_number...)
- * @param similarity khoảng cách cosine (0 = giống hệt, số càng LỚN = càng khác xa;
+ * @param distance   khoảng cách cosine (0 = giống hệt, số càng LỚN = càng khác xa;
  *                   đây là toán tử "<=>" của pgvector — là KHOẢNG CÁCH, không phải
  *                   độ tương đồng, nên càng nhỏ càng tốt, KHÔNG phải càng lớn càng tốt)
  */
-public record SearchResult(DocumentChunkEntity chunk, double similarity) {
+public record SearchResult(DocumentChunkEntity chunk, String fileName, double distance) {
 }
 
 /*

@@ -33,8 +33,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import com.javaweb.service.StorageService;
 import com.javaweb.service.NotificationService;
-import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import java.io.InputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -174,7 +173,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
-    public ResponseInputStream<GetObjectResponse> downloadDocument(Long id, UsersEntity user, String requiredRole) {
+    public InputStream downloadDocument(Long id, UsersEntity user, String requiredRole) {
         DocumentEntity document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy document id=" + id));
 

@@ -22,24 +22,19 @@ public class ChunkFormatter {
 
     /**
      * Độ dài tối đa (ký tự) cho 1 chunk khi đưa vào prompt.
-     * Đọc từ application.properties, mặc định 300 nếu không khai báo.
+     * Đọc từ application.properties, mặc định 1500 nếu không khai báo.
      */
-    @Value("${rag.prompt.chunk-max-length:300}")
+    @Value("${rag.prompt.chunk-max-length:1500}")
     private int maxLength;
 
     /**
-     * Cắt content của 1 SearchResult xuống tối đa maxLength ký tự.
+     * Trả về content của 1 SearchResult.
      *
      * Dùng ở đâu: PromptBuilder.build(), gọi 1 lần cho mỗi chunk trong
      * top-K kết quả vector search.
      *
      * Input:  SearchResult (chunk + similarity, chỉ dùng phần chunk.content())
-     * Output: String — content đã cắt, không dài hơn maxLength ký tự
-     *
-     * Lưu ý: cắt bằng substring theo ký tự thô, KHÔNG cố tránh cắt đứt
-     * giữa từ/câu — chấp nhận đánh đổi này để giữ code đơn giản, đủ dùng
-     * cho tài liệu nội bộ. Nếu sau này thấy câu trả lời bị ảnh hưởng bởi
-     * chunk cắt cụt giữa câu, đây là chỗ cần nâng cấp trước tiên.
+     * Output: String — content nguyên vẹn (bảo toàn overlap)
      */
     public String format(SearchResult result) {
         String content = result.chunk().getContent();
@@ -50,7 +45,9 @@ public class ChunkFormatter {
             return "";
         }
 
-        return content.length() > maxLength ? content.substring(0, maxLength) : content;
+        // Đã bỏ logic cắt chuỗi để bảo toàn 200 ký tự overlap từ bước Chunking.
+        // maxLength 1500 chỉ mang tính chất tham khảo hoặc để guard nếu cần trong tương lai.
+        return content;
     }
 }
 

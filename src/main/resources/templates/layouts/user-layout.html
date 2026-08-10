@@ -402,9 +402,11 @@
   </div>
 </div>
 
-<script src="/js/common.js?v=4"></script>
+<script src="/js/lib/marked.min.js"></script>
+  <script src="/js/lib/purify.min.js"></script>
+  <script src="/js/common.js?v=4"></script>
 <script src="/js/auth.js?v=4"></script>
-<script src="/js/user/dashboard.js?v=4"></script>
+<script src="/js/user/dashboard.js?v=7"></script>
 
 <!-- JS riêng của từng trang -->
 <th:block layout:fragment="custom-js"></th:block>
@@ -489,72 +491,7 @@
          return "Vừa xong";
       };
 
-      // 3. Fetch all notifications
-      const fetchNotifications = () => {
-          fetch('/api/notifications/all', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-            .then((res) => {
-              if (res.ok) return res.json();
-              throw new Error("Lỗi khi tải profile");
-            })
-            .then((freshUser) => {
-              localStorage.setItem("user", JSON.stringify(freshUser));
-              if (typeof updateUserUI !== "undefined") {
-                updateUserUI(freshUser);
-              }
-            })
-            .catch((e) => console.error(e));
 
-          // 2. Xử lý UI Chuông thông báo
-          const bell = document.getElementById("notificationBell");
-          const dropdown = document.getElementById("notificationDropdown");
-          const badge = document.getElementById("notificationBadge");
-          const notifList = document.getElementById("notificationList");
-
-          // Toggle dropdown
-          bell.addEventListener("click", (e) => {
-            if (e.target.closest("#notificationDropdown")) return; // ignore clicks inside dropdown
-            dropdown.style.display =
-              dropdown.style.display === "none" ? "block" : "none";
-          });
-
-          // Đóng dropdown khi click ra ngoài
-          document.addEventListener("click", (e) => {
-            if (!bell.contains(e.target)) {
-              dropdown.style.display = "none";
-            }
-          });
-
-          // Hàm định dạng thời gian
-          const timeAgo = (dateInput) => {
-            if (!dateInput) return "";
-            let date;
-            if (Array.isArray(dateInput)) {
-              date = new Date(
-                dateInput[0],
-                dateInput[1] - 1,
-                dateInput[2],
-                dateInput[3] || 0,
-                dateInput[4] || 0,
-                dateInput[5] || 0,
-              );
-            } else {
-              date = new Date(dateInput);
-            }
-            const seconds = Math.floor((new Date() - date) / 1000);
-            let interval = Math.floor(seconds / 31536000);
-            if (interval >= 1) return interval + " năm trước";
-            interval = Math.floor(seconds / 2592000);
-            if (interval >= 1) return interval + " tháng trước";
-            interval = Math.floor(seconds / 86400);
-            if (interval >= 1) return interval + " ngày trước";
-            interval = Math.floor(seconds / 3600);
-            if (interval >= 1) return interval + " giờ trước";
-            interval = Math.floor(seconds / 60);
-            if (interval >= 1) return interval + " phút trước";
-            return "Vừa xong";
-          };
 
           // 3. Fetch all notifications
           const fetchNotifications = () => {

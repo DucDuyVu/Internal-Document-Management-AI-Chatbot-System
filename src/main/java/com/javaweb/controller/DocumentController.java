@@ -31,10 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
-import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
-
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -128,17 +125,16 @@ public class DocumentController {
         }
 
         try {
-            ResponseInputStream<GetObjectResponse> inputStream = documentService.downloadDocument(id,
+            InputStream inputStream = documentService.downloadDocument(id,
                     userDetails.getUser(), "DOWNLOAD");
-            GetObjectResponse response = inputStream.response();
-
-            String contentType = response.contentType();
-            if (contentType == null) {
-                contentType = "application/octet-stream";
-            }
 
             DocumentResponse document = documentService.getDocumentStatus(id);
             String fileName = document.getFileName();
+            
+            String contentType = "application/octet-stream";
+            if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
+                contentType = "application/pdf";
+            }
 
             String encodedFileName = java.net.URLEncoder
                     .encode(fileName, java.nio.charset.StandardCharsets.UTF_8.toString()).replaceAll("\\+", "%20");
@@ -149,9 +145,6 @@ public class DocumentController {
                             "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName)
                     .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
                     .body(new InputStreamResource(inputStream));
-        } catch (NoSuchKeyException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Lỗi: Không tìm thấy file vật lý trên hệ thống MinIO.");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -172,20 +165,15 @@ public class DocumentController {
         }
 
         try {
-            ResponseInputStream<GetObjectResponse> inputStream = documentService.downloadDocument(id,
+            InputStream inputStream = documentService.downloadDocument(id,
                     userDetails.getUser(), "VIEW");
-            GetObjectResponse response = inputStream.response();
 
             DocumentResponse document = documentService.getDocumentStatus(id);
             String fileName = document.getFileName();
 
-            String contentType = response.contentType();
-            if (contentType == null || contentType.equals("application/octet-stream")) {
-                if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
-                    contentType = "application/pdf";
-                } else {
-                    contentType = "application/octet-stream";
-                }
+            String contentType = "application/octet-stream";
+            if (fileName != null && fileName.toLowerCase().endsWith(".pdf")) {
+                contentType = "application/pdf";
             }
 
             String encodedFileName = java.net.URLEncoder
@@ -196,9 +184,6 @@ public class DocumentController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, 
                             "inline; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName)
                     .body(new InputStreamResource(inputStream));
-        } catch (NoSuchKeyException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Lỗi: Không tìm thấy file vật lý trên hệ thống MinIO.");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

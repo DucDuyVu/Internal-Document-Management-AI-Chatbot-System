@@ -88,4 +88,10 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
        long countByDepartmentIdAndStatusAndDeletedAtIsNull(Integer departmentId, DocumentStatus status);
 
        List<DocumentEntity> findByUploadedByAndDeletedAtIsNullOrderByCreatedAtDesc(Long uploadedBy, Pageable pageable);
+
+       List<DocumentEntity> findByStatus(DocumentStatus status);
+       List<DocumentEntity> findByStatusAndApprovalStatus(DocumentStatus status, ApprovalStatus approvalStatus);
+
+       List<DocumentEntity> findByStatusAndUpdatedAtBefore(DocumentStatus status, java.time.LocalDateTime dateTime);
+       List<DocumentEntity> findByStatusAndApprovalStatusAndUpdatedAtBefore(DocumentStatus status, ApprovalStatus approvalStatus, java.time.LocalDateTime dateTime);
 }

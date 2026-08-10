@@ -60,8 +60,9 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunkEnti
                         chunk.setCreatedAt(((Timestamp) row[5]).toLocalDateTime());
                         // embedding cố tình để null - xem lưu ý trong JavaDoc phía trên
 
-                        double similarity = ((Number) row[6]).doubleValue();
-                        results.add(new SearchResult(chunk, similarity));
+                        String fileName = (String) row[6];
+                        double distance = ((Number) row[7]).doubleValue();
+                        results.add(new SearchResult(chunk, fileName, distance));
                 }
                 return results;
         }
@@ -69,16 +70,25 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunkEnti
         /**
          * Native query thực sự chạy dưới DB. Không gọi trực tiếp method này từ
          * Service - luôn đi qua searchSimilarChunks(...) ở trên để nhận về
-         * SearchResult đã map sẵn thay vì Object[] thô.
          */
         @Query(value = "SELECT dc.id, dc.document_id, dc.chunk_index, dc.page_number, " +
-                        "       dc.content, dc.created_at, " +
-                        "       (dc.embedding <=> CAST(:embeddingText AS vector)) AS similarity_score " +
+                        "       dc.content, dc.created_at, d.file_name, " +
+                        "       (CAST(dc.embedding AS halfvec(3072)) <=> CAST(:embeddingText AS halfvec(3072))) AS similarity_score " +
                         "FROM document_chunks dc " +
                         "JOIN document d ON dc.document_id = d.id " +
                         "WHERE d.deleted_at IS NULL " +
-                        "AND CAST(d.status AS text) = 'COMPLETED' " +
-                        "AND (d.department_id = :departmentId OR d.department_id IS NULL) " +
+                        "  AND d.status = 'COMPLETED' " +
+                        "AND d.approval_status = 'APPROVED' " +
+                        "AND ( " +
+                        "    d.department_id = :departmentId " +
+                        "    OR d.department_id IS NULL " +
+                        "    OR EXISTS ( " +
+                        "        SELECT 1 FROM document_permissions dp " +
+                        "        WHERE dp.document_id = d.id " +
+                        "          AND dp.revoked_at IS NULL " +
+                        "          AND (dp.department_id = :departmentId OR dp.is_public_link = true) " +
+                        "    ) " +
+                        ") " +
                         "ORDER BY similarity_score " +
                         "LIMIT :topK", nativeQuery = true)
         List<Object[]> searchSimilarChunksRaw(
