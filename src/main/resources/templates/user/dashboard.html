@@ -254,6 +254,24 @@
           </select>
         </div>
 
+        <!-- Date Filters -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="position:relative; display:flex; align-items:center; background:white; border:1px solid #e5e7eb; border-radius:8px; padding-left:12px; height: 100%;">
+            <i class="fa-solid fa-building" style="color:#9ca3af; font-size:0.875rem;"></i>
+            <select id="docDeptFilter" class="filter-select" style="border:none; box-shadow:none; padding-left:8px; height: 100%; min-height:38px;">
+              <option value="">Tất cả phòng ban</option>
+            </select>
+          </div>
+          <div style="position:relative; display:flex; align-items:center; background:white; border:1px solid #e5e7eb; border-radius:8px; padding:0 8px; min-height:38px;">
+            <span style="font-size:0.85rem; color:#6b7280; margin-right:4px;">Từ:</span>
+            <input type="date" id="docStartDateFilter" style="border:none; outline:none; font-family:inherit; padding:8px 0; color:#374151; font-size:0.9rem;" title="Ngày bắt đầu">
+          </div>
+          <div style="position:relative; display:flex; align-items:center; background:white; border:1px solid #e5e7eb; border-radius:8px; padding:0 8px; min-height:38px;">
+            <span style="font-size:0.85rem; color:#6b7280; margin-right:4px;">Đến:</span>
+            <input type="date" id="docEndDateFilter" style="border:none; outline:none; font-family:inherit; padding:8px 0; color:#374151; font-size:0.9rem;" title="Ngày kết thúc">
+          </div>
+        </div>
+
         <button class="btn btn-primary" onclick="openUploadModal()">+ Tải lên</button>
 
         <div class="view-toggle" style="display:flex; background:#f3f4f6; border-radius:8px; padding:4px;">
@@ -262,46 +280,46 @@
           <button class="view-btn" id="btnListView" onclick="setDocView('list')" title="Xem dạng danh sách"
             style="padding:6px 12px; border-radius:6px; cursor:pointer; border:none; transition:all 0.2s; font-size:1.1rem;">☰</button>
         </div>
+      </div> <!-- Đóng thẻ flex container của Search & Filter Bar ở đây! -->
 
-        <!-- Lưới tài liệu mới -->
-        <div id="docGridView" style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:24px;">
-          <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
-          <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
-          <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
-        </div>
-
-        <!-- Danh sách tài liệu -->
-        <div class="table-card" id="docListView" style="display:none;">
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Tên tài liệu</th>
-                  <th>Loại</th>
-                  <th>Kích thước</th>
-                  <th>Ngày upload</th>
-                  <th>Trạng thái</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody id="docListBody">
-                <tr>
-                  <td colspan="6" class="empty-state"><span>📁</span>Đang tải...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Phân trang -->
-        <div class="pagination" id="docPagination" style="margin-top:24px;">
-          <button class="page-btn" id="prevDocPage" disabled>‹ Trước</button>
-          <span class="page-info" id="pageInfo">Trang 1</span>
-          <button class="page-btn" id="nextDocPage">Sau ›</button>
-        </div>
-
+      <!-- Lưới tài liệu mới -->
+      <div id="docGridView" style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:24px;">
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
       </div>
-      </div><!-- kết thúc tabDocuments -->
+
+      <!-- Danh sách tài liệu -->
+      <div class="table-card" id="docListView" style="display:none;">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Tên tài liệu</th>
+                <th>Loại</th>
+                <th>Kích thước</th>
+                <th>Ngày upload</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="docListBody">
+              <tr>
+                <td colspan="6" class="empty-state"><span>📁</span>Đang tải...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Phân trang -->
+      <div class="pagination" id="docPagination" style="margin-top:24px;">
+        <button class="page-btn" id="prevDocPage" disabled>‹ Trước</button>
+        <span class="page-info" id="pageInfo">Trang 1</span>
+        <button class="page-btn" id="nextDocPage">Sau ›</button>
+      </div>
+
+    </div><!-- kết thúc tabDocuments -->
 
       <!-- ===== TAB: AI CHATBOT ===== -->
       <div id="tabChat" style="display:none;">
@@ -379,7 +397,7 @@
         <div class="search-hero">
           <div class="search-hero-input-wrap">
             <span class="search-hero-icon">🔍</span>
-            <input type="text" id="globalSearchInput" class="search-hero-input"
+            <input type="text" id="tabSearchInput" class="search-hero-input"
               placeholder="Tìm kiếm tài liệu bằng từ khóa (Vector Search)...">
             <button class="search-hero-btn" onclick="performSearch()">Tìm kiếm</button>
           </div>

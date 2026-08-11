@@ -128,10 +128,16 @@ function setupUserEventListeners() {
     }
 
     // Document filters
-    ['docTypeFilter', 'docSortFilter'].forEach(id => {
+    ['docTypeFilter', 'docSortFilter', 'docDeptFilter', 'docStartDateFilter', 'docEndDateFilter'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', filterUserDocuments);
     });
+
+    // Pagination buttons
+    const prevBtn = document.getElementById('prevDocPage');
+    const nextBtn = document.getElementById('nextDocPage');
+    if (prevBtn) prevBtn.addEventListener('click', () => { if (UserState.documents.page > 1) { UserState.documents.page--; renderUserDocuments(); } });
+    if (nextBtn) nextBtn.addEventListener('click', () => { const maxPage = Math.ceil(UserState.documents.filtered.length / UserState.documents.pageSize); if (UserState.documents.page < maxPage) { UserState.documents.page++; renderUserDocuments(); } });
 
     // Upload Document
     const uploadInput = document.getElementById('uploadDocInput');
@@ -201,6 +207,7 @@ function loadUserTabData(tabId) {
             break;
         case 'tabDocuments':
             loadUserDocuments();
+            loadSearchFilters();
             break;
         case 'tabChat':
             loadChatSessions();
@@ -346,13 +353,16 @@ async function loadUserDocuments() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/documents?page=${UserState.documents.page - 1}&size=${UserState.documents.pageSize}`);
+        // Tải toàn bộ danh sách (ví dụ 5000) để Frontend tự xử lý phân trang và lọc
+        const response = await apiRequest(`/api/documents?page=0&size=5000`);
 
         UserState.documents.data = response.content || response;
-        UserState.documents.total = response.totalElements || response.length;
         UserState.documents.filtered = [...UserState.documents.data];
-
-        renderUserDocuments();
+        
+        // Reset về trang 1 mỗi lần tải mới
+        UserState.documents.page = 1;
+        
+        filterUserDocuments();
 
     } catch (error) {
         console.error('Error loading documents:', error);
@@ -363,7 +373,23 @@ async function loadUserDocuments() {
 }
 
 function renderUserDocuments() {
-    const docs = UserState.documents.filtered;
+    const allDocs = UserState.documents.filtered;
+    const page = UserState.documents.page || 1;
+    const pageSize = UserState.documents.pageSize || 20;
+    
+    // Tính tổng số trang và slice
+    const totalItems = allDocs.length;
+    const maxPage = Math.ceil(totalItems / pageSize) || 1;
+    
+    // Nếu page hiện tại lớn hơn maxPage (do lọc), reset về 1
+    if (page > maxPage) {
+        UserState.documents.page = 1;
+    }
+    
+    const startIndex = (UserState.documents.page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const docs = allDocs.slice(startIndex, endIndex);
+
     const currentUser = JSON.parse(localStorage.getItem('user'));
 
     const canManagePerms = (doc) => {
@@ -372,12 +398,20 @@ function renderUserDocuments() {
         return currentUser.role === 'ADMIN' || (currentUser.role === 'MANAGER' && doc.departmentId && currentUser.departmentId && Number(doc.departmentId) === Number(currentUser.departmentId));
     };
 
+    // Cập nhật phân trang UI
+    const prevBtn = document.getElementById('prevDocPage');
+    const nextBtn = document.getElementById('nextDocPage');
+    const pageInfo = document.getElementById('pageInfo');
+    if (prevBtn) prevBtn.disabled = UserState.documents.page <= 1;
+    if (nextBtn) nextBtn.disabled = UserState.documents.page >= maxPage;
+    if (pageInfo) pageInfo.textContent = `Trang ${UserState.documents.page} / ${maxPage}`;
+
     // Update Summary Bar
     const totalCountEl = document.getElementById('docTotalCount');
     const failedCountEl = document.getElementById('docFailedCount');
-    if (totalCountEl) totalCountEl.textContent = UserState.documents.total || docs.length;
+    if (totalCountEl) totalCountEl.textContent = totalItems;
     if (failedCountEl) {
-        const failedDocs = docs.filter(d => d.status === 'FAILED');
+        const failedDocs = allDocs.filter(d => d.status === 'FAILED');
         failedCountEl.textContent = failedDocs.length;
     }
 
@@ -522,7 +556,7 @@ function renderUserDocuments() {
     }
 
     if (typeof updatePagination !== 'undefined') {
-        updatePagination('docPagination', UserState.documents.page, Math.ceil(UserState.documents.total / UserState.documents.pageSize));
+        
     }
 }
 
@@ -534,6 +568,9 @@ function filterUserDocuments() {
     const typeFilter = activePill ? activePill.getAttribute('data-filter') : '';
     
     const sortFilter = document.getElementById('docSortFilter')?.value || 'newest';
+    const deptFilter = document.getElementById('docDeptFilter')?.value || '';
+    const startDateFilter = document.getElementById('docStartDateFilter')?.value || '';
+    const endDateFilter = document.getElementById('docEndDateFilter')?.value || '';
 
     UserState.documents.filtered = UserState.documents.data.filter(doc => {
         const matchesSearch = !searchTerm || 
@@ -553,7 +590,28 @@ function filterUserDocuments() {
             }
             matchesType = (combinedStatus === typeFilter);
         }
-        return matchesSearch && matchesType;
+
+        let matchesDept = true;
+        if (deptFilter) {
+            matchesDept = (doc.departmentId && String(doc.departmentId) === String(deptFilter));
+        }
+
+        let matchesDate = true;
+        if (startDateFilter || endDateFilter) {
+            const docDate = new Date(doc.createdAt);
+            if (startDateFilter) {
+                const start = new Date(startDateFilter);
+                start.setHours(0, 0, 0, 0);
+                if (docDate < start) matchesDate = false;
+            }
+            if (endDateFilter) {
+                const end = new Date(endDateFilter);
+                end.setHours(23, 59, 59, 999);
+                if (docDate > end) matchesDate = false;
+            }
+        }
+
+        return matchesSearch && matchesType && matchesDept && matchesDate;
     });
 
     // Sort
@@ -571,6 +629,9 @@ function filterUserDocuments() {
             UserState.documents.filtered.sort((a, b) => (b.fileSize || 0) - (a.fileSize || 0));
             break;
     }
+
+    // Always go back to page 1 after filtering
+    UserState.documents.page = 1;
 
     renderUserDocuments();
 }
@@ -661,13 +722,16 @@ async function viewUserDocument(docId) {
         if (titleEl) titleEl.textContent = doc.fileName;
         if (contentEl) {
             contentEl.innerHTML = `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
                     <div><strong>Tên file:</strong> ${doc.fileName}</div>
                     <div><strong>Loại:</strong> ${doc.fileType?.toUpperCase()}</div>
                     <div><strong>Kích thước:</strong> ${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
-                    <div><strong>Phòng ban:</strong> ${doc.departmentName || '—'}</div>
+                    <div><strong>Phòng ban:</strong> ${doc.departmentName || 'Chung'}</div>
                     <div><strong>Ngày upload:</strong> ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
                     <div><strong>Phiên bản:</strong> ${doc.version || 1}</div>
+                </div>
+                <div id="docViewerIframeContainer" style="height:500px;width:100%;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f9fafb;">
+                    <span>Đang tải nội dung tài liệu... <i class="fa-solid fa-spinner fa-spin"></i></span>
                 </div>
             `;
         }
@@ -692,6 +756,32 @@ async function viewUserDocument(docId) {
 
         if (typeof openModal !== 'undefined') {
             openModal('docViewerModal');
+        }
+
+        // Fetch document content as blob for viewing
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('access_token');
+        if (token) {
+            fetch(`${typeof API_BASE !== 'undefined' ? API_BASE : ''}/api/documents/${docId}/view`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Cannot load document view');
+                return res.blob();
+            })
+            .then(blob => {
+                const objectUrl = URL.createObjectURL(blob);
+                const iframeContainer = document.getElementById('docViewerIframeContainer');
+                if (iframeContainer) {
+                    iframeContainer.innerHTML = `<iframe src="${objectUrl}" style="width:100%;height:100%;border:none;border-radius:8px;"></iframe>`;
+                }
+            })
+            .catch(err => {
+                console.error('Error loading doc view:', err);
+                const iframeContainer = document.getElementById('docViewerIframeContainer');
+                if (iframeContainer) {
+                    iframeContainer.innerHTML = `<span style="color:var(--error);">Không thể hiển thị tài liệu này trực tiếp. Vui lòng tải về để xem.</span>`;
+                }
+            });
         }
 
     } catch (error) {
@@ -1152,29 +1242,51 @@ async function loadSearchFilters() {
 
         const departments = await apiRequest('/api/user/departments');
         const select = document.getElementById('searchDeptFilter');
+        const docSelect = document.getElementById('docDeptFilter');
 
-        if (!select) return;
-
-        select.innerHTML = '<option value="">Tất cả phòng ban</option>';
-        departments.forEach(dept => {
-            const option = document.createElement('option');
-            option.value = dept.id;
-            option.textContent = dept.name;
-            select.appendChild(option);
-        });
+        if (select) {
+            select.innerHTML = '<option value="">Tất cả phòng ban</option>';
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                select.appendChild(option);
+            });
+        }
+        
+        if (docSelect) {
+            docSelect.innerHTML = '<option value="">Tất cả phòng ban</option>';
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                docSelect.appendChild(option);
+            });
+        }
 
     } catch (error) {
         console.error('Error loading search filters:', error);
     }
 }
 
+function removeAccents(str) {
+    if (!str) return '';
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 async function performSearch() {
-    const query = document.getElementById('globalSearchInput')?.value?.trim();
-    
     const dropdown = document.getElementById('globalSearchDropdown');
+    const isGlobal = dropdown && dropdown.style.display !== 'none';
+    
+    let query = '';
+    if (isGlobal) {
+        query = document.getElementById('globalSearchInput')?.value?.trim();
+    } else {
+        query = document.getElementById('tabSearchInput')?.value?.trim();
+    }
+
     const searchTabContainer = document.getElementById('searchResults');
-    const container = (dropdown && dropdown.style.display !== 'none') ? 
-                      document.getElementById('globalSearchResults') : searchTabContainer;
+    const container = isGlobal ? document.getElementById('globalSearchResults') : searchTabContainer;
 
     if (!query || query.length < 2) {
         if (container) {
@@ -1194,20 +1306,50 @@ async function performSearch() {
     UserState.search.loading = true;
 
     try {
-        if (typeof apiRequest === 'undefined') {
-            throw new Error('apiRequest() không tồn tại');
+        if (!UserState.documents.data || !Array.isArray(UserState.documents.data) || UserState.documents.data.length === 0) {
+            if (typeof apiRequest !== 'undefined') {
+                const response = await apiRequest(`/api/documents?page=0&size=5000`);
+                UserState.documents.data = Array.isArray(response) ? response : (response.content || []);
+            }
         }
 
-        const results = await apiRequest('/api/user/search', {
-            method: 'POST',
-            body: JSON.stringify({
-                query,
-                departmentId: deptFilter || null,
-                fileType: typeFilter || null
-            })
+        const dataArray = Array.isArray(UserState.documents.data) ? UserState.documents.data : [];
+        const normQuery = query ? removeAccents(query) : '';
+
+        const filtered = dataArray.filter(doc => {
+            if (!doc) return false;
+            const name = removeAccents(String(doc.fileName || doc.title || ''));
+            const content = removeAccents(String(doc.content || doc.aiSummary || ''));
+            
+            let matchesQ = true;
+            if (normQuery.length > 0) {
+                matchesQ = name.includes(normQuery) || content.includes(normQuery);
+            }
+            
+            let matchesD = true;
+            if (deptFilter) {
+                matchesD = String(doc.departmentId) === String(deptFilter);
+            }
+            
+            let matchesT = true;
+            if (typeFilter) {
+                matchesT = String(doc.fileType).toLowerCase().includes(typeFilter.toLowerCase());
+            }
+            
+            return matchesQ && matchesD && matchesT;
         });
 
-        UserState.search.results = results.documents || [];
+        UserState.search.results = filtered.map(doc => ({
+            documentId: doc.id || Math.random(),
+            fileName: doc.fileName || doc.title || 'Tài liệu không tên',
+            fileType: doc.fileType || 'unknown',
+            departmentName: doc.departmentName || 'Chung',
+            createdAt: doc.createdAt || new Date().toISOString(),
+            excerpt: doc.aiSummary ? String(doc.aiSummary).substring(0, 200) + '...' : 'Không có nội dung trích xuất',
+            score: 1.0,
+            pageNumber: 1
+        }));
+
         renderSearchResults();
 
     } catch (error) {
