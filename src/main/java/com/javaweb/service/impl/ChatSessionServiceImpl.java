@@ -131,6 +131,39 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         session.setDeletedAt(LocalDateTime.now());
         chatSessionsRepository.save(session);
     }
+
+    @Override
+    public ChatSessionResponse renameSession(Long sessionId, ChatSessionRequest request, UsersEntity currentUser) {
+
+        ChatSessionsEntity session = chatSessionsRepository.findById(sessionId)
+                .orElseThrow(() -> new BadRequestException(
+                        "Chat session không tồn tại hoặc bạn không có quyền truy cập"));
+
+        if (!session.getUserChatId().getId().equals(currentUser.getId())) {
+            throw new BadRequestException(
+                    "Chat session không tồn tại hoặc bạn không có quyền truy cập");
+        }
+
+        if (session.getDeletedAt() != null) {
+            throw new BadRequestException("Chat session này đã bị xóa trước đó");
+        }
+
+        String resolvedTitle = (request.getTitle() != null && !request.getTitle().isBlank())
+                ? request.getTitle()
+                : "Cuộc trò chuyện mới";
+
+        session.setTitle(resolvedTitle);
+        session.setUpdatedAt(LocalDateTime.now());
+
+        ChatSessionsEntity saved = chatSessionsRepository.save(session);
+
+        return new ChatSessionResponse(
+                saved.getId(),
+                saved.getTitle(),
+                saved.getCreatedAt(),
+                saved.getUpdatedAt()
+        );
+    }
 }
 
 /*

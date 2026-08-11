@@ -372,7 +372,7 @@
                 }
 
                 notifList.innerHTML = notifications.map(notif => `
-                <div class="notif-item" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor:pointer; background: ${notif.read ? '#ffffff' : '#e0f2fe'}" onclick="openNotification(${notif.id}, '${notif.title.replace(/'/g, "\\'")}', '${notif.message.replace(/\n/g, '\\n').replace(/'/g, "\\'")}')">
+                <div class="notif-item" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor:pointer; background: ${notif.read ? '#ffffff' : '#e0f2fe'}" onclick="openNotification(${notif.id}, '${(notif.title || '').replace(/'/g, "\\'")}', '${(notif.message || '').replace(/\n/g, '\\n').replace(/'/g, "\\'")}')">
                    <div style="font-weight: ${notif.read ? '500' : '700'}; font-size:0.875rem; color:#0f172a; margin-bottom:4px; display: flex; justify-content: space-between; align-items: start;">
                      <div style="padding-right: 8px;">
                        ${notif.read ? '' : '<span style="display:inline-block; width:8px; height:8px; background:#ef4444; border-radius:50%; margin-right:6px;"></span>'}

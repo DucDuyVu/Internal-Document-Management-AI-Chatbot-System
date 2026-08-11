@@ -49,4 +49,9 @@ public interface ChatSessionService {
      *     tin nhắn.
      */
     void deleteSession(Long sessionId, UsersEntity currentUser);
+
+    /**
+     * Đổi tên chat session.
+     */
+    ChatSessionResponse renameSession(Long sessionId, ChatSessionRequest request, UsersEntity currentUser);
 }

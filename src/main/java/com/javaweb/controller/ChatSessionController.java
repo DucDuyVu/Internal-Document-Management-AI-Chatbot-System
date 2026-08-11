@@ -146,6 +146,22 @@ public class ChatSessionController {
     }
 
     /**
+     * Đổi tên 1 chat session.
+     */
+    @org.springframework.web.bind.annotation.PutMapping({"/sessions/{id}", "/chat-sessions/{id}"})
+    public ResponseEntity<ChatSessionResponse> renameSession(
+            @PathVariable Long id,
+            @RequestBody ChatSessionRequest request) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UsersEntity currentUser = getCurrentUser(authentication);
+
+        ChatSessionResponse response = chatSessionService.renameSession(id, request, currentUser);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Helper: lấy UsersEntity từ Authentication.
      *
      * JwtAuthenticationFilter set principal = CustomUserDetails (wrap UsersEntity),

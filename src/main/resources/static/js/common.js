@@ -1454,7 +1454,7 @@ async function markNotificationAsRead(id) {
 }
 
 // Khởi tạo Notifications
-document.addEventListener('DOMContentLoaded', initNotifications);
+// document.addEventListener('DOMContentLoaded', initNotifications); // Disabled to prevent double toggle with layout scripts
 
 // ==========================================
 // Theme (Dark Mode) & Dropdown UI Logic

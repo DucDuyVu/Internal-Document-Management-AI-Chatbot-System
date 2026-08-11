@@ -119,6 +119,8 @@ function setupUserSidebar() {
 }
 
 function setupUserEventListeners() {
+    if (typeof initCitationPopover === 'function') initCitationPopover();
+    if (typeof initCitationPopover === 'function') initCitationPopover();
     // Document search
     const docSearch = document.getElementById('docSearchInput');
     if (docSearch && typeof debounce !== 'undefined') {
@@ -149,7 +151,25 @@ function setupUserEventListeners() {
     // Global search
     const globalSearch = document.getElementById('globalSearchInput');
     if (globalSearch && typeof debounce !== 'undefined') {
-        globalSearch.addEventListener('input', debounce(performSearch, 500));
+        globalSearch.addEventListener('input', debounce(() => {
+            const dropdown = document.getElementById('globalSearchDropdown');
+            if (globalSearch.value.trim().length >= 2) {
+                if (dropdown) dropdown.style.display = 'block';
+                performSearch();
+            } else {
+                if (dropdown) dropdown.style.display = 'none';
+                const res = document.getElementById('globalSearchResults');
+                if (res) res.innerHTML = '';
+            }
+        }, 500));
+        
+        // Hide dropdown when click outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.topbar-search')) {
+                const dropdown = document.getElementById('globalSearchDropdown');
+                if (dropdown) dropdown.style.display = 'none';
+            }
+        });
     }
 
     // Logout
@@ -770,10 +790,16 @@ async function openChatSession(sessionId) {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const session = await apiRequest(`/api/user/chat-sessions/${sessionId}`);
-
+        const messages = await apiRequest(`/api/user/chat-sessions/${sessionId}/messages`);
+        
+        const sessionMeta = UserState.chat.sessions.find(s => s.id === sessionId);
+        const session = {
+            title: sessionMeta ? sessionMeta.title : 'Cuộc hội thoại',
+            messageCount: messages ? messages.length : 0
+        };
+        
         UserState.chat.currentSessionId = sessionId;
-        UserState.chat.messages = session.messages || [];
+        UserState.chat.messages = messages || [];
 
         const emptyState = document.getElementById('chatEmptyState');
         const active = document.getElementById('chatActive');
@@ -824,6 +850,9 @@ function renderChatMessages() {
 
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
+    
+    // Trigger notebook-style popover init if function exists
+    if (typeof initNotebookPopover === 'function') initNotebookPopover();
 }
 
 function formatMessageContent(content, sources) {
@@ -858,8 +887,8 @@ function formatMessageContent(content, sources) {
                         const source = sources[num];
                         const title = source.fileName || "Tài liệu";
                         const excerpt = source.excerpt || "";
-                        const t = title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        const e = excerpt.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const t = title.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ').replace(/\r/g, '');
+                        const e = excerpt.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ').replace(/\r/g, '');
                         return '<span class="citation-badge" data-index="' + num + '" ' +
                             'onmouseenter="showCitationPopover(this, \'' + t + '\', \'' + e + '\')" ' +
                             'onmouseleave="hideCitationPopover()">' + (num + 1) + '</span>';
@@ -917,19 +946,19 @@ async function sendChatMessage() {
             await loadChatSessions();
         }
 
-        // Send message - SỬA LẠI: trỏ đúng API của ChatController
+        // Send message
         const response = await apiRequest(`/api/chat/ask`, {
             method: 'POST',
-            body: {
+            body: JSON.stringify({
                 sessionId: UserState.chat.currentSessionId,
                 question: message
-            }
+            })
         });
 
         // Remove loading
         removeLoadingMessage(loadingMsg);
 
-        // Add AI response - SỬA LẠI: map đúng trường trả về từ ChatAnswerResponse (answer, sources)
+        // Add AI response
         const aiMessage = {
             role: 'ASSISTANT',
             content: response.answer,
@@ -1139,8 +1168,13 @@ async function loadSearchFilters() {
 
 async function performSearch() {
     const query = document.getElementById('globalSearchInput')?.value?.trim();
+    
+    const dropdown = document.getElementById('globalSearchDropdown');
+    const searchTabContainer = document.getElementById('searchResults');
+    const container = (dropdown && dropdown.style.display !== 'none') ? 
+                      document.getElementById('globalSearchResults') : searchTabContainer;
+
     if (!query || query.length < 2) {
-        const container = document.getElementById('searchResults');
         if (container) {
             container.innerHTML = `
                 <div class="search-hint">
@@ -1185,7 +1219,7 @@ async function performSearch() {
 }
 
 function renderSearchResults() {
-    const container = document.getElementById('searchResults');
+    const container = document.getElementById('globalSearchDropdown') && document.getElementById('globalSearchDropdown').style.display !== 'none' ? document.getElementById('globalSearchResults') : document.getElementById('searchResults');
     if (!container) return;
 
     const results = UserState.search.results;
