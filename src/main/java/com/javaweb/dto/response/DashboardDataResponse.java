@@ -17,7 +17,14 @@ public class DashboardDataResponse {
     
     private LocalDateTime lastLoginTime;
     
-    // Manager fields
+    // Chỉ số sử dụng (Usage Metrics)
+    private long storageUsedBytes;
+    private long storageQuotaBytes;
+    private int aiTokensUsed;
+    private int aiTokensQuota;
+    private int documentQuota;
+    
+    // Các trường dành cho cấp Quản lý (Manager)
     private boolean isManager;
     private int managedEmployeeCount;
     private String departmentName;
@@ -27,4 +34,9 @@ public class DashboardDataResponse {
     
     private List<DashboardActivityDTO> recentActivities;
     private List<DashboardDocumentDTO> recentDocuments;
+    
+    // Dữ liệu cho Biểu đồ hoạt động
+    private List<String> activityLabels;
+    private List<Integer> uploadData;
+    private List<Integer> aiData;
 }

@@ -2845,11 +2845,18 @@ async function loadReportStats() {
             }
         }
 
-        // Update Stat Cards
-        document.getElementById('repTotalDocs').textContent = stats.totalDocuments.toLocaleString();
-        document.getElementById('repApprovalRate').textContent = stats.approvalRate.toFixed(1) + '%';
-        document.getElementById('repAvgTime').textContent = stats.avgProcessingHours.toFixed(1) + ' giờ';
-        document.getElementById('repAiSaved').textContent = stats.aiTimeSavedHours.toFixed(1) + '+ giờ';
+        // Update Stat Cards safely
+        const totalDocsEl = document.getElementById('repTotalDocs');
+        if (totalDocsEl) totalDocsEl.textContent = stats.totalDocuments.toLocaleString();
+        
+        const approvalRateEl = document.getElementById('repApprovalRate');
+        if (approvalRateEl) approvalRateEl.textContent = stats.approvalRate.toFixed(1) + '%';
+        
+        const avgTimeEl = document.getElementById('repAvgTime');
+        if (avgTimeEl) avgTimeEl.textContent = stats.avgProcessingHours.toFixed(1) + ' giờ';
+        
+        const aiSavedEl = document.getElementById('repAiSaved');
+        if (aiSavedEl) aiSavedEl.textContent = stats.aiTimeSavedHours.toFixed(1) + '+ giờ';
 
         // Initialize Charts if Chart.js is loaded
         if (typeof Chart !== 'undefined') {
@@ -2858,7 +2865,7 @@ async function loadReportStats() {
             console.warn("Chart.js is not loaded. Please include Chart.js in the HTML.");
             // Dynamically load Chart.js just in case
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js';
             script.onload = () => initReportCharts(stats);
             document.head.appendChild(script);
         }
@@ -2872,118 +2879,184 @@ function initReportCharts(stats) {
     if (trendCtx) {
         if (reportTrendChart) reportTrendChart.destroy();
         
-        // Gradient for Created (Purple)
-        let gradientCreated = trendCtx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-        gradientCreated.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-        gradientCreated.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
-        
-        // Gradient for Approved (Green)
-        let gradientApproved = trendCtx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-        gradientApproved.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
-        gradientApproved.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+        // Kiểm tra xem có dữ liệu không (tránh chart trắng tinh)
+        const totalTrendData = stats.trendDataCreated.reduce((a, b) => a + b, 0) + stats.trendDataApproved.reduce((a, b) => a + b, 0);
+        if (totalTrendData === 0) {
+            trendCtx.style.display = 'none';
+            let emptyState = document.getElementById('trendEmptyState');
+            if (!emptyState) {
+                emptyState = document.createElement('div');
+                emptyState.id = 'trendEmptyState';
+                emptyState.style = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-size:0.9rem;';
+                emptyState.innerHTML = '<i class="fa-solid fa-chart-line" style="font-size:2rem;margin-bottom:8px;color:#cbd5e1;"></i><span>Chưa có dữ liệu trong tuần qua</span>';
+                trendCtx.parentElement.appendChild(emptyState);
+            }
+            emptyState.style.display = 'flex';
+        } else {
+            trendCtx.style.display = 'block';
+            const emptyState = document.getElementById('trendEmptyState');
+            if (emptyState) emptyState.style.display = 'none';
+            
+            try {
+                // Gradient for Created (Purple)
+                let gradientCreated = trendCtx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+                gradientCreated.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+                gradientCreated.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
+                
+                // Gradient for Approved (Green)
+                let gradientApproved = trendCtx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+                gradientApproved.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+                gradientApproved.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
 
-        reportTrendChart = new Chart(trendCtx.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: stats.trendLabels,
-                datasets: [
-                    {
-                        label: 'Tài liệu tạo mới',
-                        data: stats.trendDataCreated,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: gradientCreated,
-                        borderWidth: 3,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#8b5cf6',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true,
-                        tension: 0.4
+                reportTrendChart = new Chart(trendCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: stats.trendLabels,
+                        datasets: [
+                            {
+                                label: 'Tài liệu tạo mới',
+                                data: stats.trendDataCreated,
+                                borderColor: '#8b5cf6',
+                                backgroundColor: gradientCreated,
+                                borderWidth: 3,
+                                pointBackgroundColor: '#fff',
+                                pointBorderColor: '#8b5cf6',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Đã duyệt',
+                                data: stats.trendDataApproved,
+                                borderColor: '#10b981',
+                                backgroundColor: gradientApproved,
+                                borderWidth: 3,
+                                pointBackgroundColor: '#fff',
+                                pointBorderColor: '#10b981',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
                     },
-                    {
-                        label: 'Đã duyệt',
-                        data: stats.trendDataApproved,
-                        borderColor: '#10b981',
-                        backgroundColor: gradientApproved,
-                        borderWidth: 3,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#10b981',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true,
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        titleColor: '#1f2937',
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyColor: '#4b5563',
-                        bodyFont: { size: 13 },
-                        borderColor: '#e5e7eb',
-                        borderWidth: 1,
-                        padding: 12,
-                        boxPadding: 6,
-                        usePointStyle: true,
-                        callbacks: {
-                            labelColor: function(context) {
-                                return {
-                                    borderColor: context.dataset.borderColor,
-                                    backgroundColor: context.dataset.borderColor
-                                };
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                titleColor: '#1f2937',
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyColor: '#4b5563',
+                                bodyFont: { size: 13 },
+                                borderColor: '#e5e7eb',
+                                borderWidth: 1,
+                                padding: 12,
+                                boxPadding: 6,
+                                usePointStyle: true,
+                                callbacks: {
+                                    labelColor: function(context) {
+                                        return {
+                                            borderColor: context.dataset.borderColor,
+                                            backgroundColor: context.dataset.borderColor
+                                        };
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                grid: { borderDash: [4, 4], color: '#f3f4f6', drawBorder: false },
+                                border: { display: false }
+                            },
+                            x: { 
+                                grid: { display: false, drawBorder: false },
+                                border: { display: false }
                             }
                         }
                     }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { borderDash: [4, 4], color: '#f3f4f6', drawBorder: false },
-                        border: { display: false }
-                    },
-                    x: { 
-                        grid: { display: false, drawBorder: false },
-                        border: { display: false }
-                    }
+                });
+            } catch (err) {
+                console.error("Lỗi vẽ biểu đồ Trend:", err);
+                trendCtx.style.display = 'none';
+                let errorState = document.getElementById('trendErrorState');
+                if (!errorState) {
+                    errorState = document.createElement('div');
+                    errorState.id = 'trendErrorState';
+                    errorState.style = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:0.9rem;font-weight:bold;';
+                    errorState.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i> Lỗi hiển thị biểu đồ';
+                    trendCtx.parentElement.appendChild(errorState);
                 }
+                errorState.style.display = 'flex';
             }
-        });
+        }
     }
 
     const typeCtx = document.getElementById('typeChart');
     if (typeCtx) {
         if (reportTypeChart) reportTypeChart.destroy();
-        reportTypeChart = new Chart(typeCtx.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: stats.statusLabels,
-                datasets: [{
-                    data: stats.statusData,
-                    backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right' }
-                },
-                cutout: '70%'
+        
+        const totalStatusData = stats.statusData.reduce((a, b) => a + b, 0);
+        if (totalStatusData === 0) {
+            typeCtx.style.display = 'none';
+            let emptyState = document.getElementById('typeEmptyState');
+            if (!emptyState) {
+                emptyState = document.createElement('div');
+                emptyState.id = 'typeEmptyState';
+                emptyState.style = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-size:0.9rem;';
+                emptyState.innerHTML = '<i class="fa-solid fa-chart-pie" style="font-size:2rem;margin-bottom:8px;color:#cbd5e1;"></i><span>Chưa có dữ liệu xử lý</span>';
+                typeCtx.parentElement.appendChild(emptyState);
             }
-        });
+            emptyState.style.display = 'flex';
+        } else {
+            typeCtx.style.display = 'block';
+            const emptyState = document.getElementById('typeEmptyState');
+            if (emptyState) emptyState.style.display = 'none';
+            
+            try {
+                reportTypeChart = new Chart(typeCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: stats.statusLabels,
+                        datasets: [{
+                            data: stats.statusData,
+                            backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right' }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            } catch (err) {
+                console.error("Lỗi vẽ biểu đồ Type:", err);
+                typeCtx.style.display = 'none';
+                let errorState = document.getElementById('typeErrorState');
+                if (!errorState) {
+                    errorState = document.createElement('div');
+                    errorState.id = 'typeErrorState';
+                    errorState.style = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:0.9rem;font-weight:bold;';
+                    errorState.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i> Lỗi hiển thị biểu đồ';
+                    typeCtx.parentElement.appendChild(errorState);
+                }
+                errorState.style.display = 'flex';
+            }
+        }
     }
 }
 

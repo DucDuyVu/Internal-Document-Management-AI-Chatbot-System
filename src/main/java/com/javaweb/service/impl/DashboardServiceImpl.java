@@ -5,6 +5,7 @@ import com.javaweb.dto.response.DashboardDataResponse;
 import com.javaweb.dto.response.DashboardDocumentDTO;
 import com.javaweb.dto.response.ReportStatsDTO;
 import com.javaweb.entity.ActivityLogsEntity;
+import com.javaweb.entity.ChatSessionsEntity;
 import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.entity.DepartmentsEntity;
@@ -24,13 +25,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.io.PrintWriter;
+import java.io.FileWriter;
 
 @Service
 @RequiredArgsConstructor
@@ -45,15 +50,16 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public DashboardDataResponse getDashboardStats() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-        UsersEntity user = usersRepository.findByUserName(username).orElse(null);
-        if (user == null)
-            return null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            UsersEntity user = usersRepository.findByUserName(username).orElse(null);
+            if (user == null)
+                return null;
 
-        Long userId = user.getId();
-        Integer deptId = user.getDepartment() != null ? user.getDepartment().getId().intValue() : null;
-        Long deptIdLong = user.getDepartment() != null ? user.getDepartment().getId() : null;
+            Long userId = user.getId();
+            Integer deptId = user.getDepartment() != null ? user.getDepartment().getId().intValue() : null;
+            Long deptIdLong = user.getDepartment() != null ? user.getDepartment().getId() : null;
 
         // Statistics
         int viewCount = activityLogsRepository.countByUsersEntityId_IdAndAction(userId, "VIEW_DOCUMENT");
@@ -75,7 +81,8 @@ public class DashboardServiceImpl implements DashboardService {
             docPage = new org.springframework.data.domain.PageImpl<>(recentForAdmin);
         } else {
             boolean isManager = user.getRole().name().equals("MANAGER");
-            docPage = documentRepository.findVisibleToDepartmentWithSharing(deptId, deptIdLong, userId, isManager, docPageable);
+            docPage = documentRepository.findVisibleToDepartmentWithSharing(deptId, deptIdLong, userId, isManager,
+                    docPageable);
             documentCount = (int) docPage.getTotalElements();
         }
 
@@ -123,6 +130,70 @@ public class DashboardServiceImpl implements DashboardService {
             managedEmployeeCount = (int) usersRepository.countByDepartmentId(user.getDepartment().getId());
             departmentName = user.getDepartment().getName();
         }
+        // Tính toán các chỉ số sử dụng (Usage Metrics)
+        long storageUsedBytes = 0;
+        if (user.getRole().name().equals("ADMIN")) {
+            List<DocumentEntity> allDocsForSize = documentRepository.findByDeletedAtIsNull();
+            storageUsedBytes = allDocsForSize.stream()
+                    .filter(d -> d.getFileSize() != null)
+                    .mapToLong(DocumentEntity::getFileSize)
+                    .sum();
+        } else {
+            List<DocumentEntity> allDocsForDept = documentRepository
+                    .findVisibleToDepartmentWithSharing(deptId, deptIdLong, userId, isManager, PageRequest.of(0, 10000))
+                    .getContent();
+            storageUsedBytes = allDocsForDept.stream()
+                    .filter(d -> d.getFileSize() != null)
+                    .mapToLong(DocumentEntity::getFileSize)
+                    .sum();
+        }
+        long storageQuotaBytes = 10L * 1024 * 1024 * 1024; // Giả lập giới hạn 10 GB
+
+        int totalSystemChatSessions = user.getRole().name().equals("ADMIN")
+                ? chatSessionsRepository.countByDeletedAtIsNull()
+                : chatSessionCount;
+
+        int aiTokensUsed = totalSystemChatSessions * 1250; // Tính toán giả lập dựa trên số phiên chat
+        int aiTokensQuota = 50000;
+        int documentQuota = 500;
+
+        // Dữ liệu cho Biểu đồ hoạt động (7 ngày gần nhất)
+        List<String> activityLabels = new ArrayList<>();
+        List<Integer> uploadData = new ArrayList<>();
+        List<Integer> aiData = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
+
+        List<DocumentEntity> allDocsForTrend = user.getRole().name().equals("ADMIN")
+                ? documentRepository.findByDeletedAtIsNull()
+                : documentRepository.findVisibleToDepartmentWithSharing(deptId, deptIdLong, userId, isManager,
+                        PageRequest.of(0, 10000)).getContent();
+
+        List<ChatSessionsEntity> allChatsForTrend = user.getRole().name().equals("ADMIN")
+                ? chatSessionsRepository.findByDeletedAtIsNull()
+                : chatSessionsRepository.findByUserChatId_IdAndDeletedAtIsNullOrderByUpdatedAtDesc(userId);
+
+        for (int i = 6; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            activityLabels.add(date.format(formatter));
+
+            int docsCreated = 0;
+            for (DocumentEntity d : allDocsForTrend) {
+                if (d.getCreatedAt() != null && d.getCreatedAt().toLocalDate().equals(date)) {
+                    docsCreated++;
+                }
+            }
+            uploadData.add(docsCreated);
+
+            int chatsCreated = 0;
+            for (ChatSessionsEntity c : allChatsForTrend) {
+                if (c.getCreatedAt() != null && c.getCreatedAt().toLocalDate().equals(date)) {
+                    chatsCreated++;
+                }
+            }
+            aiData.add(chatsCreated);
+        }
 
         return DashboardDataResponse.builder()
                 .documentCount(documentCount)
@@ -138,7 +209,24 @@ public class DashboardServiceImpl implements DashboardService {
                 .pendingDocumentCount(0) // TODO: Implement when approval workflow is added
                 .pendingRequestCount(0) // TODO: Implement when department requests are added
                 .activeSessionsCount(activeSessionsCount)
+                .storageUsedBytes(storageUsedBytes)
+                .storageQuotaBytes(storageQuotaBytes)
+                .aiTokensUsed(aiTokensUsed)
+                .aiTokensQuota(aiTokensQuota)
+                .documentQuota(documentQuota)
+                .activityLabels(activityLabels)
+                .uploadData(uploadData)
+                .aiData(aiData)
                 .build();
+        } catch (Exception e) {
+            try {
+                PrintWriter pw = new PrintWriter(new FileWriter("error.log", true));
+                pw.println("----- ERROR in getDashboardStats -----");
+                e.printStackTrace(pw);
+                pw.close();
+            } catch (Exception ex) {}
+            throw e;
+        }
     }
 
     @Override
@@ -146,7 +234,8 @@ public class DashboardServiceImpl implements DashboardService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         UsersEntity user = usersRepository.findByUserName(username).orElse(null);
-        if (user == null) return null;
+        if (user == null)
+            return null;
 
         Long userId = user.getId();
         Integer deptId = user.getDepartment() != null ? user.getDepartment().getId().intValue() : null;
@@ -159,44 +248,49 @@ public class DashboardServiceImpl implements DashboardService {
         if (isAdmin) {
             docs = documentRepository.findByDeletedAtIsNull();
         } else {
-            docs = documentRepository.findVisibleToDepartmentWithSharing(deptId, deptIdLong, userId, isManager, PageRequest.of(0, 10000)).getContent();
+            docs = documentRepository
+                    .findVisibleToDepartmentWithSharing(deptId, deptIdLong, userId, isManager, PageRequest.of(0, 10000))
+                    .getContent();
         }
 
         int totalDocuments = docs.size();
-        
-        // Tính tỷ lệ duyệt (Sử dụng dữ liệu thực tế nếu có, ngược lại dùng mock data)
+
+        // Tính tỷ lệ duyệt
         long approvedCount = docs.stream().filter(d -> d.getApprovalStatus() == ApprovalStatus.APPROVED).count();
-        double approvalRate = totalDocuments > 0 ? (double) approvedCount / totalDocuments * 100 : 96.8;
+        double approvalRate = totalDocuments > 0 ? (double) approvedCount / totalDocuments * 100 : 0.0;
 
         // Tính toán thời gian xử lý trung bình động
         double totalProcessingHours = 0;
         int processedCount = 0;
         for (DocumentEntity d : docs) {
-            if (d.getApprovalStatus() == ApprovalStatus.APPROVED && d.getCreatedAt() != null && d.getUpdatedAt() != null) {
+            if (d.getApprovalStatus() == ApprovalStatus.APPROVED && d.getCreatedAt() != null
+                    && d.getUpdatedAt() != null) {
                 java.time.Duration duration = java.time.Duration.between(d.getCreatedAt(), d.getUpdatedAt());
                 totalProcessingHours += duration.toMinutes() / 60.0;
                 processedCount++;
             }
         }
-        double avgProcessingHours = processedCount > 0 ? (Math.round((totalProcessingHours / processedCount) * 10.0) / 10.0) : 0.0;
+        double avgProcessingHours = processedCount > 0
+                ? (Math.round((totalProcessingHours / processedCount) * 10.0) / 10.0)
+                : 0.0;
 
         // Tính số giờ tiết kiệm nhờ AI
         int chatSessionCount = chatSessionsRepository.countByUserChatId_IdAndDeletedAtIsNull(userId);
-        long docsWithAiCount = docs.stream().filter(d -> d.getAiSummary() != null && !d.getAiSummary().isEmpty()).count();
+        long docsWithAiCount = docs.stream().filter(d -> d.getAiSummary() != null && !d.getAiSummary().isEmpty())
+                .count();
         double aiTimeSavedHours = (chatSessionCount * 1.5) + (docsWithAiCount * 0.5);
-        if (aiTimeSavedHours == 0) aiTimeSavedHours = 340.0;
 
         // Dữ liệu cho biểu đồ đường (Line Chart)
         List<String> trendLabels = new ArrayList<>();
         List<Integer> trendDataCreated = new ArrayList<>();
         List<Integer> trendDataApproved = new ArrayList<>();
-        
+
         LocalDate today = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
         for (int i = 6; i >= 0; i--) {
             LocalDate date = today.minusDays(i);
             trendLabels.add(date.format(formatter));
-            
+
             int created = 0;
             int approved = 0;
             for (DocumentEntity d : docs) {
@@ -209,12 +303,6 @@ public class DashboardServiceImpl implements DashboardService {
             }
             trendDataCreated.add(created);
             trendDataApproved.add(approved);
-        }
-        
-        // Sử dụng dữ liệu mẫu nếu cơ sở dữ liệu trống
-        if (trendDataCreated.stream().allMatch(v -> v == 0)) {
-            trendDataCreated = Arrays.asList(42, 58, 75, 64, 82, 100, 115);
-            trendDataApproved = Arrays.asList(38, 52, 70, 60, 75, 95, 105);
         }
 
         // Dữ liệu cho biểu đồ tròn (Trạng thái tài liệu)
@@ -235,17 +323,11 @@ public class DashboardServiceImpl implements DashboardService {
                 }
             }
         }
-        
         List<String> statusLabels = Arrays.asList("Chờ phê duyệt", "Đã duyệt", "Bị từ chối", "Lỗi xử lý AI");
-        List<Integer> statusData;
-        if (docs.isEmpty()) {
-            statusData = Arrays.asList(15, 65, 10, 5); // Mock data
-        } else {
-            statusData = Arrays.asList(pending, approved, rejected, aiFailed);
-        }
+        List<Integer> statusData = Arrays.asList(pending, approved, rejected, aiFailed);
 
         return ReportStatsDTO.builder()
-                .totalDocuments(totalDocuments > 0 ? totalDocuments : 1527)
+                .totalDocuments(totalDocuments)
                 .approvalRate(approvalRate)
                 .avgProcessingHours(avgProcessingHours)
                 .aiTimeSavedHours(aiTimeSavedHours)
@@ -260,14 +342,43 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     @Override
-    public ReportStatsDTO getAdminReportStats() {
+    public ReportStatsDTO getAdminReportStats(Long departmentId, String startDateStr, String endDateStr) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         UsersEntity user = usersRepository.findByUserName(username).orElse(null);
-        if (user == null || !user.getRole().name().equals("ADMIN")) return null;
+        if (user == null || !user.getRole().name().equals("ADMIN"))
+            return null;
 
         Long userId = user.getId();
-        List<DocumentEntity> docs = documentRepository.findByDeletedAtIsNull();
+        List<DocumentEntity> allDocs = documentRepository.findByDeletedAtIsNull();
+
+        // Xử lý chuyển đổi chuỗi ngày tháng sang LocalDateTime
+        LocalDateTime start = null;
+        LocalDateTime end = null;
+        try {
+            if (startDateStr != null && !startDateStr.isEmpty()) {
+                start = LocalDate.parse(startDateStr).atStartOfDay();
+            }
+            if (endDateStr != null && !endDateStr.isEmpty()) {
+                end = LocalDate.parse(endDateStr).atTime(23, 59, 59);
+            }
+        } catch (Exception e) {
+            // Bỏ qua lỗi nếu định dạng ngày tháng không hợp lệ (mặc định sẽ không lọc theo
+            // ngày)
+        }
+
+        final LocalDateTime finalStart = start;
+        final LocalDateTime finalEnd = end;
+
+        List<DocumentEntity> docs;
+        docs = allDocs.stream().filter(d -> {
+            boolean matchDept = (departmentId == null)
+                    || (d.getDepartmentId() != null && d.getDepartmentId().equals(departmentId.intValue()));
+            boolean matchStart = (finalStart == null)
+                    || (d.getCreatedAt() != null && !d.getCreatedAt().isBefore(finalStart));
+            boolean matchEnd = (finalEnd == null) || (d.getCreatedAt() != null && !d.getCreatedAt().isAfter(finalEnd));
+            return matchDept && matchStart && matchEnd;
+        }).collect(Collectors.toList());
         int totalDocuments = docs.size();
 
         // Tính tỷ lệ duyệt
@@ -278,17 +389,23 @@ public class DashboardServiceImpl implements DashboardService {
         double totalProcessingHours = 0;
         int processedCount = 0;
         for (DocumentEntity d : docs) {
-            if (d.getApprovalStatus() == ApprovalStatus.APPROVED && d.getCreatedAt() != null && d.getUpdatedAt() != null) {
-                java.time.Duration duration = java.time.Duration.between(d.getCreatedAt(), d.getUpdatedAt());
+            if (d.getApprovalStatus() == ApprovalStatus.APPROVED && d.getCreatedAt() != null
+                    && d.getUpdatedAt() != null) {
+                Duration duration = Duration.between(d.getCreatedAt(), d.getUpdatedAt());
                 totalProcessingHours += duration.toMinutes() / 60.0;
                 processedCount++;
             }
         }
-        double avgProcessingHours = processedCount > 0 ? (Math.round((totalProcessingHours / processedCount) * 10.0) / 10.0) : 0.0;
+        double avgProcessingHours = processedCount > 0
+                ? (Math.round((totalProcessingHours / processedCount) * 10.0) / 10.0)
+                : 0.0;
 
         // Tính số giờ tiết kiệm nhờ AI
-        int chatSessionCount = chatSessionsRepository.countByUserChatId_IdAndDeletedAtIsNull(userId);
-        long docsWithAiCount = docs.stream().filter(d -> d.getAiSummary() != null && !d.getAiSummary().isEmpty()).count();
+        int chatSessionCount = (departmentId == null)
+                ? chatSessionsRepository.countByUserChatId_IdAndDeletedAtIsNull(userId)
+                : 0;
+        long docsWithAiCount = docs.stream().filter(d -> d.getAiSummary() != null && !d.getAiSummary().isEmpty())
+                .count();
         double aiTimeSavedHours = (chatSessionCount * 1.5) + (docsWithAiCount * 0.5);
 
         // Dữ liệu cho biểu đồ Cột nhóm (Thống kê theo phòng ban)
@@ -300,33 +417,24 @@ public class DashboardServiceImpl implements DashboardService {
         List<DepartmentsEntity> allDepts = departmentsRepository.findAll();
         for (DepartmentsEntity dept : allDepts) {
             departmentLabels.add(dept.getName());
-            
+
             int deptTotal = 0;
             int deptApproved = 0;
             int deptPending = 0;
-            
-            for (DocumentEntity d : docs) {
+
+            for (DocumentEntity d : allDocs) {
                 if (d.getDepartmentId() != null && d.getDepartmentId().intValue() == dept.getId().intValue()) {
                     deptTotal++;
-                    if (d.getApprovalStatus() == ApprovalStatus.APPROVED) deptApproved++;
-                    else if (d.getApprovalStatus() == ApprovalStatus.PENDING) deptPending++;
+                    if (d.getApprovalStatus() == ApprovalStatus.APPROVED)
+                        deptApproved++;
+                    else if (d.getApprovalStatus() == ApprovalStatus.PENDING)
+                        deptPending++;
                 }
             }
-            
+
             deptTotalDocs.add(deptTotal);
             deptApprovedDocs.add(deptApproved);
             deptPendingDocs.add(deptPending);
-        }
-        
-        // Đảm bảo có dữ liệu mẫu nếu DB trống để biểu đồ vẫn hiển thị (Dành cho demo)
-        if (departmentLabels.isEmpty() || deptTotalDocs.stream().allMatch(v -> v == 0)) {
-            departmentLabels = Arrays.asList("Kế toán & Tài chính", "Nhân sự", "IT & Công nghệ", "Pháp chế & Bán hàng", "Kinh doanh & Marketing");
-            deptTotalDocs = Arrays.asList(482, 210, 290, 205, 195);
-            deptApprovedDocs = Arrays.asList(450, 210, 280, 190, 180);
-            deptPendingDocs = Arrays.asList(22, 0, 5, 15, 10);
-            totalDocuments = 1527;
-            approvalRate = 96.8;
-            aiTimeSavedHours = 340.0;
         }
 
         return ReportStatsDTO.builder()

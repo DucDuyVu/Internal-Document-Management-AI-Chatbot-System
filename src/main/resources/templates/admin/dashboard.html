@@ -144,9 +144,9 @@
         </div>
       </div>
 
-      <!-- Chart & Timeline (Phase 2) -->
-      <div class="two-col" style="margin-top: 24px;">
-        <div class="chart-section">
+      <!-- Chart (Phase 2) -->
+      <div style="margin-top: 24px;">
+        <div class="chart-section" style="width: 100%;">
           <div class="section-header">
             <h2>📈 Biểu đồ hoạt động</h2>
           </div>
@@ -154,38 +154,6 @@
              <div style="flex: 1; min-height: 400px; width: 100%;">
                  <canvas id="mixedChart"></canvas>
              </div>
-          </div>
-        </div>
-        
-        <div class="timeline-section">
-          <div class="section-header">
-            <h2>⏱️ Timeline hoạt động</h2>
-          </div>
-          <div class="kpi-card" style="padding: 24px; min-height: 480px; max-height: 480px; overflow-y: auto;">
-            <div class="timeline" id="timelineList">
-              <!-- Skeleton Loader -->
-              <div class="timeline-item">
-                 <div class="tl-dot" style="background:#e2e8f0; border-color:#e2e8f0;"></div>
-                 <div class="tl-content" style="width:100%;">
-                    <div class="skeleton-loader" style="width:40px; height:12px; border-radius:4px; margin-bottom:8px; color:transparent;">-</div>
-                    <div class="skeleton-loader" style="width:80%; height:16px; border-radius:4px; color:transparent;">-</div>
-                 </div>
-              </div>
-              <div class="timeline-item" style="opacity: 0.7;">
-                 <div class="tl-dot" style="background:#e2e8f0; border-color:#e2e8f0;"></div>
-                 <div class="tl-content" style="width:100%;">
-                    <div class="skeleton-loader" style="width:40px; height:12px; border-radius:4px; margin-bottom:8px; color:transparent;">-</div>
-                    <div class="skeleton-loader" style="width:60%; height:16px; border-radius:4px; color:transparent;">-</div>
-                 </div>
-              </div>
-              <div class="timeline-item" style="opacity: 0.4;">
-                 <div class="tl-dot" style="background:#e2e8f0; border-color:#e2e8f0;"></div>
-                 <div class="tl-content" style="width:100%;">
-                    <div class="skeleton-loader" style="width:40px; height:12px; border-radius:4px; margin-bottom:8px; color:transparent;">-</div>
-                    <div class="skeleton-loader" style="width:70%; height:16px; border-radius:4px; color:transparent;">-</div>
-                 </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -211,30 +179,37 @@
           </div>
         </div>
 
-        <!-- System Status -->
-        <div>
-          <div class="section-header"><h2>🟢 System Status</h2></div>
-          <div class="kpi-card" style="padding: 16px; gap: 0;">
-             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                <span><i class="fa-solid fa-robot text-primary" style="width: 24px;"></i> AI Server</span>
-                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> Running</span>
-             </div>
-             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                <span><i class="fa-solid fa-database text-info" style="width: 24px;"></i> PostgreSQL</span>
-                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> Healthy</span>
-             </div>
-             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                <span><i class="fa-solid fa-hard-drive text-warning" style="width: 24px;"></i> Storage</span>
-                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> 75%</span>
-             </div>
-             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                <span><i class="fa-solid fa-envelope text-danger" style="width: 24px;"></i> SMTP</span>
-                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> Connected</span>
-             </div>
-             <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0;">
-                <span><i class="fa-solid fa-memory text-secondary" style="width: 24px;"></i> Redis</span>
-                <span class="text-success" style="font-size: 0.85rem;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 4px;"></i> Connected</span>
-             </div>
+
+        <!-- Timeline hoạt động -->
+        <div class="timeline-section">
+          <div class="section-header">
+            <h2>⏱️ Timeline hoạt động</h2>
+          </div>
+          <div class="kpi-card" style="padding: 16px; min-height: 250px; max-height: 250px; overflow-y: auto;">
+            <div class="timeline" id="timelineList">
+              <!-- Skeleton Loader -->
+              <div class="timeline-item">
+                 <div class="tl-dot" style="background:#e2e8f0; border-color:#e2e8f0;"></div>
+                 <div class="tl-content" style="width:100%;">
+                    <div class="skeleton-loader" style="width:40px; height:12px; border-radius:4px; margin-bottom:8px; color:transparent;">-</div>
+                    <div class="skeleton-loader" style="width:80%; height:16px; border-radius:4px; color:transparent;">-</div>
+                 </div>
+              </div>
+              <div class="timeline-item" style="opacity: 0.7;">
+                 <div class="tl-dot" style="background:#e2e8f0; border-color:#e2e8f0;"></div>
+                 <div class="tl-content" style="width:100%;">
+                    <div class="skeleton-loader" style="width:40px; height:12px; border-radius:4px; margin-bottom:8px; color:transparent;">-</div>
+                    <div class="skeleton-loader" style="width:60%; height:16px; border-radius:4px; color:transparent;">-</div>
+                 </div>
+              </div>
+              <div class="timeline-item" style="opacity: 0.4;">
+                 <div class="tl-dot" style="background:#e2e8f0; border-color:#e2e8f0;"></div>
+                 <div class="tl-content" style="width:100%;">
+                    <div class="skeleton-loader" style="width:40px; height:12px; border-radius:4px; margin-bottom:8px; color:transparent;">-</div>
+                    <div class="skeleton-loader" style="width:70%; height:16px; border-radius:4px; color:transparent;">-</div>
+                 </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -278,10 +253,10 @@
             <option value="">Tất cả phòng ban</option>
             <!-- Sẽ được populate bởi JS -->
           </select>
-          <select class="report-filter-select" style="padding:8px 16px; border:1px solid #cbd5e1; border-radius:8px; outline:none; background:white; color:#334155; font-weight:500;">
-            <option>30 ngày qua</option>
-            <option>7 ngày qua</option>
-          </select>
+          <div style="position: relative; display: flex; align-items: center;">
+            <i class="fa-regular fa-calendar" style="position: absolute; left: 12px; color: #64748b; pointer-events: none;"></i>
+            <input type="text" id="adminRepDateFilter" placeholder="Chọn ngày (All time)" style="padding:8px 16px 8px 36px; border:1px solid #cbd5e1; border-radius:8px; outline:none; background:white; color:#334155; font-weight:500; width: 270px; cursor: pointer;">
+          </div>
           <button class="btn-export" style="background:#10b981; color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
         </div>
       </div>
@@ -320,16 +295,7 @@
           </div>
         </div>
 
-        <div class="report-stat-card" style="border: 1px solid #fbcfe8; background: #fdf2f8; border-radius:16px; padding:20px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
-          <div class="report-stat-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; color:#be185d; font-weight:600; font-size:0.9rem;">
-            <span>Tiết kiệm bằng AI</span>
-            <div class="report-stat-icon-small" style="background:#fce7f3; color:#db2777; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-          </div>
-          <div class="report-stat-value" style="display:flex; align-items:baseline; gap:8px; color:#9d174d;">
-            <span id="adminRepAiSaved" style="font-size:2rem; font-weight:800;">0 giờ</span>
-            <span style="font-size:0.75rem; background:#fbcfe8; color:#9d174d; padding:2px 8px; border-radius:12px;">Ước tính</span>
-          </div>
-        </div>
+
       </div>
       
       <!-- Charts placeholder -->
@@ -531,45 +497,151 @@
         <div class="card-header">
           <h2>📤 Upload tài liệu PDF</h2>
         </div>
-        <div class="card-body">
-          <p class="upload-hint-text">
-            Tải lên tài liệu PDF để hệ thống AI tự động phân tích, chia nhỏ và lập chỉ mục nội dung.
-            Sau khi upload, tài liệu sẽ chuyển qua các trạng thái:
-            <strong>Chờ xử lý → Đang xử lý → Hoàn thành</strong>.
+        <div class="card-body" style="padding: 32px;">
+          <p class="upload-hint-text" style="background: linear-gradient(to right, rgba(238, 242, 255, 0.7), rgba(248, 250, 252, 0.7)); border-left: 4px solid #6366f1; padding: 16px 24px; border-radius: 12px; color: #475569; font-size: 0.95rem; line-height: 1.6; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+            <strong style="color: #4338ca;"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 6px;"></i>Hệ thống Trí Tuệ Nhân Tạo</strong> sẽ tự động phân tích, chia nhỏ và lập chỉ mục nội dung từ tài liệu PDF của bạn. Quá trình xử lý: <span style="background: white; padding: 2px 8px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 0 4px; font-weight: 600; color: #f59e0b; font-size: 0.85rem;">Chờ xử lý</span> → <span style="background: white; padding: 2px 8px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 0 4px; font-weight: 600; color: #3b82f6; font-size: 0.85rem;">Đang xử lý</span> → <span style="background: white; padding: 2px 8px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 0 4px; font-weight: 600; color: #10b981; font-size: 0.85rem;">Hoàn thành</span>.
           </p>
 
-          <div class="upload-area" id="uploadArea">
-            <div class="upload-hint-icon">📄</div>
-            <p><strong>Nhấp để chọn file PDF</strong> hoặc kéo thả vào đây</p>
-            <p class="upload-hint-subtext">Chỉ hỗ trợ định dạng PDF · Tối đa 50MB</p>
+          <style>
+            .premium-upload-area {
+              position: relative;
+              border: 2px dashed #cbd5e1;
+              border-radius: 16px;
+              padding: 24px 20px;
+              text-align: center;
+              background: #f8fafc;
+              cursor: pointer;
+              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+              overflow: hidden;
+            }
+            .premium-upload-area::before {
+              content: '';
+              position: absolute;
+              top: 0; left: -100%; width: 50%; height: 100%;
+              background: linear-gradient(to right, transparent, rgba(255,255,255,0.8), transparent);
+              transform: skewX(-20deg);
+              transition: 0.7s;
+            }
+            .premium-upload-area:hover {
+              border-color: #6366f1;
+              background: linear-gradient(145deg, #f1f5f9, #ffffff);
+              box-shadow: 0 10px 25px rgba(99, 102, 241, 0.1), inset 0 0 0 1px rgba(255,255,255,1);
+              transform: translateY(-2px);
+            }
+            .premium-upload-area:hover::before {
+              left: 150%;
+            }
+            .premium-icon-wrapper {
+              width: 56px; height: 56px;
+              margin: 0 auto 12px;
+              background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+              border-radius: 50%;
+              display: flex; align-items: center; justify-content: center;
+              box-shadow: 0 8px 16px rgba(99, 102, 241, 0.15);
+              transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            .premium-upload-area:hover .premium-icon-wrapper {
+              transform: scale(1.05) translateY(-3px);
+              background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+            }
+            .premium-icon {
+              font-size: 1.5rem;
+              color: #4f46e5;
+              background: linear-gradient(135deg, #4f46e5, #7c3aed);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+            }
+            .premium-btn {
+              background: linear-gradient(135deg, #4f46e5, #6366f1);
+              color: white; border: none; border-radius: 10px;
+              padding: 12px 20px; font-size: 0.95rem; font-weight: 600;
+              box-shadow: 0 8px 16px rgba(79, 70, 229, 0.25);
+              transition: all 0.3s ease;
+              display: flex; align-items: center; justify-content: center; gap: 8px;
+            }
+            .premium-btn:hover:not(:disabled) {
+              transform: translateY(-2px);
+              box-shadow: 0 12px 20px rgba(79, 70, 229, 0.3);
+              background: linear-gradient(135deg, #4338ca, #4f46e5);
+            }
+            .premium-btn:disabled {
+              background: #cbd5e1; box-shadow: none; cursor: not-allowed; opacity: 0.7;
+            }
+            .premium-select-wrapper {
+              position: relative;
+              transition: all 0.3s ease;
+            }
+            .premium-select-wrapper select {
+              width: 100%; appearance: none;
+              padding: 14px 16px 14px 44px;
+              border: 2px solid #e2e8f0; border-radius: 12px;
+              background: white; font-size: 0.95rem; color: #334155; font-weight: 500;
+              transition: all 0.3s ease; cursor: pointer;
+            }
+            .premium-select-wrapper select:focus {
+              border-color: #6366f1; outline: none;
+              box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            }
+            .premium-select-icon {
+              position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+              color: #94a3b8; font-size: 1.1rem; transition: color 0.3s ease;
+            }
+            .premium-select-wrapper select:focus + .premium-select-icon {
+              color: #6366f1;
+            }
+            .premium-select-arrow {
+              position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+              color: #94a3b8; pointer-events: none;
+            }
+          </style>
+
+          <div class="premium-upload-area" id="uploadArea">
+            <div class="premium-icon-wrapper">
+              <i class="fa-solid fa-cloud-arrow-up premium-icon"></i>
+            </div>
+            <p style="font-size: 1.05rem; color: #334155; margin-bottom: 6px;">
+              <strong style="color: #4f46e5;">Nhấp để tải lên</strong> hoặc kéo thả file PDF vào đây
+            </p>
+            <p style="font-size: 0.85rem; color: #94a3b8; font-weight: 500;">Chỉ hỗ trợ định dạng PDF &bull; Dung lượng tối đa 50MB</p>
             <input type="file" id="fileInput" accept=".pdf" style="display:none;">
           </div>
 
-          <div id="selectedFile" class="file-selected-box" style="display:none;">
-            <span>📄</span>
-            <div style="flex:1;">
-              <div class="file-selected-name" id="selectedFileName">—</div>
-              <div class="file-selected-size" id="selectedFileSize">—</div>
+          <div id="selectedFile" style="display:none; align-items:center; gap:16px; padding:16px 20px; background:linear-gradient(to right, #ffffff, #f8fafc); border:1px solid #e2e8f0; border-radius:12px; margin-top:20px; box-shadow:0 4px 12px rgba(0,0,0,0.02);">
+            <div style="width:40px; height:40px; background:#fef2f2; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#ef4444; font-size:1.25rem;">
+              <i class="fa-solid fa-file-pdf"></i>
             </div>
-            <button onclick="clearFile()" class="btn-icon-danger">✕</button>
+            <div style="flex:1; overflow:hidden;">
+              <div id="selectedFileName" style="font-weight:600; color:#1e293b; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+              <div id="selectedFileSize" style="color:#64748b; font-size:0.8rem; margin-top:2px;">—</div>
+            </div>
+            <button onclick="clearFile()" style="background:white; border:1px solid #e2e8f0; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:#ef4444; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 4px rgba(0,0,0,0.05);" onmouseover="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5';" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0';">
+              <i class="fa-solid fa-xmark" style="font-size:0.85rem;"></i>
+            </button>
           </div>
 
-          <div class="form-group mt-4">
-            <label for="departmentId"><i class="fa-solid fa-building" style="margin-right: 6px; color: var(--text-muted);"></i>Phòng ban (tùy chọn)</label>
-            <select id="departmentId" class="form-input">
-              <option value="">-- Tất cả phòng ban --</option>
-            </select>
+          <div style="margin-top: 20px;">
+            <label for="departmentId" style="display:block; margin-bottom:8px; font-weight:600; color:#475569; font-size:0.9rem;">Chọn phòng ban áp dụng (Tùy chọn)</label>
+            <div class="premium-select-wrapper">
+              <select id="departmentId" style="padding: 12px 16px 12px 40px; font-size: 0.9rem;">
+                <option value="">-- Áp dụng cho tất cả phòng ban --</option>
+              </select>
+              <i class="fa-solid fa-building-user premium-select-icon"></i>
+              <i class="fa-solid fa-chevron-down premium-select-arrow"></i>
+            </div>
           </div>
 
-          <button class="btn-primary w-full mt-4" id="uploadBtn" disabled>
-            📤 Tải lên & Xử lý
+          <button class="premium-btn w-full" style="margin-top: 24px;" id="uploadBtn" disabled>
+            <i class="fa-solid fa-rocket"></i> Bắt đầu tải lên & Xử lý AI
           </button>
 
           <!-- Upload progress -->
-          <div id="uploadStatus" style="display:none;" class="mt-4">
-            <div class="upload-progress-text" id="uploadStatusText">Đang tải lên...</div>
-            <div class="upload-progress-bar">
-              <div id="uploadProgress" class="upload-progress-fill"></div>
+          <div id="uploadStatus" style="display:none; margin-top:24px; padding:20px; background:#f8fafc; border-radius:16px; border:1px solid #e2e8f0;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+              <span id="uploadStatusText" style="font-weight:600; color:#4f46e5; font-size:0.95rem;">Đang tải lên...</span>
+              <span id="uploadPercentage" style="font-weight:700; color:#1e293b; font-size:0.95rem;">0%</span>
+            </div>
+            <div style="height:10px; background:#e2e8f0; border-radius:10px; overflow:hidden;">
+              <div id="uploadProgress" style="height:100%; width:0%; background:linear-gradient(90deg, #6366f1, #8b5cf6); border-radius:10px; transition:width 0.3s ease;"></div>
             </div>
           </div>
         </div>
@@ -1158,6 +1230,11 @@
     </div>
 
   </div>
+
+  <th:block layout:fragment="custom-js">
+    <!-- Thêm thư viện Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  </th:block>
 </body>
 
 </html>

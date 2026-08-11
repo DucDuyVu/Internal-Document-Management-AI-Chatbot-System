@@ -17,26 +17,14 @@
     <link rel="stylesheet" href="/css/dashboard.css" />
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
     <link rel="icon" type="image/png" href="/images/favicon.png" />
 
     <!-- CSS riêng của từng trang -->
     <th:block layout:fragment="custom-css"></th:block>
 
-    <!-- Prevent FOUC for Dark Mode -->
-    <script>
-      (function () {
-        try {
-          const theme = localStorage.getItem("idms_theme") || "system";
-          const isDark =
-            theme === "dark" ||
-            (theme === "system" &&
-              window.matchMedia("(prefers-color-scheme: dark)").matches);
-          if (isDark) document.documentElement.classList.add("dark");
-        } catch (e) {}
-      })();
-    </script>
+    <!-- Bỏ chế độ sáng/tối -->
   </head>
 
   <body>
@@ -287,30 +275,9 @@
               </div>
             </div>
 
-            <!-- Settings -->
-            <div
-              style="cursor: pointer; color: #fff; font-size: 1.25rem"
-              onclick="
-                if (typeof switchTab === 'function') switchTab('tabSettings');
-              "
-            >
-              <i class="fa-solid fa-gear"></i>
-            </div>
 
-            <!-- Darkmode Toggle Switch -->
-            <div style="display: flex; align-items: center">
-              <label class="theme-switch" for="checkboxThemeToggleUser">
-                <input
-                  type="checkbox"
-                  id="checkboxThemeToggleUser"
-                  onchange="setTheme(this.checked ? 'dark' : 'light')"
-                />
-                <div class="slider round">
-                  <i class="fa-solid fa-moon icon-moon"></i>
-                  <i class="fa-solid fa-sun icon-sun"></i>
-                </div>
-              </label>
-            </div>
+
+
 
             <span class="role-badge user" id="topRoleBadge">Nhân viên</span>
             <div style="position: relative;">

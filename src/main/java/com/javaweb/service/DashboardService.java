@@ -6,5 +6,5 @@ import com.javaweb.dto.response.ReportStatsDTO;
 public interface DashboardService {
     DashboardDataResponse getDashboardStats();
     ReportStatsDTO getManagerReportStats();
-    ReportStatsDTO getAdminReportStats();
+    ReportStatsDTO getAdminReportStats(Long departmentId, String startDate, String endDate);
 }

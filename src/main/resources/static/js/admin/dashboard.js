@@ -218,18 +218,18 @@ async function loadOverviewStats() {
         ]);
 
         const elements = {
-            'statTotalUsers': usersRes.totalElements || 0,
-            'statTotalDocs': dashboardStats.documentCount || 0,
+            'statTotalUsers': usersRes ? (usersRes.totalElements || 0) : 0,
+            'statTotalDocs': dashboardStats ? (dashboardStats.documentCount || 0) : 0,
             'statUploadToday': Math.floor(Math.random() * 20) + 1, // Mock
-            'statTotalChats': dashboardStats.chatSessionCount || 0,
+            'statTotalChats': dashboardStats ? (dashboardStats.chatSessionCount || 0) : 0,
             'statFailedDocs': '0',
             'statOnline': Math.floor(Math.random() * 10) + 5 // Mock
         };
 
         AdminState.overview = {
-            totalUsers: usersRes.totalElements || 0,
-            totalDocuments: dashboardStats.documentCount || 0,
-            totalDepartments: Array.isArray(deptsRes) ? deptsRes.length : (deptsRes.content ? deptsRes.content.length : 0)
+            totalUsers: usersRes ? (usersRes.totalElements || 0) : 0,
+            totalDocuments: dashboardStats ? (dashboardStats.documentCount || 0) : 0,
+            totalDepartments: deptsRes ? (Array.isArray(deptsRes) ? deptsRes.length : (deptsRes.content ? deptsRes.content.length : 0)) : 0
         };
 
         Object.keys(elements).forEach(id => {
@@ -256,6 +256,8 @@ async function loadOverviewStats() {
             }
         });
 
+
+
         // Update user banner info
         const currentUser = typeof getUser !== 'undefined' ? getUser() : null;
         if (currentUser) {
@@ -276,10 +278,14 @@ async function loadOverviewStats() {
         const pendingDocEl = document.getElementById('pendingDocCount');
         if (pendingDocEl) pendingDocEl.textContent = Math.floor(Math.random() * 5);
 
+        // Khởi tạo biểu đồ với dữ liệu thực
+        if (typeof initCharts === 'function') {
+            initCharts(dashboardStats);
+        }
 
     } catch (error) {
         console.error('Error loading overview stats:', error);
-        document.querySelectorAll('.stat-value').forEach(el => {
+        document.querySelectorAll('.kpi-value').forEach(el => {
             el.classList.remove('skeleton-loader');
             el.textContent = 'Lỗi';
             el.style.fontSize = '1.2rem';
@@ -2538,20 +2544,40 @@ async function changeUserDepartment(userId) {
 // ADMIN GLOBAL REPORTS
 // =============================================
 let adminDeptChartInstance = null;
+let adminDatePicker = null;
 
 async function loadAdminReports() {
     try {
         const deptId = document.getElementById('adminRepDeptFilter')?.value || '';
         
-        // Fetch both global stats and admin-specific report stats
+        let startDate = '';
+        let endDate = '';
+        if (adminDatePicker && adminDatePicker.selectedDates.length === 2) {
+            // Lấy ngày bắt đầu và kết thúc
+            const start = adminDatePicker.selectedDates[0];
+            const end = adminDatePicker.selectedDates[1];
+            
+            // Format YYYY-MM-DD
+            startDate = start.getFullYear() + '-' + String(start.getMonth() + 1).padStart(2, '0') + '-' + String(start.getDate()).padStart(2, '0');
+            endDate = end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0') + '-' + String(end.getDate()).padStart(2, '0');
+        }
+
+        const queryParams = new URLSearchParams();
+        if (deptId) queryParams.append('departmentId', deptId);
+        if (startDate) queryParams.append('startDate', startDate);
+        if (endDate) queryParams.append('endDate', endDate);
+        
+        const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+        
+        // Gọi API lấy dữ liệu thống kê tổng quan và báo cáo chi tiết theo bộ lọc
         const [dashboardStats, reportStats] = await Promise.all([
             apiRequest('/api/dashboard/stats'),
-            apiRequest('/api/admin/reports/stats')
+            apiRequest(`/api/admin/reports/stats${queryString}`)
         ]);
         
         if (!reportStats) return;
 
-        // Update UI
+        // Cập nhật giao diện (UI)
         const setEl = (id, val) => {
             const el = document.getElementById(id);
             if(el) el.textContent = val;
@@ -2663,18 +2689,43 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adminRepDeptFilter) {
         adminRepDeptFilter.addEventListener('change', loadAdminReports);
     }
+    
+    // Khởi tạo Flatpickr cho bộ lọc ngày tháng
+    const dateFilterInput = document.getElementById('adminRepDateFilter');
+    if (dateFilterInput && typeof flatpickr !== 'undefined') {
+        adminDatePicker = flatpickr(dateFilterInput, {
+            mode: "range",
+            dateFormat: "d/m/Y",
+            locale: "vn", // Hiển thị tiếng Việt
+            onClose: function(selectedDates, dateStr, instance) {
+                // Tự động load lại báo cáo khi người dùng chọn xong khoảng ngày (2 ngày) hoặc xóa ngày
+                if (selectedDates.length === 2 || selectedDates.length === 0) {
+                    loadAdminReports();
+                }
+            }
+        });
+    }
 });
 
 
 // Khởi tạo các biểu đồ hoạt động
-function initCharts() {
+function initCharts(stats) {
     const mixedCtx = document.getElementById('mixedChart');
     
     if (mixedCtx && typeof Chart !== 'undefined' && !window.mixedChartInst) {
-        // Mock data cho Mixed Chart
-        const labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-        const uploadData = [12, 19, 15, 25, 22, 10, 5];
-        const aiData = [45, 60, 50, 80, 70, 30, 15];
+        
+        // Sử dụng dữ liệu thực từ API nếu có, ngược lại dùng mock data
+        const labels = (stats && stats.activityLabels && stats.activityLabels.length > 0) 
+            ? stats.activityLabels 
+            : ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+            
+        const uploadData = (stats && stats.uploadData && stats.uploadData.length > 0)
+            ? stats.uploadData
+            : [12, 19, 15, 25, 22, 10, 5];
+            
+        const aiData = (stats && stats.aiData && stats.aiData.length > 0)
+            ? stats.aiData
+            : [45, 60, 50, 80, 70, 30, 15];
         
         window.mixedChartInst = new Chart(mixedCtx, {
             type: 'line', 
