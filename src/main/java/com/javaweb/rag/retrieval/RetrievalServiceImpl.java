@@ -163,7 +163,8 @@ public class RetrievalServiceImpl implements RetrievalService {
             }
             
             String fileName = docIdToFileName.getOrDefault(r.chunk().getDocumentId(), "Tài liệu không xác định");
-            sources.add(new SourceRefResponse(r.chunk().getDocumentId(), fileName, r.chunk().getId(), excerpt));
+            int estimatedPage = r.chunk().getPageNumber() != null ? r.chunk().getPageNumber() : (r.chunk().getChunkIndex() / 7) + 1;
+            sources.add(new SourceRefResponse(r.chunk().getDocumentId(), fileName, r.chunk().getId(), excerpt, estimatedPage));
         }
 
         // Pass 2: Rewrite lại câu trả lời với index mới, xóa index ảo

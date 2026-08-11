@@ -889,8 +889,10 @@ function formatMessageContent(content, sources) {
                         const excerpt = source.excerpt || "";
                         const t = title.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ').replace(/\r/g, '');
                         const e = excerpt.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ').replace(/\r/g, '');
+                        const docId = source.documentId || '';
+                        const p = source.pageNumber || '';
                         return '<span class="citation-badge" data-index="' + num + '" ' +
-                            'onmouseenter="showCitationPopover(this, \'' + t + '\', \'' + e + '\')" ' +
+                            'onmouseenter="showCitationPopover(this, \'' + t + '\', \'' + e + '\', \'' + docId + '\', \'' + p + '\')" ' +
                             'onmouseleave="hideCitationPopover()">' + (num + 1) + '</span>';
                     }
                     return m;
@@ -1964,18 +1966,50 @@ function initCitationPopover() {
     const popover = document.createElement('div');
     popover.id = 'citation-popover';
     popover.className = 'citation-popover';
+    
+    popover.onmouseenter = function() {
+        this.classList.add('visible');
+    };
+    popover.onmouseleave = function() {
+        hideCitationPopover();
+    };
+
     popover.innerHTML = `
         <div class='citation-popover-title'><i class='fa-solid fa-file-lines'></i> <span id='citation-popover-title-text'></span></div>
         <div id='citation-popover-excerpt' class='citation-popover-excerpt'></div>
+        <div style="margin-top: 10px; text-align: right;">
+            <button id="citation-popover-link" class="btn-primary-sm" style="font-size: 0.75rem; padding: 4px 8px; display: none;"><i class="fa-solid fa-book-open"></i> Xem tài liệu gốc</button>
+        </div>
     `;
     document.body.appendChild(popover);
 }
 
-window.showCitationPopover = function(element, title, excerpt) {
+window.showCitationPopover = function(element, title, excerpt, docId, pageNumber) {
     const popover = document.getElementById('citation-popover');
     if (!popover) return;
-    document.getElementById('citation-popover-title-text').textContent = title;
+    
+    let displayTitle = title;
+    if (pageNumber && pageNumber !== 'null' && pageNumber !== '') {
+        displayTitle += ` (Trang ${pageNumber})`;
+    }
+    
+    document.getElementById('citation-popover-title-text').textContent = displayTitle;
     document.getElementById('citation-popover-excerpt').textContent = '"' + excerpt + '"';
+    
+    const linkBtn = document.getElementById('citation-popover-link');
+    if (linkBtn) {
+        if (docId) {
+            linkBtn.style.display = 'inline-block';
+            linkBtn.onclick = function() {
+                const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+                
+                // User will scroll manually based on the page number shown in the popover title
+                window.open('/api/documents/' + docId + '/view?token=' + token, '_blank');
+            };
+        } else {
+            linkBtn.style.display = 'none';
+        }
+    }
     
     // Position it
     const rect = element.getBoundingClientRect();
@@ -2003,58 +2037,10 @@ window.hideCitationPopover = function() {
             if (!popover.classList.contains('visible')) {
                 popover.style.display = 'none';
             }
-        }, 200);
+        }, 300);
     }
 };
 
 document.addEventListener('DOMContentLoaded', initCitationPopover);
 
 
-// ===== NOTEBOOKLM CITATION POPOVER =====
-function initCitationPopover() {
-    if (document.getElementById('citation-popover')) return;
-    const popover = document.createElement('div');
-    popover.id = 'citation-popover';
-    popover.className = 'citation-popover';
-    popover.innerHTML = `
-        <div class='citation-popover-title'><i class='fa-solid fa-file-lines'></i> <span id='citation-popover-title-text'></span></div>
-        <div id='citation-popover-excerpt' class='citation-popover-excerpt'></div>
-    `;
-    document.body.appendChild(popover);
-}
-
-window.showCitationPopover = function(element, title, excerpt) {
-    const popover = document.getElementById('citation-popover');
-    if (!popover) return;
-    document.getElementById('citation-popover-title-text').textContent = title;
-    document.getElementById('citation-popover-excerpt').textContent = '"' + excerpt + '"';
-    
-    const rect = element.getBoundingClientRect();
-    popover.style.display = 'block';
-    const popoverHeight = popover.offsetHeight;
-    
-    popover.style.left = Math.max(10, rect.left - 130) + 'px';
-    popover.style.top = (rect.top - popoverHeight - 10) + 'px';
-    
-    if (rect.top - popoverHeight - 10 < 0) {
-        popover.style.top = (rect.bottom + 10) + 'px';
-    }
-    
-    requestAnimationFrame(() => {
-        popover.classList.add('visible');
-    });
-};
-
-window.hideCitationPopover = function() {
-    const popover = document.getElementById('citation-popover');
-    if (popover) {
-        popover.classList.remove('visible');
-        setTimeout(() => {
-            if (!popover.classList.contains('visible')) {
-                popover.style.display = 'none';
-            }
-        }, 200);
-    }
-};
-
-document.addEventListener('DOMContentLoaded', initCitationPopover);

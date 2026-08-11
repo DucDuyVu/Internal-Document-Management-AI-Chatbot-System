@@ -243,7 +243,8 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                                     ref.getDocumentId().getId(),
                                     fileNameByDocumentId.get(ref.getDocumentId().getId()),
                                     ref.getChunkId().getId(),
-                                    ref.getExcerpt()
+                                    ref.getExcerpt(),
+                                    ref.getChunkId().getPageNumber() != null ? ref.getChunkId().getPageNumber() : (ref.getChunkId().getChunkIndex() / 7) + 1
                             ))
                             .collect(Collectors.toList());
 

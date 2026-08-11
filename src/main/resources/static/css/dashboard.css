@@ -2912,8 +2912,6 @@ select.form-input {
   grid-template-columns: 1fr 1fr;
   gap: 24px;
 }
-  padding: 24px;
-}
 
 .form-row {
   display: grid;
@@ -3477,137 +3475,137 @@ select.form-input {
   color: var(--text-muted);
 }
 
- / *   = = = = =   M O D E R N   D A T A   T A B L E   = = = = =   * / 
- . m o d e r n - t a b l e   { 
-     w i d t h :   1 0 0 % ; 
-     b o r d e r - c o l l a p s e :   s e p a r a t e ; 
-     b o r d e r - s p a c i n g :   0 ; 
-     b a c k g r o u n d :   w h i t e ; 
-     b o r d e r - r a d i u s :   1 2 p x ; 
-     o v e r f l o w :   h i d d e n ; 
-     b o x - s h a d o w :   0   4 p x   6 p x   - 1 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 0 5 ) ,   0   2 p x   4 p x   - 1 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 0 3 ) ; 
- } 
- 
- . m o d e r n - t a b l e   t h e a d   t r   { 
-     b a c k g r o u n d - c o l o r :   # f 8 f a f c ; 
- } 
- 
- . m o d e r n - t a b l e   t h   { 
-     p a d d i n g :   1 6 p x   2 0 p x ; 
-     f o n t - s i z e :   0 . 7 5 r e m ; 
-     f o n t - w e i g h t :   7 0 0 ; 
-     c o l o r :   # 6 4 7 4 8 b ; 
-     t e x t - t r a n s f o r m :   u p p e r c a s e ; 
-     l e t t e r - s p a c i n g :   0 . 0 5 e m ; 
-     t e x t - a l i g n :   l e f t ; 
-     b o r d e r - b o t t o m :   1 p x   s o l i d   # e 2 e 8 f 0 ; 
- } 
- 
- . m o d e r n - t a b l e   t d   { 
-     p a d d i n g :   1 6 p x   2 0 p x ; 
-     f o n t - s i z e :   0 . 9 r e m ; 
-     c o l o r :   # 3 3 4 1 5 5 ; 
-     b o r d e r - b o t t o m :   1 p x   s o l i d   # f 1 f 5 f 9 ; 
-     v e r t i c a l - a l i g n :   m i d d l e ; 
- } 
- 
- . m o d e r n - t a b l e   t b o d y   t r   { 
-     t r a n s i t i o n :   a l l   0 . 2 s   e a s e ; 
- } 
- 
- . m o d e r n - t a b l e   t b o d y   t r : h o v e r   { 
-     b a c k g r o u n d - c o l o r :   # f 8 f a f c ; 
- } 
- 
- . m o d e r n - t a b l e   t b o d y   t r : l a s t - c h i l d   t d   { 
-     b o r d e r - b o t t o m :   n o n e ; 
- } 
- 
- . m o d e r n - t a b l e   . d o c - t i t l e - c e l l   { 
-     d i s p l a y :   f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     g a p :   1 2 p x ; 
- } 
- 
- . m o d e r n - t a b l e   . d o c - i c o n   { 
-     w i d t h :   4 0 p x ; 
-     h e i g h t :   4 0 p x ; 
-     b o r d e r - r a d i u s :   1 0 p x ; 
-     d i s p l a y :   f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     j u s t i f y - c o n t e n t :   c e n t e r ; 
-     f o n t - s i z e :   1 . 2 5 r e m ; 
-     f l e x - s h r i n k :   0 ; 
- } 
- 
- . m o d e r n - t a b l e   . d o c - i c o n . p d f   { 
-     b a c k g r o u n d :   # f e e 2 e 2 ; 
-     c o l o r :   # e f 4 4 4 4 ; 
- } 
- 
- . m o d e r n - t a b l e   . d o c - n a m e   { 
-     f o n t - w e i g h t :   6 0 0 ; 
-     c o l o r :   # 0 f 1 7 2 a ; 
-     t e x t - d e c o r a t i o n :   n o n e ; 
-     t r a n s i t i o n :   c o l o r   0 . 2 s ; 
- } 
- 
- . m o d e r n - t a b l e   . d o c - n a m e : h o v e r   { 
-     c o l o r :   # 4 f 4 6 e 5 ; 
- } 
- 
- . m o d e r n - t a b l e   . t e x t - m u t e d   { 
-     c o l o r :   # 6 4 7 4 8 b ; 
-     f o n t - s i z e :   0 . 8 5 r e m ; 
- } 
- 
- / *   M o d e r n   B a d g e s   * / 
- . b a d g e - m o d e r n   { 
-     d i s p l a y :   i n l i n e - f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     g a p :   6 p x ; 
-     p a d d i n g :   4 p x   1 2 p x ; 
-     b o r d e r - r a d i u s :   2 0 p x ; 
-     f o n t - s i z e :   0 . 7 5 r e m ; 
-     f o n t - w e i g h t :   6 0 0 ; 
- } 
- 
- . b a d g e - m o d e r n . s u c c e s s   {   b a c k g r o u n d :   # d c f c e 7 ;   c o l o r :   # 1 6 6 5 3 4 ;   } 
- . b a d g e - m o d e r n . w a r n i n g   {   b a c k g r o u n d :   # f e f 9 c 3 ;   c o l o r :   # 8 5 4 d 0 e ;   } 
- . b a d g e - m o d e r n . d a n g e r   {   b a c k g r o u n d :   # f e e 2 e 2 ;   c o l o r :   # 9 9 1 b 1 b ;   } 
- . b a d g e - m o d e r n . i n f o   {   b a c k g r o u n d :   # d b e a f e ;   c o l o r :   # 1 e 4 0 a f ;   } 
- . b a d g e - m o d e r n . s e c o n d a r y   {   b a c k g r o u n d :   # f 1 f 5 f 9 ;   c o l o r :   # 4 7 5 5 6 9 ;   } 
- 
- / *   M o d e r n   A c t i o n   B u t t o n s   * / 
- . a c t i o n - b t n - g r o u p   { 
-     d i s p l a y :   f l e x ; 
-     g a p :   8 p x ; 
- } 
- 
- . m o d e r n - a c t i o n - b t n   { 
-     w i d t h :   3 2 p x ; 
-     h e i g h t :   3 2 p x ; 
-     b o r d e r - r a d i u s :   8 p x ; 
-     b o r d e r :   n o n e ; 
-     b a c k g r o u n d :   t r a n s p a r e n t ; 
-     c o l o r :   # 6 4 7 4 8 b ; 
-     d i s p l a y :   f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     j u s t i f y - c o n t e n t :   c e n t e r ; 
-     c u r s o r :   p o i n t e r ; 
-     t r a n s i t i o n :   a l l   0 . 2 s ; 
-     f o n t - s i z e :   1 r e m ; 
- } 
- 
- . m o d e r n - a c t i o n - b t n : h o v e r   { 
-     t r a n s f o r m :   s c a l e ( 1 . 0 5 ) ; 
- } 
- 
- . m o d e r n - a c t i o n - b t n . v i e w : h o v e r   {   b a c k g r o u n d :   # e 0 e 7 f f ;   c o l o r :   # 4 f 4 6 e 5 ;   } 
- . m o d e r n - a c t i o n - b t n . d o w n l o a d : h o v e r   {   b a c k g r o u n d :   # e 0 e 7 f f ;   c o l o r :   # 4 f 4 6 e 5 ;   } 
- . m o d e r n - a c t i o n - b t n . d e l e t e : h o v e r   {   b a c k g r o u n d :   # f e e 2 e 2 ;   c o l o r :   # e f 4 4 4 4 ;   } 
- . m o d e r n - a c t i o n - b t n . a p p r o v e : h o v e r   {   b a c k g r o u n d :   # d c f c e 7 ;   c o l o r :   # 1 0 b 9 8 1 ;   } 
- . m o d e r n - a c t i o n - b t n . r e t r y : h o v e r   {   b a c k g r o u n d :   # f e f 9 c 3 ;   c o l o r :   # e a b 3 0 8 ;   } 
+/* ===== MODERN DATA TABLE ===== */
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.modern-table thead tr {
+  background-color: #f8fafc;
+}
+
+.modern-table th {
+  padding: 16px 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modern-table td {
+  padding: 16px 20px;
+  font-size: 0.9rem;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.modern-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.modern-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.modern-table .doc-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modern-table .doc-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.modern-table .doc-icon.pdf {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.modern-table .doc-name {
+  font-weight: 600;
+  color: #0f172a;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.modern-table .doc-name:hover {
+  color: #4f46e5;
+}
+
+.modern-table .text-muted {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* Modern Badges */
+.badge-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-modern.success { background: #dcfce7; color: #166534; }
+.badge-modern.warning { background: #fef9c3; color: #854d0e; }
+.badge-modern.danger { background: #fee2e2; color: #991b1b; }
+.badge-modern.info { background: #dbeafe; color: #1e40af; }
+.badge-modern.secondary { background: #f1f5f9; color: #475569; }
+
+/* Modern Action Buttons */
+.action-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.modern-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.modern-action-btn:hover {
+  transform: scale(1.05);
+}
+
+.modern-action-btn.view:hover { background: #e0e7ff; color: #4f46e5; }
+.modern-action-btn.download:hover { background: #e0e7ff; color: #4f46e5; }
+.modern-action-btn.delete:hover { background: #fee2e2; color: #ef4444; }
+.modern-action-btn.approve:hover { background: #dcfce7; color: #10b981; }
+.modern-action-btn.retry:hover { background: #fef9c3; color: #eab308; }
 .tl-content p {
   font-size: 0.85rem;
   color: var(--text-primary);
@@ -3672,137 +3670,137 @@ select.form-input {
   color: var(--text-muted);
 }
 
- / *   = = = = =   M O D E R N   D A T A   T A B L E   = = = = =   * / 
- . m o d e r n - t a b l e   { 
-     w i d t h :   1 0 0 % ; 
-     b o r d e r - c o l l a p s e :   s e p a r a t e ; 
-     b o r d e r - s p a c i n g :   0 ; 
-     b a c k g r o u n d :   w h i t e ; 
-     b o r d e r - r a d i u s :   1 2 p x ; 
-     o v e r f l o w :   h i d d e n ; 
-     b o x - s h a d o w :   0   4 p x   6 p x   - 1 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 0 5 ) ,   0   2 p x   4 p x   - 1 p x   r g b a ( 0 ,   0 ,   0 ,   0 . 0 3 ) ; 
+ /*   =====   MODERN   DATA   TABLE   =====   */ 
+ .modern-table   { 
+     width:   100%; 
+     border-collapse:   separate; 
+     border-spacing:   0; 
+     background:   white; 
+     border-radius:   12px; 
+     overflow:   hidden; 
+     box-shadow:   0   4px   6px   -1px   rgba(0,   0,   0,   0.05),   0   2px   4px   -1px   rgba(0,   0,   0,   0.03); 
  } 
  
- . m o d e r n - t a b l e   t h e a d   t r   { 
-     b a c k g r o u n d - c o l o r :   # f 8 f a f c ; 
+ .modern-table   thead   tr   { 
+     background-color:   #f8fafc; 
  } 
  
- . m o d e r n - t a b l e   t h   { 
-     p a d d i n g :   1 6 p x   2 0 p x ; 
-     f o n t - s i z e :   0 . 7 5 r e m ; 
-     f o n t - w e i g h t :   7 0 0 ; 
-     c o l o r :   # 6 4 7 4 8 b ; 
-     t e x t - t r a n s f o r m :   u p p e r c a s e ; 
-     l e t t e r - s p a c i n g :   0 . 0 5 e m ; 
-     t e x t - a l i g n :   l e f t ; 
-     b o r d e r - b o t t o m :   1 p x   s o l i d   # e 2 e 8 f 0 ; 
+ .modern-table   th   { 
+     padding:   16px   20px; 
+     font-size:   0.75rem; 
+     font-weight:   700; 
+     color:   #64748b; 
+     text-transform:   uppercase; 
+     letter-spacing:   0.05em; 
+     text-align:   left; 
+     border-bottom:   1px   solid   #e2e8f0; 
  } 
  
- . m o d e r n - t a b l e   t d   { 
-     p a d d i n g :   1 6 p x   2 0 p x ; 
-     f o n t - s i z e :   0 . 9 r e m ; 
-     c o l o r :   # 3 3 4 1 5 5 ; 
-     b o r d e r - b o t t o m :   1 p x   s o l i d   # f 1 f 5 f 9 ; 
-     v e r t i c a l - a l i g n :   m i d d l e ; 
+ .modern-table   td   { 
+     padding:   16px   20px; 
+     font-size:   0.9rem; 
+     color:   #334155; 
+     border-bottom:   1px   solid   #f1f5f9; 
+     vertical-align:   middle; 
  } 
  
- . m o d e r n - t a b l e   t b o d y   t r   { 
-     t r a n s i t i o n :   a l l   0 . 2 s   e a s e ; 
+ .modern-table   tbody   tr   { 
+     transition:   all   0.2s   ease; 
  } 
  
- . m o d e r n - t a b l e   t b o d y   t r : h o v e r   { 
-     b a c k g r o u n d - c o l o r :   # f 8 f a f c ; 
+ .modern-table   tbody   tr:hover   { 
+     background-color:   #f8fafc; 
  } 
  
- . m o d e r n - t a b l e   t b o d y   t r : l a s t - c h i l d   t d   { 
-     b o r d e r - b o t t o m :   n o n e ; 
+ .modern-table   tbody   tr:last-child   td   { 
+     border-bottom:   none; 
  } 
  
- . m o d e r n - t a b l e   . d o c - t i t l e - c e l l   { 
-     d i s p l a y :   f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     g a p :   1 2 p x ; 
+ .modern-table   .doc-title-cell   { 
+     display:   flex; 
+     align-items:   center; 
+     gap:   12px; 
  } 
  
- . m o d e r n - t a b l e   . d o c - i c o n   { 
-     w i d t h :   4 0 p x ; 
-     h e i g h t :   4 0 p x ; 
-     b o r d e r - r a d i u s :   1 0 p x ; 
-     d i s p l a y :   f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     j u s t i f y - c o n t e n t :   c e n t e r ; 
-     f o n t - s i z e :   1 . 2 5 r e m ; 
-     f l e x - s h r i n k :   0 ; 
+ .modern-table   .doc-icon   { 
+     width:   40px; 
+     height:   40px; 
+     border-radius:   10px; 
+     display:   flex; 
+     align-items:   center; 
+     justify-content:   center; 
+     font-size:   1.25rem; 
+     flex-shrink:   0; 
  } 
  
- . m o d e r n - t a b l e   . d o c - i c o n . p d f   { 
-     b a c k g r o u n d :   # f e e 2 e 2 ; 
-     c o l o r :   # e f 4 4 4 4 ; 
+ .modern-table   .doc-icon.pdf   { 
+     background:   #fee2e2; 
+     color:   #ef4444; 
  } 
  
- . m o d e r n - t a b l e   . d o c - n a m e   { 
-     f o n t - w e i g h t :   6 0 0 ; 
-     c o l o r :   # 0 f 1 7 2 a ; 
-     t e x t - d e c o r a t i o n :   n o n e ; 
-     t r a n s i t i o n :   c o l o r   0 . 2 s ; 
+ .modern-table   .doc-name   { 
+     font-weight:   600; 
+     color:   #0f172a; 
+     text-decoration:   none; 
+     transition:   color   0.2s; 
  } 
  
- . m o d e r n - t a b l e   . d o c - n a m e : h o v e r   { 
-     c o l o r :   # 4 f 4 6 e 5 ; 
+ .modern-table   .doc-name:hover   { 
+     color:   #4f46e5; 
  } 
  
- . m o d e r n - t a b l e   . t e x t - m u t e d   { 
-     c o l o r :   # 6 4 7 4 8 b ; 
-     f o n t - s i z e :   0 . 8 5 r e m ; 
+ .modern-table   .text-muted   { 
+     color:   #64748b; 
+     font-size:   0.85rem; 
  } 
  
- / *   M o d e r n   B a d g e s   * / 
- . b a d g e - m o d e r n   { 
-     d i s p l a y :   i n l i n e - f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     g a p :   6 p x ; 
-     p a d d i n g :   4 p x   1 2 p x ; 
-     b o r d e r - r a d i u s :   2 0 p x ; 
-     f o n t - s i z e :   0 . 7 5 r e m ; 
-     f o n t - w e i g h t :   6 0 0 ; 
+ /*   Modern   Badges   */ 
+ .badge-modern   { 
+     display:   inline-flex; 
+     align-items:   center; 
+     gap:   6px; 
+     padding:   4px   12px; 
+     border-radius:   20px; 
+     font-size:   0.75rem; 
+     font-weight:   600; 
  } 
  
- . b a d g e - m o d e r n . s u c c e s s   {   b a c k g r o u n d :   # d c f c e 7 ;   c o l o r :   # 1 6 6 5 3 4 ;   } 
- . b a d g e - m o d e r n . w a r n i n g   {   b a c k g r o u n d :   # f e f 9 c 3 ;   c o l o r :   # 8 5 4 d 0 e ;   } 
- . b a d g e - m o d e r n . d a n g e r   {   b a c k g r o u n d :   # f e e 2 e 2 ;   c o l o r :   # 9 9 1 b 1 b ;   } 
- . b a d g e - m o d e r n . i n f o   {   b a c k g r o u n d :   # d b e a f e ;   c o l o r :   # 1 e 4 0 a f ;   } 
- . b a d g e - m o d e r n . s e c o n d a r y   {   b a c k g r o u n d :   # f 1 f 5 f 9 ;   c o l o r :   # 4 7 5 5 6 9 ;   } 
+ .badge-modern.success   {   background:   #dcfce7;   color:   #166534;   } 
+ .badge-modern.warning   {   background:   #fef9c3;   color:   #854d0e;   } 
+ .badge-modern.danger   {   background:   #fee2e2;   color:   #991b1b;   } 
+ .badge-modern.info   {   background:   #dbeafe;   color:   #1e40af;   } 
+ .badge-modern.secondary   {   background:   #f1f5f9;   color:   #475569;   } 
  
- / *   M o d e r n   A c t i o n   B u t t o n s   * / 
- . a c t i o n - b t n - g r o u p   { 
-     d i s p l a y :   f l e x ; 
-     g a p :   8 p x ; 
+ /*   Modern   Action   Buttons   */ 
+ .action-btn-group   { 
+     display:   flex; 
+     gap:   8px; 
  } 
  
- . m o d e r n - a c t i o n - b t n   { 
-     w i d t h :   3 2 p x ; 
-     h e i g h t :   3 2 p x ; 
-     b o r d e r - r a d i u s :   8 p x ; 
-     b o r d e r :   n o n e ; 
-     b a c k g r o u n d :   t r a n s p a r e n t ; 
-     c o l o r :   # 6 4 7 4 8 b ; 
-     d i s p l a y :   f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     j u s t i f y - c o n t e n t :   c e n t e r ; 
-     c u r s o r :   p o i n t e r ; 
-     t r a n s i t i o n :   a l l   0 . 2 s ; 
-     f o n t - s i z e :   1 r e m ; 
+ .modern-action-btn   { 
+     width:   32px; 
+     height:   32px; 
+     border-radius:   8px; 
+     border:   none; 
+     background:   transparent; 
+     color:   #64748b; 
+     display:   flex; 
+     align-items:   center; 
+     justify-content:   center; 
+     cursor:   pointer; 
+     transition:   all   0.2s; 
+     font-size:   1rem; 
  } 
  
- . m o d e r n - a c t i o n - b t n : h o v e r   { 
-     t r a n s f o r m :   s c a l e ( 1 . 0 5 ) ; 
+ .modern-action-btn:hover   { 
+     transform:   scale(1.05); 
  } 
  
- . m o d e r n - a c t i o n - b t n . v i e w : h o v e r   {   b a c k g r o u n d :   # e 0 e 7 f f ;   c o l o r :   # 4 f 4 6 e 5 ;   } 
- . m o d e r n - a c t i o n - b t n . d o w n l o a d : h o v e r   {   b a c k g r o u n d :   # e 0 e 7 f f ;   c o l o r :   # 4 f 4 6 e 5 ;   } 
- . m o d e r n - a c t i o n - b t n . d e l e t e : h o v e r   {   b a c k g r o u n d :   # f e e 2 e 2 ;   c o l o r :   # e f 4 4 4 4 ;   } 
- . m o d e r n - a c t i o n - b t n . a p p r o v e : h o v e r   {   b a c k g r o u n d :   # d c f c e 7 ;   c o l o r :   # 1 0 b 9 8 1 ;   } 
- . m o d e r n - a c t i o n - b t n . r e t r y : h o v e r   {   b a c k g r o u n d :   # f e f 9 c 3 ;   c o l o r :   # e a b 3 0 8 ;   } 
+ .modern-action-btn.view:hover   {   background:   #e0e7ff;   color:   #4f46e5;   } 
+ .modern-action-btn.download:hover   {   background:   #e0e7ff;   color:   #4f46e5;   } 
+ .modern-action-btn.delete:hover   {   background:   #fee2e2;   color:   #ef4444;   } 
+ .modern-action-btn.approve:hover   {   background:   #dcfce7;   color:   #10b981;   } 
+ .modern-action-btn.retry:hover   {   background:   #fef9c3;   color:   #eab308;   } 
  
  
  
@@ -3855,6 +3853,7 @@ select.form-input {
     display: block;
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
 }
 .citation-popover-title {
     font-weight: 600;
@@ -3865,7 +3864,7 @@ select.form-input {
     letter-spacing: 0.05em;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap:4px;
 }
 .citation-popover-excerpt {
     color: #f1f5f9;
