@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import java.time.format.DateTimeFormatter;
 import java.io.PrintWriter;
 import java.io.FileWriter;
+import com.javaweb.rag.chat.GeminiChatService;
+import com.javaweb.repository.UserSessionsRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +48,8 @@ public class DashboardServiceImpl implements DashboardService {
     private final DocumentRepository documentRepository;
     private final UsersRepository usersRepository;
     private final DepartmentsRepository departmentsRepository;
-    private final com.javaweb.repository.UserSessionsRepository userSessionsRepository;
+    private final GeminiChatService geminiChatService;
+    private final UserSessionsRepository userSessionsRepository;
 
     @Override
     public DashboardDataResponse getDashboardStats() {
@@ -296,9 +299,9 @@ public class DashboardServiceImpl implements DashboardService {
             for (DocumentEntity d : docs) {
                 if (d.getCreatedAt() != null && d.getCreatedAt().toLocalDate().equals(date)) {
                     created++;
-                    if (d.getApprovalStatus() == ApprovalStatus.APPROVED) {
-                        approved++;
-                    }
+                }
+                if (d.getApprovalStatus() == ApprovalStatus.APPROVED && d.getUpdatedAt() != null && d.getUpdatedAt().toLocalDate().equals(date)) {
+                    approved++;
                 }
             }
             trendDataCreated.add(created);
@@ -448,5 +451,33 @@ public class DashboardServiceImpl implements DashboardService {
                 .deptPendingDocs(deptPendingDocs)
                 .isAdmin(true)
                 .build();
+    }
+
+    @Override
+    public String generateAiReportAnalysis() {
+        DashboardDataResponse stats = getDashboardStats();
+        if (stats == null) {
+            return "Không có dữ liệu báo cáo để phân tích.";
+        }
+
+        String prompt = String.format(
+            "Bạn là một chuyên gia phân tích dữ liệu và quản lý điều hành xuất sắc.\n" +
+            "Dưới đây là số liệu thống kê của hệ thống quản lý tài liệu hôm nay (Phòng ban: %s):\n" +
+            "- Tổng số tài liệu: %d\n" +
+            "- Số nhân viên quản lý: %d\n" +
+            "- Số phiên AI đã dùng: %d\n" +
+            "- Số tài liệu chờ duyệt (Pending): %d\n" +
+            "Nhiệm vụ của bạn là:\n" +
+            "1. Đánh giá ngắn gọn (2-3 câu) về tình hình hoạt động của hệ thống, dựa trên số lượng chờ duyệt và tổng tài liệu.\n" +
+            "2. Đưa ra 3 khuyến nghị hành động cụ thể cho người quản lý để tối ưu hoá quy trình làm việc.\n" +
+            "Hãy trình bày bằng tiếng Việt, định dạng Markdown rõ ràng, in đậm các ý chính và dùng emoji phù hợp. Không cần chào hỏi hay giải thích vòng vo, hãy đi thẳng vào phân tích.",
+            stats.getDepartmentName() != null ? stats.getDepartmentName() : "Toàn hệ thống",
+            stats.getDocumentCount(),
+            stats.getManagedEmployeeCount(),
+            stats.getChatSessionCount(),
+            stats.getPendingDocumentCount()
+        );
+
+        return geminiChatService.generateAnswer(prompt);
     }
 }

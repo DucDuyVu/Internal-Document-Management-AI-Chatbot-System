@@ -168,6 +168,12 @@ function setupUserEventListeners() {
             });
         }
     });
+
+    // AI Report Banner
+    const btnAiReport = document.getElementById('btnAiReport');
+    if (btnAiReport) {
+        btnAiReport.addEventListener('click', generateAiReport);
+    }
 }
 
 function loadUserTabData(tabId) {
@@ -3363,3 +3369,66 @@ class VisualSignatureModal {
         if (modal) modal.remove();
     }
 }
+
+// ==========================================
+// TÍNH NĂNG AI PHÂN TÍCH BÁO CÁO
+// ==========================================
+
+async function generateAiReport() {
+    const modal = document.getElementById('aiReportModal');
+    const loading = document.getElementById('aiReportLoading');
+    const contentWrapper = document.getElementById('aiReportContentWrapper');
+    const contentBox = document.getElementById('aiReportContent');
+    
+    if (!modal) return;
+    
+    // Reset UI
+    modal.style.display = '';
+    openModal('aiReportModal');
+    loading.style.display = 'flex';
+    contentWrapper.style.display = 'none';
+    contentBox.innerHTML = '';
+    
+    try {
+        const response = await apiRequest('/api/manager/reports/ai-analysis');
+        
+        if (response && response.content) {
+            loading.style.display = 'none';
+            contentWrapper.style.display = 'block';
+            
+            // Parse Markdown to HTML
+            const htmlContent = marked.parse(response.content);
+            
+            // Fade-in effect
+            contentBox.style.opacity = '0';
+            contentBox.innerHTML = htmlContent;
+            
+            let opacity = 0;
+            const interval = setInterval(() => {
+                opacity += 0.1;
+                contentBox.style.opacity = opacity;
+                if (opacity >= 1) clearInterval(interval);
+            }, 50);
+            
+        } else {
+            throw new Error("Không nhận được dữ liệu từ AI.");
+        }
+    } catch (error) {
+        loading.style.display = 'none';
+        contentWrapper.style.display = 'block';
+        contentBox.innerHTML = `<div style="color: #ef4444; padding: 16px; background: #fef2f2; border-radius: 8px;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Có lỗi xảy ra khi gọi AI: ${error.message}
+        </div>`;
+    }
+}
+
+function copyAiReport() {
+    const contentBox = document.getElementById('aiReportContent');
+    if (!contentBox || !contentBox.innerText) return;
+    
+    navigator.clipboard.writeText(contentBox.innerText).then(() => {
+        showToast('Đã sao chép nội dung báo cáo!', 'success');
+    }).catch(err => {
+        console.error('Không thể sao chép: ', err);
+    });
+}

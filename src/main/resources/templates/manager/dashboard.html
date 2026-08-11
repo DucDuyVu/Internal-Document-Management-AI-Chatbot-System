@@ -644,7 +644,7 @@
             <p style="margin:0; font-size:0.85rem; color:#4f46e5;">Sử dụng mô hình Gemini để tự động tổng hợp báo cáo và đưa ra khuyến nghị quản lý.</p>
           </div>
         </div>
-        <button class="btn-primary" style="background: linear-gradient(90deg, #8b5cf6, #d946ef); border:none; box-shadow:0 4px 12px rgba(217, 70, 239, 0.3);">
+        <button id="btnAiReport" onclick="generateAiReport()" class="btn-primary" style="background: linear-gradient(90deg, #8b5cf6, #d946ef); border:none; box-shadow:0 4px 12px rgba(217, 70, 239, 0.3);">
           <i class="fa-solid fa-wand-magic-sparkles"></i> AI Phân Tích Báo Cáo
         </button>
       </div>
@@ -1376,6 +1376,35 @@
         </div>
       </div>
     </div>
+
+    <!-- MODAL: AI Phân Tích Báo Cáo -->
+    <div class="modal-overlay" id="aiReportModal">
+      <div class="modal modal-lg" style="max-width: 800px;">
+        <div class="modal-header" style="background: linear-gradient(90deg, #312e81, #4f46e5); color: white; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+          <h3 id="aiReportModalTitle" style="color: white; margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+             <i class="fa-solid fa-wand-magic-sparkles"></i> Trợ lý AI IDMS Phân Tích
+          </h3>
+          <button class="modal-close" style="color: white;" onclick="closeModal('aiReportModal')">✕</button>
+        </div>
+        <div class="modal-body" style="background: #f8fafc; padding: 24px; min-height: 300px;">
+          <!-- Loading state -->
+          <div id="aiReportLoading" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 250px;">
+             <div class="spinner" style="border-top-color: #8b5cf6; width: 40px; height: 40px; border-width: 4px; margin-bottom: 16px;"></div>
+             <p style="color: #4f46e5; font-weight: 500; margin: 0; animation: pulse 1.5s infinite;">AI đang tổng hợp số liệu và suy nghĩ...</p>
+          </div>
+          <!-- Content state -->
+          <div id="aiReportContentWrapper" style="display: none;">
+              <div id="aiReportContent" class="markdown-body" style="background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 0.95rem; line-height: 1.6; color: #1e293b;">
+                  <!-- Nội dung markdown sẽ được render ở đây -->
+              </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('aiReportModal')">Đóng</button>
+          <button class="btn-primary" style="background: #4f46e5;" onclick="copyAiReport()"><i class="fa-regular fa-copy"></i> Sao chép</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <th:block layout:fragment="custom-js">
@@ -1386,6 +1415,8 @@
     </script>
     <!-- Thêm thư viện Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <!-- Thêm thư viện Marked.js để parse markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </th:block>
 </body>
 </html>

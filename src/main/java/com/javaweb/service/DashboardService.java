@@ -7,4 +7,5 @@ public interface DashboardService {
     DashboardDataResponse getDashboardStats();
     ReportStatsDTO getManagerReportStats();
     ReportStatsDTO getAdminReportStats(Long departmentId, String startDate, String endDate);
+    String generateAiReportAnalysis();
 }
