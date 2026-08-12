@@ -15,4 +15,8 @@ public class UpdateProfileRequest {
 		
 		private String avatarUrl;
 
+		private String signatureUrl;
+
+		private String jobTitle;
+
 }

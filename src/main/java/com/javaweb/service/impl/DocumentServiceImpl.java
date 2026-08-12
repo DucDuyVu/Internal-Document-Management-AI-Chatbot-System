@@ -233,6 +233,13 @@ public class DocumentServiceImpl implements DocumentService {
                     .orElse(null);
         }
 
+        List<DocumentPermissionsEntity> perms = documentPermissionsRepository.findByDocumentIdWithDetails(document.getId());
+        List<String> sharedWithDepartments = perms.stream()
+            .filter(p -> p.getPermissionDepartmentId() != null)
+            .map(p -> p.getPermissionDepartmentId().getName())
+            .distinct()
+            .collect(Collectors.toList());
+
         return new DocumentResponse(
                 document.getId(),
                 document.getTitle() != null ? document.getTitle() : document.getFileName(),
@@ -251,7 +258,8 @@ public class DocumentServiceImpl implements DocumentService {
                 document.getFileType(),
                 document.getAiPurpose(),
                 document.getAiSummary(),
-                document.getAiTags());
+                document.getAiTags(),
+                sharedWithDepartments);
     }
 
     @Override

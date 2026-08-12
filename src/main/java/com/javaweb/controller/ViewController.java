@@ -43,7 +43,7 @@ public class ViewController {
     }
     @GetMapping("/user/chat")
     public String chatPage() {
-        return "user/chat"; // ✅ trỏ tới templates/user/chat.html
+        return "redirect:/user/dashboard?tab=chat";
     }
 
     @GetMapping("/admin/dashboard")

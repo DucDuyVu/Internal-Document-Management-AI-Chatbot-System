@@ -677,8 +677,6 @@ async function handleUploadDocument(event) {
     }
 
     try {
-        if (typeof showToast !== 'undefined') showToast('Đang tải lên...', 'info');
-        
         const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
         const url = `${typeof API_BASE !== 'undefined' ? API_BASE : ''}/api/documents/upload`;
         
@@ -888,6 +886,8 @@ async function openChatSession(sessionId) {
             messageCount: messages ? messages.length : 0
         };
         
+        const sessionInfo = UserState.chat.sessions.find(s => s.id === sessionId) || {};
+
         UserState.chat.currentSessionId = sessionId;
         UserState.chat.messages = messages || [];
 
@@ -898,8 +898,8 @@ async function openChatSession(sessionId) {
 
         if (emptyState) emptyState.style.display = 'none';
         if (active) active.style.display = 'flex';
-        if (title) title.textContent = session.title || 'Cuộc hội thoại';
-        // (Bỏ phần hiển thị số tin nhắn)
+        if (title) title.textContent = sessionInfo.title || 'Cuộc hội thoại';
+        if (meta) meta.textContent = `${sessionInfo.messageCount || messages.length || 0} tin nhắn`;
 
         renderChatMessages();
         renderChatSessionList();
@@ -1225,10 +1225,20 @@ async function executeDeleteChatSession() {
 }
 
 function askAIAboutDocument(docName) {
+    if (typeof switchTab !== 'undefined') {
+        const tabEl = document.querySelector('[data-tab="tabChat"]');
+        if (tabEl) {
+            switchTab('tabChat', tabEl);
+            if (typeof loadUserTabData === 'function') loadUserTabData('tabChat');
+        }
+    }
     const input = document.getElementById('chatInput');
     if (input) {
         input.value = `Cho tôi biết nội dung chính của tài liệu "${docName}"`;
         input.focus();
+    }
+    if (typeof closeModal !== 'undefined') {
+        closeModal('docViewerModal');
     }
 }
 
@@ -1506,7 +1516,7 @@ async function loadUserProfile() {
         const viewEmail = document.getElementById('viewEmail');
         const viewPhone = document.getElementById('viewPhone');
         const viewDept = document.getElementById('viewDept');
-        const viewRole = document.getElementById('viewRole');
+        const viewJobTitle = document.getElementById('viewJobTitle');
         const viewCreatedAt = document.getElementById('viewCreatedAt');
         const viewLastLogin = document.getElementById('viewLastLogin');
 
@@ -1515,9 +1525,12 @@ async function loadUserProfile() {
         if (viewEmail) viewEmail.textContent = profile.email || '—';
         if (viewPhone) viewPhone.textContent = profile.phone || '—';
         if (viewDept) viewDept.textContent = profile.departmentName || 'Toàn hệ thống';
-        if (viewRole) {
-            const roles = { ADMIN: 'Quản trị viên', MANAGER: 'Quản lý', USER: 'Nhân viên' };
-            viewRole.textContent = roles[profile.role] || profile.role || '—';
+        if (viewJobTitle) {
+            let defaultTitle = '';
+            if (profile.role === 'ADMIN') defaultTitle = 'Giám đốc';
+            else if (profile.role === 'MANAGER') defaultTitle = 'Trưởng phòng';
+            else if (profile.role === 'USER') defaultTitle = 'Nhân viên';
+            viewJobTitle.textContent = profile.jobTitle || defaultTitle || '—';
         }
         if (viewCreatedAt) viewCreatedAt.textContent = profile.createdAt ? (typeof formatDate !== 'undefined' ? formatDate(profile.createdAt) : profile.createdAt) : '—';
         if (viewLastLogin) viewLastLogin.textContent = profile.lastLogin ? (typeof formatDate !== 'undefined' ? formatDate(profile.lastLogin) : profile.lastLogin) : '—';
@@ -1526,9 +1539,23 @@ async function loadUserProfile() {
         const fullNameInput = document.getElementById('editFullName');
         const phoneInput = document.getElementById('editPhone');
         const avatarInput = document.getElementById('editAvatarUrl');
+        const emailInput = document.getElementById('editEmail');
+        const deptInput = document.getElementById('editDepartment');
+        const jobTitleInput = document.getElementById('editJobTitle');
 
         if (fullNameInput) fullNameInput.value = profile.fullName || '';
         if (phoneInput) phoneInput.value = profile.phone || '';
+        
+        if (emailInput) emailInput.value = profile.email || '';
+        if (deptInput) deptInput.value = profile.departmentName || 'Toàn hệ thống';
+        
+        if (jobTitleInput) {
+            let defaultTitle = '';
+            if (profile.role === 'ADMIN') defaultTitle = 'Giám đốc';
+            else if (profile.role === 'MANAGER') defaultTitle = 'Trưởng phòng';
+            else if (profile.role === 'USER') defaultTitle = 'Nhân viên';
+            jobTitleInput.value = profile.jobTitle || defaultTitle;
+        }
 
         // Load profile stats
         const docCount = document.getElementById('psDocCount');
@@ -1949,7 +1976,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const user = typeof getUser !== 'undefined' ? getUser() : null;
     if (user && user.role !== 'ADMIN') {
         initUserDashboard();
-        loadHomeData();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'chat') {
+            const tabEl = document.querySelector('[data-tab="tabChat"]');
+            if (tabEl && typeof switchTab !== 'undefined') {
+                switchTab('tabChat', tabEl);
+                if (typeof loadUserTabData === 'function') loadUserTabData('tabChat');
+            }
+        } else {
+            loadHomeData();
+        }
     }
 });
 // ===== DOCUMENT PERMISSION MANAGEMENT =====
@@ -2186,3 +2223,122 @@ window.hideCitationPopover = function() {
 document.addEventListener('DOMContentLoaded', initCitationPopover);
 
 
+// --- Xử lý sự kiện Upload Modal (Tài liệu của tôi) ---
+let selectedUploadFile = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('uploadFileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                selectedUploadFile = this.files[0];
+                document.getElementById('uploadFileName').textContent = selectedUploadFile.name;
+                document.getElementById('uploadFileSize').textContent = typeof formatFileSize !== 'undefined' ? formatFileSize(selectedUploadFile.size) : (selectedUploadFile.size / 1024 / 1024).toFixed(2) + ' MB';
+                
+                document.getElementById('uploadDropArea').style.display = 'none';
+                document.getElementById('uploadFileSelectedBox').style.display = 'flex';
+            }
+        });
+    }
+
+    // Wrap closeModal để reset modal khi đóng
+    if (typeof window.closeModal === 'function') {
+        const originalCloseModal = window.closeModal;
+        window.closeModal = function(id) {
+            if (id === 'uploadDocModal') {
+                clearSelectedUploadFile();
+            }
+            originalCloseModal(id);
+        };
+    }
+});
+
+function clearSelectedUploadFile() {
+    selectedUploadFile = null;
+    const fileInput = document.getElementById('uploadFileInput');
+    if (fileInput) fileInput.value = '';
+    
+    const dropArea = document.getElementById('uploadDropArea');
+    const selectedBox = document.getElementById('uploadFileSelectedBox');
+    const progressWrap = document.getElementById('uploadProgressWrap');
+    const progressFill = document.getElementById('uploadProgressFill');
+    const submitBtn = document.getElementById('uploadSubmitBtn');
+    
+    if (dropArea) dropArea.style.display = 'flex';
+    if (selectedBox) selectedBox.style.display = 'none';
+    if (progressWrap) progressWrap.style.display = 'none';
+    if (progressFill) progressFill.style.width = '0%';
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Tải lên';
+    }
+}
+
+async function submitUploadDocument() {
+    if (!selectedUploadFile) {
+        if (typeof showToast !== 'undefined') showToast('Vui lòng chọn file để tải lên', 'warning');
+        return;
+    }
+
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    if (selectedUploadFile.size > maxSize) {
+        if (typeof showToast !== 'undefined') showToast('Kích thước file không được vượt quá 20MB', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedUploadFile);
+    
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    if (currentUser && currentUser.departmentId) {
+        formData.append('departmentId', currentUser.departmentId);
+    }
+
+    const submitBtn = document.getElementById('uploadSubmitBtn');
+    const progressWrap = document.getElementById('uploadProgressWrap');
+    const progressFill = document.getElementById('uploadProgressFill');
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang xử lý...';
+    }
+    if (progressWrap) progressWrap.style.display = 'block';
+    if (progressFill) progressFill.style.width = '50%'; // fake progress
+
+    try {
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+        const url = `${typeof API_BASE !== 'undefined' ? API_BASE : ''}/api/documents/upload`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err || 'Upload thất bại');
+        }
+
+        if (progressFill) progressFill.style.width = '100%';
+        if (typeof showToast !== 'undefined') showToast('Tải lên thành công! Đang chờ duyệt.', 'success');
+        
+        if (typeof loadUserDocuments === 'function') loadUserDocuments();
+        
+        if (typeof window.closeModal === 'function') window.closeModal('uploadDocModal');
+        clearSelectedUploadFile();
+        
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        if (typeof showToast !== 'undefined') showToast(error.message, 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Tải lên';
+        }
+        if (progressWrap) progressWrap.style.display = 'none';
+        if (progressFill) progressFill.style.width = '0%';
+    }
+}

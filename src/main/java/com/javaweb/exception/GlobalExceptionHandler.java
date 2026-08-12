@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * Bat exception nem ra tu bat ky Controller nao trong ung dung.
@@ -25,6 +26,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleBadRequest(BadRequestException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleMaxSizeException(MaxUploadSizeExceededException exc) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Map.of("message", "Kích thước file quá lớn (tối đa 20MB)"));
     }
 
     @ExceptionHandler(InvalidFileException.class)

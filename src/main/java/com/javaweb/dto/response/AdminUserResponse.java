@@ -1,5 +1,6 @@
 package com.javaweb.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,6 +15,15 @@ public class AdminUserResponse {
     private String departmentName;
     private String phone;
     
-    @com.fasterxml.jackson.annotation.JsonProperty("isActive")
+    @JsonProperty("isActive")
     private boolean isActive;
+    
+    private String employeeCode;
+    private String jobTitle;
+    private Long managerId;
+    private String managerName;
+    private String avatarURL;
+    
+    private Long uploadedFilesCount;
+    private Long approvedFilesCount;
 }

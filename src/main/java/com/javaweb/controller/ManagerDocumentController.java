@@ -25,6 +25,7 @@ import com.javaweb.rag.DocumentProcessingService;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.security.CustomUserDetails;
 import com.javaweb.service.DocumentService;
+import com.javaweb.service.PdfSignatureService;
 
 @RestController
 @RequestMapping("/api/manager/documents")
@@ -39,6 +40,9 @@ public class ManagerDocumentController {
 
     @Autowired
     private DocumentService documentService;
+    
+    @Autowired
+    private PdfSignatureService pdfSignatureService;
 
     // 0. LẤY TÀI LIỆU CHỜ DUYỆT CỦA PHÒNG BAN
     @GetMapping("/pending")
@@ -58,6 +62,7 @@ public class ManagerDocumentController {
     // 1. DUYỆT TÀI LIỆU
     @PutMapping("/{id}/approve")
     public ResponseEntity<String> approveDocument(@PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestBody(required = false) com.javaweb.dto.SignaturePlacementRequest payload,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         DocumentEntity document = documentRepository.findById(id)
                 .orElseThrow(() -> new DocumentNotFoundException("Không tìm thấy tài liệu id=" + id));
@@ -72,6 +77,23 @@ public class ManagerDocumentController {
 
         if (document.getApprovalStatus() != ApprovalStatus.PENDING) {
             return ResponseEntity.badRequest().body("Chỉ có thể duyệt tài liệu đang ở trạng thái PENDING.");
+        }
+
+        // Ký tên vào PDF (nếu là PDF)
+        try {
+            Float x = null;
+            Float y = null;
+            Integer page = null;
+            if (payload != null) {
+                x = payload.getX();
+                y = payload.getY();
+                page = payload.getPageNumber();
+            }
+            pdfSignatureService.signDocument(document, userDetails.getUser(), x, y, page);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Không thể ký tài liệu PDF: " + e.getMessage());
+            // Có thể chọn chặn duyệt nếu lỗi ký, nhưng thông thường cứ cho qua nếu lỗi font/pdf
         }
 
         // Đổi trạng thái và lưu

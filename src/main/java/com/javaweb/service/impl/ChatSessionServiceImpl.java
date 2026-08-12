@@ -15,7 +15,14 @@ import com.javaweb.service.ChatSessionService;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import com.javaweb.dto.chat.AdminChatSessionResponse;
+import java.time.LocalDateTime;
+
+import com.javaweb.dto.chat.ChatSessionResponse;
+import com.javaweb.entity.ChatSessionsEntity;
 /**
  * ChatSessionServiceImpl — Triển khai ChatSessionService, chứa toàn bộ
  * business logic liên quan đến quản lý chat session.
@@ -147,23 +154,57 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         if (session.getDeletedAt() != null) {
             throw new BadRequestException("Chat session này đã bị xóa trước đó");
         }
+String title = (newTitle == null || newTitle.trim().isEmpty())
+        ? "Cuộc trò chuyện mới"
+        : newTitle.trim();
 
-        String resolvedTitle = (request.getTitle() != null && !request.getTitle().isBlank())
-                ? request.getTitle()
-                : "Cuộc trò chuyện mới";
+session.setTitle(title);
+session.setUpdatedAt(LocalDateTime.now());
 
-        session.setTitle(resolvedTitle);
-        session.setUpdatedAt(LocalDateTime.now());
+ChatSessionsEntity saved = chatSessionsRepository.save(session);
+return mapToResponse(saved);
+}
 
-        ChatSessionsEntity saved = chatSessionsRepository.save(session);
+private ChatSessionResponse mapToResponse(ChatSessionsEntity entity) {
+    return new ChatSessionResponse(
+            entity.getId(),
+            entity.getTitle(),
+            entity.getCreatedAt(),
+            entity.getUpdatedAt()
+    );
+}
 
-        return new ChatSessionResponse(
-                saved.getId(),
-                saved.getTitle(),
-                saved.getCreatedAt(),
-                saved.getUpdatedAt()
-        );
-    }
+@Override
+public Page<AdminChatSessionResponse> getAllSessionsForAdmin(Pageable pageable) {
+    return chatSessionsRepository.findAll(pageable).map(session -> {
+
+        AdminChatSessionResponse response = new AdminChatSessionResponse();
+
+        response.setId(session.getId());
+        response.setTitle(session.getTitle());
+        response.setCreatedAt(session.getCreatedAt());
+        response.setUpdatedAt(session.getUpdatedAt());
+
+        if (session.getUserChatId() != null) {
+            response.setUserName(
+                    session.getUserChatId().getFullName() != null
+                            ? session.getUserChatId().getFullName()
+                            : session.getUserChatId().getUserName()
+            );
+        }
+
+        if (session.getChatMessageEntities() != null) {
+            response.setMessageCount(
+                    (long) session.getChatMessageEntities().size()
+            );
+        } else {
+            response.setMessageCount(0L);
+        }
+
+        return response;
+    });
+}
+
 }
 
 /*

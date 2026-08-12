@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.javaweb.dto.chat.ChatMessageHistoryResponse;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 /**
  * ChatSessionController — REST Controller xử lý các request liên quan đến
  * vòng đời chat session (tạo, liệt kê, xoá mềm).

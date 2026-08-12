@@ -9,7 +9,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.PostConstruct;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import com.javaweb.dto.chat.AdminChatSessionResponse;
+import com.javaweb.dto.chat.ChatSessionRequest;
+import com.javaweb.dto.chat.ChatSessionResponse;
+import com.javaweb.entity.ChatSessionsEntity;
+import java.io.InputStream;
 @Slf4j
 @Service
 public class MinioStorageServiceImpl implements StorageService {
@@ -60,43 +67,71 @@ public class MinioStorageServiceImpl implements StorageService {
         }
     }
 
-    @Override
-    public String uploadFile(MultipartFile file) {
-        try {
-            String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
-            
-            log.info("Uploading file: {} to bucket: {}", fileName, bucketName);
-            
-            minioClient.putObject(
-                PutObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(fileName)
-                    .stream(file.getInputStream(), file.getSize(), -1)
-                    .contentType(file.getContentType())
-                    .build()
-            );
-            
-            log.info("File uploaded successfully: {}", fileName);
-            return fileName;
-            
-        } catch (Exception e) {
-            log.error("Upload failed: {}", e.getMessage(), e);
-            throw new RuntimeException("Upload failed: " + e.getMessage());
-        }
-    }
 
-    @Override
-    public java.io.InputStream downloadFile(String fileName) {
-        try {
-            return minioClient.getObject(
-                GetObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(fileName)
-                    .build()
+
+    String resolvedTitle = (request.getTitle() != null && !request.getTitle().isBlank())
+        ? request.getTitle()
+        : "Cuộc trò chuyện mới";
+
+session.setTitle(resolvedTitle);
+session.setUpdatedAt(LocalDateTime.now());
+
+ChatSessionsEntity saved = chatSessionsRepository.save(session);
+
+return mapToResponse(saved);
+}
+
+private ChatSessionResponse mapToResponse(ChatSessionsEntity entity) {
+    return new ChatSessionResponse(
+            entity.getId(),
+            entity.getTitle(),
+            entity.getCreatedAt(),
+            entity.getUpdatedAt()
+    );
+}
+
+@Override
+public Page<AdminChatSessionResponse> getAllSessionsForAdmin(Pageable pageable) {
+    return chatSessionsRepository.findAll(pageable).map(session -> {
+
+        AdminChatSessionResponse response = new AdminChatSessionResponse();
+
+        response.setId(session.getId());
+        response.setTitle(session.getTitle());
+        response.setCreatedAt(session.getCreatedAt());
+        response.setUpdatedAt(session.getUpdatedAt());
+
+        if (session.getUserChatId() != null) {
+            response.setUserName(
+                    session.getUserChatId().getFullName() != null
+                            ? session.getUserChatId().getFullName()
+                            : session.getUserChatId().getUserName()
             );
-        } catch (Exception e) {
-            log.error("Download failed: {}", e.getMessage(), e);
-            throw new RuntimeException("Download failed: " + e.getMessage());
         }
+
+        if (session.getChatMessageEntities() != null) {
+            response.setMessageCount(
+                    (long) session.getChatMessageEntities().size()
+            );
+        } else {
+            response.setMessageCount(0L);
+        }
+
+        return response;
+    });
+}
+   @Override
+public InputStream downloadFile(String fileName) {
+    try {
+        return minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(fileName)
+                        .build()
+        );
+    } catch (Exception e) {
+        log.error("Download failed: {}", e.getMessage(), e);
+        throw new RuntimeException("Download failed: " + e.getMessage());
     }
+}
 }

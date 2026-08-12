@@ -75,17 +75,17 @@
         <div class="quick-grid">
           <div class="quick-card"
             onclick="switchTab('tabChat', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabChat');">
-            <div class="quick-card-icon"><i class="fa-solid fa-robot"></i></div>
+            <div class="quick-card-icon" style="color: #a78bfa;"><i class="fa-solid fa-robot"></i></div>
             <span>Hỏi AI ngay</span>
           </div>
           <div class="quick-card"
             onclick="switchTab('tabDocuments', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabDocuments');">
-            <div class="quick-card-icon"><i class="fa-solid fa-folder-open"></i></div>
+            <div class="quick-card-icon" style="color: #60a5fa;"><i class="fa-solid fa-folder-open"></i></div>
             <span>Tài liệu của tôi</span>
           </div>
           <div class="quick-card"
             onclick="switchTab('tabSearch', null); if(typeof loadUserTabData === 'function') loadUserTabData('tabSearch');">
-            <div class="quick-card-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <div class="quick-card-icon" style="color: #34d399;"><i class="fa-solid fa-magnifying-glass"></i></div>
             <span>Tìm kiếm</span>
           </div>
         </div>
@@ -99,35 +99,38 @@
         </div>
         <div class="stat-grid">
           <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-file-lines"></i></div>
+            <div class="stat-icon" style="color: #6366f1; background: #eef2ff;"><i class="fa-solid fa-file-lines"></i>
+            </div>
             <div>
               <div class="stat-label">Tài liệu phòng ban</div>
               <div class="stat-value skeleton-loader" id="statDocCount">—</div>
-              <div class="stat-change">Có thể truy cập</div>
+              <div class="stat-change" style="color: #818cf8;">Có thể truy cập</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-comments"></i></div>
+            <div class="stat-icon" style="color: #f472b6; background: #fdf2f8;"><i class="fa-solid fa-comments"></i>
+            </div>
             <div>
               <div class="stat-label">Phiên Chat AI</div>
               <div class="stat-value skeleton-loader" id="statChatCount">—</div>
-              <div class="stat-change">Tổng hội thoại</div>
+              <div class="stat-change" style="color: #f472b6;">Tổng hội thoại</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-eye"></i></div>
+            <div class="stat-icon" style="color: #fbbf24; background: #fffbeb;"><i class="fa-solid fa-eye"></i></div>
             <div>
               <div class="stat-label">Tài liệu đã xem</div>
               <div class="stat-value skeleton-loader" id="statViewCount">—</div>
-              <div class="stat-change">Tổng lượt xem</div>
+              <div class="stat-change" style="color: #fbbf24;">Tổng lượt xem</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <div class="stat-icon" style="color: #34d399; background: #ecfdf5;"><i
+                class="fa-solid fa-magnifying-glass"></i></div>
             <div>
               <div class="stat-label">Lượt tìm kiếm</div>
               <div class="stat-value skeleton-loader" id="statSearchCount">—</div>
-              <div class="stat-change">Tổng số lần</div>
+              <div class="stat-change" style="color: #34d399;">Tổng số lần</div>
             </div>
           </div>
         </div>
@@ -191,18 +194,17 @@
           </div>
         </div>
         <div>
-          <input type="file" id="uploadDocInput" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
-          <button class="btn-primary" onclick="document.getElementById('uploadDocInput').click()" id="uploadDocBtn"
-            style="background:#4f46e5;border-radius:8px;padding:12px 24px;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:8px;border:none;color:white;cursor:pointer;transition:all 0.2s;"
+          <button class="btn-primary" onclick="openModal('uploadDocModal')"
+            style="background:#4f46e5;border-radius:8px;padding:10px 20px;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:8px;border:none;color:white;cursor:pointer;transition:all 0.2s;box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);"
             onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Tải lên tài liệu mới
+            <i class="fa-solid fa-cloud-arrow-up"></i> Tải lên tài liệu
           </button>
         </div>
       </div>
 
       <!-- Summary bar -->
       <div id="docSummaryBar"
-        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; font-size: 0.9rem; color: #4b5563; background: white; padding: 12px 20px; border-radius: 8px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; font-size: 0.95rem; color: var(--text-secondary); background: var(--glass-bg); backdrop-filter: blur(10px); padding: 16px 24px; border-radius: var(--radius-lg); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
         <div>
           <strong>Tổng số:</strong> <span id="docTotalCount" style="color:#111827; font-weight:600;">0</span> tài liệu
           <span style="color:#d1d5db; margin:0 8px;">|</span>
@@ -217,7 +219,7 @@
           <span class="search-icon"
             style="color:#94a3b8;position:absolute;left:16px;top:50%;transform:translateY(-50%);"><i
               class="fa-solid fa-magnifying-glass"></i></span>
-          <input type="text" id="docSearchInput" placeholder="Tìm theo tên tài liệu..."
+          <input type="text" id="docSearchInput" placeholder="Lọc nhanh theo tên file..."
             style="width:100%;height:48px;padding:0 16px 0 44px;border-radius:12px;border:1px solid #e2e8f0;font-size:0.95rem;outline:none;background:#ffffff;box-sizing:border-box;box-shadow:0 2px 4px rgba(0,0,0,0.02);">
         </div>
         <div class="pill-filters" id="docTypePillFilter"
@@ -241,18 +243,37 @@
             <option value="pptx">PowerPoint</option>
           </select>
         </div>
+      </div>
 
-        <div
-          style="position:relative; display:flex; align-items:center; background:white; border:1px solid #e5e7eb; border-radius:8px; padding-left:12px;">
-          <i class="fa-solid fa-arrow-down-short-wide" style="color:#9ca3af; font-size:0.875rem;"></i>
-          <select id="docSortFilter" class="filter-select"
-            style="border:none; box-shadow:none; padding-left:8px; height: 100%;">
-            <option value="newest">Mới nhất</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="name">Theo tên</option>
-            <option value="size">Theo kích thước</option>
-          </select>
+      <!-- Lưới tài liệu mới -->
+      <div id="docGridView" style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:24px;">
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
+        <div class="doc-card-skeleton" style="height:220px;border-radius:16px;"></div>
+      </div>
+
+      <!-- Danh sách tài liệu -->
+      <div class="table-card" id="docListView" style="display:none;">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Tên tài liệu</th>
+                <th>Loại</th>
+                <th>Kích thước</th>
+                <th>Ngày upload</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="docListBody">
+              <tr>
+                <td colspan="6" class="empty-state"><span>📁</span>Đang tải...</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
 
         <!-- Date Filters -->
         <div style="display:flex; align-items:center; gap:8px;">
@@ -321,78 +342,49 @@
 
     </div><!-- kết thúc tabDocuments -->
 
-      <!-- ===== TAB: AI CHATBOT ===== -->
-      <div id="tabChat" style="display:none;">
-        <div class="chat-full-layout">
+          <!-- Trạng thái trống -->
+          <div class="chat-empty-state" id="chatEmptyState">
+            <div class="chat-empty-icon text-center mb-4" style="font-size:4rem;">🤖</div>
+            <h3>Bắt đầu trò chuyện với AI</h3>
+            <p>Hỏi AI về các tài liệu, quy trình, chính sách nội bộ của phòng ban bạn.</p>
+            <button class="btn-primary mt-4" onclick="createNewChat()">＋ Tạo hội thoại
+              mới</button>
+          </div>
 
-          <!-- Bảng bên trái: Danh sách phiên chat -->
-          <div class="chat-sidebar-panel" id="chatSidebar">
-            <div class="chat-sidebar-header">
-              <span>Lịch sử hội thoại</span>
-              <button class="btn-new-chat" onclick="createNewChat()" title="Tạo hội thoại mới">＋</button>
+          <!-- Giao diện chat đang hoạt động -->
+          <div class="chat-active-view" id="chatActive" style="display:none;">
+            <div class="chat-topbar-inner">
+              <div>
+                <div class="chat-session-title" id="chatSessionTitle">Cuộc hội thoại mới</div>
+                <div class="chat-session-meta" id="chatSessionMeta">—</div>
+              </div>
+              <div class="chat-topbar-actions">
+                <button class="chat-action-btn" onclick="renameChatSession()" title="Đổi tên">✏️ Đổi tên</button>
+                <button class="chat-action-btn danger" onclick="deleteChatSession()" title="Xóa hội thoại">🗑️
+                  Xóa</button>
+              </div>
             </div>
-            <div class="chat-search-wrap">
-              <input type="text" id="chatHistorySearch" placeholder="Tìm hội thoại...">
-            </div>
-            <div class="chat-session-list" id="chatSessionList">
-              <div class="chat-session-empty">
-                <span>💬</span><br>Chưa có hội thoại nào
+
+            <!-- Tin nhắn -->
+            <div class="chat-messages" id="chatMessages"></div>
+
+            <!-- Vùng nhập liệu -->
+            <div class="chat-input-area">
+              <div class="chat-input-wrap">
+                <textarea id="chatInput" class="chat-textarea" placeholder="Nhập câu hỏi về tài liệu nội bộ..."
+                  rows="1"></textarea>
+                <button class="chat-send-btn" id="chatSendBtn">➤</button>
+              </div>
+              <div class="chat-input-meta">
+                <span>Nhấn Enter để gửi, Shift+Enter để xuống dòng</span>
+                <span id="chatTokenInfo"></span>
               </div>
             </div>
           </div>
-
-          <!-- Khu vực chat chính -->
-          <div class="chat-main-panel" id="chatMain">
-
-            <!-- Trạng thái trống -->
-            <div class="chat-empty-state" id="chatEmptyState">
-              <div class="chat-empty-icon text-center mb-4" style="font-size:4rem;">🤖</div>
-              <h3>Bắt đầu trò chuyện với AI</h3>
-              <p>Hỏi AI về các tài liệu, quy trình, chính sách nội bộ của phòng ban bạn.</p>
-              <button class="btn-primary mt-4" onclick="createNewChat()">＋ Tạo hội thoại
-                mới</button>
-            </div>
-
-            <!-- Giao diện chat đang hoạt động -->
-            <div class="chat-active-view" id="chatActive" style="display:none;">
-              <div class="chat-topbar-inner">
-                <div>
-                  <div class="chat-session-title" id="chatSessionTitle">Cuộc hội thoại mới</div>
-                  <div class="chat-session-meta" id="chatSessionMeta">—</div>
-                </div>
-                <div class="chat-topbar-actions">
-                  <button class="chat-action-btn" onclick="renameChatSession()" title="Đổi tên">✏️ Đổi tên</button>
-                  <button class="chat-action-btn danger" onclick="deleteChatSession()" title="Xóa hội thoại">🗑️
-                    Xóa</button>
-                </div>
-              </div>
-
-              <!-- Tin nhắn -->
-              <div class="chat-messages" id="chatMessages"></div>
-
-              <!-- Vùng nhập liệu -->
-              <div class="chat-input-area">
-                <div class="chat-input-wrap">
-                  <textarea id="chatInput" class="chat-textarea" placeholder="Nhập câu hỏi về tài liệu nội bộ..."
-                    rows="1"></textarea>
-                  <button class="chat-send-btn" id="chatSendBtn">➤</button>
-                </div>
-                <div class="chat-input-meta">
-                  <span>Nhấn Enter để gửi, Shift+Enter để xuống dòng</span>
-                  <span id="chatTokenInfo"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
-      </div><!-- kết thúc tabChat -->
 
-      <!-- ===== TAB: TÌM KIẾM TÀI LIỆU ===== -->
-      <div id="tabSearch" style="display:none;">
-        <div class="section-header">
-          <h2>🔍 Tìm kiếm tài liệu</h2>
-        </div>
+      </div>
+    </div><!-- kết thúc tabChat -->
 
         <div class="search-hero">
           <div class="search-hero-input-wrap">
@@ -413,447 +405,556 @@
             </select>
           </div>
         </div>
+      </div>
 
-        <div id="searchResults">
-          <div class="search-hint">
-            <div class="search-hint-icon">🔍</div>
-            <p>Nhập từ khóa để tìm kiếm tài liệu trong phòng ban của bạn.</p>
-            <p class="search-hint-subtext">Hệ thống sử dụng Vector Search để tìm kiếm ngữ
-              nghĩa.</p>
+      <div id="searchResults">
+        <div class="search-hint">
+          <div class="search-hint-icon"><i class="fa-solid fa-robot" style="color: var(--primary); opacity: 0.5;"></i>
           </div>
+          <p>Nhập từ khóa hoặc câu hỏi để AI tìm kiếm nội dung trong các tài liệu.</p>
+          <p class="search-hint-subtext">Hệ thống sẽ đọc hiểu nội dung toàn bộ văn bản để trả về kết quả chính xác nhất.
+          </p>
+        </div>
+      </div>
+
+    </div><!-- kết thúc tabSearch -->
+
+
+
+    <!-- ===== TAB: HỒ SƠ CÁ NHÂN ===== -->
+    <div id="tabProfile" style="display:none;">
+      <div class="section-header">
+        <h2>👤 Hồ sơ cá nhân</h2>
+      </div>
+
+      <div class="settings-layout">
+        <!-- Left Nav -->
+        <div class="settings-nav">
+          <button class="settings-tab active" onclick="switchProfileTab('ptInfo', this)">Thông tin cá nhân</button>
+          <button class="settings-tab" onclick="switchProfileTab('ptUpdate', this)">Cập nhật hồ sơ</button>
+          <button class="settings-tab" onclick="switchProfileTab('ptPassword', this)">Bảo mật</button>
+          <button class="settings-tab" onclick="switchProfileTab('ptActivity', this)">Lịch sử hoạt động</button>
         </div>
 
-      </div><!-- kết thúc tabSearch -->
+        <!-- Right Content -->
+        <div class="settings-content">
 
-
-
-      <!-- ===== TAB: HỒ SƠ CÁ NHÂN ===== -->
-      <div id="tabProfile" style="display:none;">
-        <div class="section-header">
-          <h2>👤 Hồ sơ cá nhân</h2>
-        </div>
-
-        <div class="settings-layout">
-          <!-- Left Nav -->
-          <div class="settings-nav">
-            <button class="settings-tab active" onclick="switchProfileTab('ptInfo', this)">Thông tin cá nhân</button>
-            <button class="settings-tab" onclick="switchProfileTab('ptUpdate', this)">Cập nhật hồ sơ</button>
-            <button class="settings-tab" onclick="switchProfileTab('ptPassword', this)">Bảo mật</button>
-            <button class="settings-tab" onclick="switchProfileTab('ptActivity', this)">Lịch sử hoạt động</button>
-          </div>
-
-          <!-- Right Content -->
-          <div class="settings-content">
-
-            <!-- Thông tin cá nhân -->
-            <div id="ptInfo" class="settings-card active">
-              <div class="settings-header">
-                <h3>Thông tin cá nhân</h3>
-                <p>Chi tiết thông tin định danh và tài khoản của bạn trên hệ thống.</p>
-              </div>
-              <div class="settings-profile-grid">
-
-                <div class="profile-info-list">
-                  <div class="profile-info-row">
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Tên đăng nhập</span>
-                      <span class="profile-info-value" id="viewUsername">—</span>
-                    </div>
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Họ và tên</span>
-                      <span class="profile-info-value" id="viewFullName">—</span>
-                    </div>
-                  </div>
-                  <div class="profile-info-row">
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Email</span>
-                      <span class="profile-info-value" id="viewEmail">—</span>
-                    </div>
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Số điện thoại</span>
-                      <span class="profile-info-value" id="viewPhone">—</span>
-                    </div>
-                  </div>
-                  <div class="profile-info-row">
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Phòng ban</span>
-                      <span class="profile-info-value" id="viewDept">—</span>
-                    </div>
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Vai trò</span>
-                      <span class="profile-info-value" id="viewRole">—</span>
-                    </div>
-                  </div>
-                  <div class="profile-info-row">
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Ngày tạo tài khoản</span>
-                      <span class="profile-info-value" id="viewCreatedAt">—</span>
-                    </div>
-                    <div class="profile-info-item">
-                      <span class="profile-info-label">Đăng nhập lần cuối</span>
-                      <span class="profile-info-value" id="viewLastLogin">—</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Avatar Preview -->
-                <div class="settings-avatar-section">
-                  <div class="settings-avatar" id="profileAvatar">U</div>
-                  <div class="settings-role-badge user" id="profileRoleBadge">Nhân viên</div>
-                  <div class="settings-stats">
-                    <div class="settings-stat-item">
-                      <span>Tài liệu</span>
-                      <span id="psDocCount">—</span>
-                    </div>
-                    <div class="settings-stat-item">
-                      <span>Chat AI</span>
-                      <span id="psChatCount">—</span>
-                    </div>
-                    <div class="settings-stat-item">
-                      <span>Hoạt động</span>
-                      <span id="psActivityCount">—</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-
-
+          <!-- Thông tin cá nhân -->
+          <div id="ptInfo" class="settings-card active">
+            <div class="settings-header">
+              <h3>Thông tin cá nhân</h3>
+              <p>Chi tiết thông tin định danh và tài khoản của bạn trên hệ thống.</p>
             </div>
+            <div class="settings-profile-grid">
 
-            <!-- Cập nhật hồ sơ -->
-            <div id="ptUpdate" class="settings-card">
-              <div class="settings-header">
-                <h3>Cập nhật hồ sơ</h3>
-                <p>Chỉnh sửa thông tin liên lạc và ảnh đại diện của bạn.</p>
+              <div class="profile-info-list">
+                <div class="profile-info-row">
+                  <div class="profile-info-item" style="display:none;">
+                    <span class="profile-info-label">Tên đăng nhập</span>
+                    <span class="profile-info-value" id="viewUsername">—</span>
+                  </div>
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Họ và tên</span>
+                    <span class="profile-info-value" id="viewFullName">—</span>
+                  </div>
+                </div>
+                <div class="profile-info-row">
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Email</span>
+                    <span class="profile-info-value" id="viewEmail">—</span>
+                  </div>
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Số điện thoại</span>
+                    <span class="profile-info-value" id="viewPhone">—</span>
+                  </div>
+                </div>
+                <div class="profile-info-row">
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Phòng ban</span>
+                    <span class="profile-info-value" id="viewDept">—</span>
+                  </div>
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Chức danh</span>
+                    <span class="profile-info-value"><span id="viewJobTitle"
+                        style="color:var(--primary); font-weight:600;">—</span></span>
+                  </div>
+                </div>
+                <div class="profile-info-row">
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Ngày tạo tài khoản</span>
+                    <span class="profile-info-value" id="viewCreatedAt">—</span>
+                  </div>
+                  <div class="profile-info-item">
+                    <span class="profile-info-label">Đăng nhập lần cuối</span>
+                    <span class="profile-info-value" id="viewLastLogin">—</span>
+                  </div>
+                </div>
               </div>
-              <div class="settings-form">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Họ và tên</label>
-                    <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
+
+              <!-- Avatar Preview -->
+              <div class="settings-avatar-section">
+                <div class="settings-avatar" id="profileAvatar">U</div>
+                <div class="settings-role-badge user" id="profileRoleBadge">Nhân viên</div>
+                <div class="settings-stats">
+                  <div class="settings-stat-item">
+                    <span>Tài liệu</span>
+                    <span id="psDocCount">—</span>
                   </div>
-                  <div class="form-group">
-                    <label>Số điện thoại</label>
-                    <input type="tel" id="editPhone" class="form-input" placeholder="Nhập số điện thoại">
+                  <div class="settings-stat-item">
+                    <span>Chat AI</span>
+                    <span id="psChatCount">—</span>
                   </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group" style="width: 100%;">
-                    <label>Ảnh đại diện</label>
-                    <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
-                      <div id="avatarPreviewContainer"
-                        style="width: 80px; height: 80px; border-radius: 50%; background: #f1f5f9; border: 2px solid #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                        <img id="avatarPreviewImg" src=""
-                          style="width: 100%; height: 100%; object-fit: cover; display: none;">
-                        <span id="avatarPreviewInitials"
-                          style="font-size: 24px; font-weight: bold; color: #64748b;">?</span>
-                      </div>
-                      <div>
-                        <label for="editAvatarUrl" class="btn btn-outline"
-                          style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.875rem; padding: 8px 16px;">
-                          <i class="fa-solid fa-camera"></i> Đổi ảnh đại diện
-                        </label>
-                        <input type="file" id="editAvatarUrl" class="form-input"
-                          accept="image/jpeg, image/png, image/webp" style="display: none;"
-                          onchange="previewAvatar(event)">
-                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">Định dạng: JPG, PNG, WEBP. Tối
-                          đa 5MB.</div>
-                      </div>
-                    </div>
+                  <div class="settings-stat-item">
+                    <span>Hoạt động</span>
+                    <span id="psActivityCount">—</span>
                   </div>
-                </div>
-                <div class="form-actions" style="margin-top: 32px;">
-                  <button class="btn btn-primary" onclick="updateProfile()">Lưu thay đổi</button>
                 </div>
               </div>
             </div>
 
-            <!-- Đổi mật khẩu -->
-            <div id="ptPassword" class="settings-card">
-              <div class="settings-header">
-                <h3>Bảo mật</h3>
-                <p>Cập nhật mật khẩu để bảo vệ tài khoản của bạn.</p>
-              </div>
-              <div class="form-group max-w-md">
-                <label>Mật khẩu hiện tại</label>
-                <div class="pass-wrap">
-                  <input type="password" id="currentPassword" class="form-input" placeholder="Nhập mật khẩu hiện tại">
-                  <button class="pass-eye" onclick="togglePassVis('currentPassword')">👁</button>
-                </div>
-              </div>
-              <div class="form-group max-w-md">
-                <label>Mật khẩu mới</label>
-                <div class="pass-wrap">
-                  <input type="password" id="newPassword" class="form-input" placeholder="Tối thiểu 8 ký tự">
-                  <button class="pass-eye" onclick="togglePassVis('newPassword')">👁</button>
-                </div>
-                <div class="pass-strength-bar">
-                  <div class="pass-strength-fill" id="passStrengthFill" style="width:0%"></div>
-                </div>
-                <div class="pass-strength-label" id="passStrengthLabel"></div>
-              </div>
-              <div class="form-group max-w-md">
-                <label>Xác nhận mật khẩu mới</label>
-                <div class="pass-wrap">
-                  <input type="password" id="confirmPassword" class="form-input" placeholder="Nhập lại mật khẩu mới">
-                  <button class="pass-eye" onclick="togglePassVis('confirmPassword')">👁</button>
-                </div>
-              </div>
-              <div class="form-actions max-w-md" style="margin-top: 32px;">
-                <button class="btn btn-primary" onclick="changePassword()">Đổi mật khẩu</button>
-              </div>
-            </div>
 
-            <!-- Lịch sử hoạt động -->
-            <div id="ptActivity" class="settings-card">
-              <div class="settings-header">
-                <h3>Lịch sử hoạt động</h3>
-                <p>Nhật ký các thao tác gần đây của bạn trên hệ thống.</p>
-              </div>
-              <ul class="activity-list-v2" id="profileActivityList">
-                <li class="activity-empty">Đang tải lịch sử hoạt động...</li>
-              </ul>
-            </div>
 
           </div>
-        </div>
 
-      </div><!-- kết thúc tabProfile -->
-
-      <!-- ===== TAB: CÀI ĐẶT HỆ THỐNG ===== -->
-      <div id="tabSettings" style="display:none;">
-        <div class="section-header">
-          <h2>⚙️ Cài đặt</h2>
-        </div>
-
-        <div class="settings-layout">
-          <!-- Left Nav -->
-          <div class="settings-nav">
-            <button class="settings-tab active" onclick="switchSettingsTab('stGeneral', this)">Chung</button>
-            <button class="settings-tab" onclick="switchSettingsTab('stNotifications', this)">Thông báo</button>
-            <button class="settings-tab" onclick="switchSettingsTab('stAppearance', this)">Giao diện</button>
-          </div>
-
-          <!-- Right Content -->
-          <div class="settings-content">
-
-            <!-- Chung -->
-            <div id="stGeneral" class="settings-card active">
-              <div class="settings-header">
-                <h3>Cài đặt chung</h3>
-                <p>Quản lý ngôn ngữ, múi giờ và định dạng hệ thống.</p>
-              </div>
-              <div class="settings-form">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Ngôn ngữ</label>
-                    <select class="form-input">
-                      <option>Tiếng Việt</option>
-                      <option>English</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label>Múi giờ</label>
-                    <select class="form-input">
-                      <option>UTC+07:00 (Hồ Chí Minh)</option>
-                      <option>UTC+00:00 (London)</option>
-                    </select>
-                  </div>
+          <!-- Cập nhật hồ sơ -->
+          <div id="ptUpdate" class="settings-card">
+            <div class="settings-header">
+              <h3>Cập nhật hồ sơ</h3>
+              <p>Chỉnh sửa thông tin liên lạc và ảnh đại diện của bạn.</p>
+            </div>
+            <div class="settings-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Email <i class="fa-solid fa-lock"
+                      style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                  <input type="email" id="editEmail" class="form-input"
+                    style="background:#f1f5f9; color:#64748b; cursor:not-allowed;" disabled>
                 </div>
                 <div class="form-group">
-                  <label>Định dạng ngày tháng</label>
+                  <label>Phòng ban <i class="fa-solid fa-lock"
+                      style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                  <input type="text" id="editDepartment" class="form-input"
+                    style="background:#f1f5f9; color:#64748b; cursor:not-allowed;" disabled>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Chức danh <i class="fa-solid fa-lock"
+                      style="color:#94a3b8; font-size:0.8rem; margin-left:4px;"></i></label>
+                  <input type="text" id="editJobTitle" class="form-input"
+                    style="background:#f1f5f9; color:#64748b; cursor:not-allowed;" disabled>
+                </div>
+                <div class="form-group">
+                  <label>Họ và tên</label>
+                  <input type="text" id="editFullName" class="form-input" placeholder="Nhập họ và tên">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Số điện thoại</label>
+                  <input type="tel" id="editPhone" class="form-input" placeholder="Nhập số điện thoại">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group" style="width: 100%;">
+                  <label>Ảnh đại diện</label>
+                  <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+                    <div id="avatarPreviewContainer"
+                      style="width: 80px; height: 80px; border-radius: 50%; background: #f1f5f9; border: 2px solid #e2e8f0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                      <img id="avatarPreviewImg" src=""
+                        style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                      <span id="avatarPreviewInitials"
+                        style="font-size: 24px; font-weight: bold; color: #64748b;">?</span>
+                    </div>
+                    <div>
+                      <label for="editAvatarUrl" class="btn btn-outline"
+                        style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.875rem; padding: 8px 16px;">
+                        <i class="fa-solid fa-camera"></i> Đổi ảnh đại diện
+                      </label>
+                      <input type="file" id="editAvatarUrl" class="form-input"
+                        accept="image/jpeg, image/png, image/webp" style="display: none;"
+                        onchange="previewAvatar(event)">
+                      <div style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">Định dạng: JPG, PNG, WEBP. Tối
+                        đa 5MB.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-actions" style="margin-top: 32px;">
+                <button class="btn btn-primary" onclick="updateProfile()">Lưu thay đổi</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Đổi mật khẩu -->
+          <div id="ptPassword" class="settings-card">
+            <div class="settings-header">
+              <h3>Bảo mật</h3>
+              <p>Cập nhật mật khẩu để bảo vệ tài khoản của bạn.</p>
+            </div>
+            <div class="form-group max-w-md">
+              <label>Mật khẩu hiện tại</label>
+              <div class="pass-wrap">
+                <input type="password" id="currentPassword" class="form-input" placeholder="Nhập mật khẩu hiện tại">
+                <button class="pass-eye" onclick="togglePassVis('currentPassword')">👁</button>
+              </div>
+            </div>
+            <div class="form-group max-w-md">
+              <label>Mật khẩu mới</label>
+              <div class="pass-wrap">
+                <input type="password" id="newPassword" class="form-input" placeholder="Tối thiểu 8 ký tự">
+                <button class="pass-eye" onclick="togglePassVis('newPassword')">👁</button>
+              </div>
+              <div class="pass-strength-bar">
+                <div class="pass-strength-fill" id="passStrengthFill" style="width:0%"></div>
+              </div>
+              <div class="pass-strength-label" id="passStrengthLabel"></div>
+            </div>
+            <div class="form-group max-w-md">
+              <label>Xác nhận mật khẩu mới</label>
+              <div class="pass-wrap">
+                <input type="password" id="confirmPassword" class="form-input" placeholder="Nhập lại mật khẩu mới">
+                <button class="pass-eye" onclick="togglePassVis('confirmPassword')">👁</button>
+              </div>
+            </div>
+            <div class="form-actions max-w-md" style="margin-top: 32px;">
+              <button class="btn btn-primary" onclick="changePassword()">Đổi mật khẩu</button>
+            </div>
+          </div>
+
+          <!-- Lịch sử hoạt động -->
+          <div id="ptActivity" class="settings-card">
+            <div class="settings-header">
+              <h3>Lịch sử hoạt động</h3>
+              <p>Nhật ký các thao tác gần đây của bạn trên hệ thống.</p>
+            </div>
+            <ul class="activity-list-v2" id="profileActivityList">
+              <li class="activity-empty">Đang tải lịch sử hoạt động...</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- kết thúc tabProfile -->
+
+    <!-- ===== TAB: CÀI ĐẶT HỆ THỐNG ===== -->
+    <div id="tabSettings" style="display:none;">
+      <div class="section-header">
+        <h2>⚙️ Cài đặt</h2>
+      </div>
+
+      <div class="settings-layout">
+        <!-- Left Nav -->
+        <div class="settings-nav">
+          <button class="settings-tab active" onclick="switchSettingsTab('stGeneral', this)">Chung</button>
+          <button class="settings-tab" onclick="switchSettingsTab('stNotifications', this)">Thông báo</button>
+          <button class="settings-tab" onclick="switchSettingsTab('stAppearance', this)">Giao diện</button>
+        </div>
+
+        <!-- Right Content -->
+        <div class="settings-content">
+
+          <!-- Chung -->
+          <div id="stGeneral" class="settings-card active">
+            <div class="settings-header">
+              <h3>Cài đặt chung</h3>
+              <p>Quản lý ngôn ngữ, múi giờ và định dạng hệ thống.</p>
+            </div>
+            <div class="settings-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Ngôn ngữ</label>
                   <select class="form-input">
-                    <option>DD/MM/YYYY</option>
-                    <option>MM/DD/YYYY</option>
+                    <option>Tiếng Việt</option>
+                    <option>English</option>
                   </select>
                 </div>
-                <button class="btn-primary-sm" onclick="alert('Đã lưu thay đổi!')">Lưu thay đổi</button>
-              </div>
-            </div>
-
-            <!-- Thông báo -->
-            <div id="stNotifications" class="settings-card">
-              <div class="settings-header">
-                <h3>Cài đặt thông báo</h3>
-                <p>Tùy chỉnh cách bạn nhận thông báo từ hệ thống.</p>
-              </div>
-              <div class="settings-form">
-                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
-                  <div>
-                    <label style="margin-bottom:0;">Thông báo trong ứng dụng</label>
-                    <p style="font-size:0.875rem; color:var(--text-muted);">Nhận thông báo push khi đang mở ứng dụng.
-                    </p>
-                  </div>
-                  <input type="checkbox" checked style="width:20px; height:20px; cursor:pointer;">
-                </div>
-                <div style="border-top: 1px solid var(--border-color); margin: 16px 0;"></div>
-                <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
-                  <div>
-                    <label style="margin-bottom:0;">Thông báo qua Email</label>
-                    <p style="font-size:0.875rem; color:var(--text-muted);">Nhận email khi có tài liệu mới hoặc cập nhật
-                      quan trọng.</p>
-                  </div>
-                  <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
-                </div>
-              </div>
-            </div>
-
-            <!-- Giao diện -->
-            <div id="stAppearance" class="settings-card">
-              <div class="settings-header">
-                <h3>Cài đặt giao diện</h3>
-                <p>Tùy chỉnh hiển thị theo sở thích của bạn.</p>
-              </div>
-              <div class="settings-form">
                 <div class="form-group">
-                  <label>Mật độ hiển thị (Density)</label>
+                  <label>Múi giờ</label>
                   <select class="form-input">
-                    <option>Thoải mái (Comfortable)</option>
-                    <option>Thu gọn (Compact)</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Chủ đề (Theme)</label>
-                  <select class="form-input" id="settingsThemeSelect" onchange="setTheme(this.value)">
-                    <option value="system">Hệ thống</option>
-                    <option value="light">Sáng</option>
-                    <option value="dark">Tối</option>
+                    <option>UTC+07:00 (Hồ Chí Minh)</option>
+                    <option>UTC+00:00 (London)</option>
                   </select>
                 </div>
               </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== MODALS ===== -->
-
-      <!-- MODAL: Xem chi tiết tài liệu -->
-      <div class="modal-overlay" id="docViewerModal">
-        <div class="modal modal-lg">
-          <div class="modal-header">
-            <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
-            <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
-          </div>
-          <div id="docViewerContent" class="modal-body-scroll"></div>
-          <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
-            <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
-            <button class="btn-primary-sm bg-sky" onclick="askAIAboutDoc()" id="btnAskAI">💬 Hỏi AI về tài liệu
-              này</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- MODAL: Đổi tên hội thoại -->
-      <div class="modal-overlay" id="renameChatModal">
-        <div class="modal max-w-sm">
-          <div class="modal-header">
-            <h3>✏️ Đổi tên hội thoại</h3>
-            <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
-          </div>
-          <div class="form-group">
-            <label for="newChatTitle">Tên mới</label>
-            <input type="text" id="newChatTitle" class="form-input" placeholder="Nhập tên hội thoại...">
-          </div>
-          <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
-            <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- MODAL: Upload tài liệu -->
-      <div class="modal-overlay" id="uploadDocModal">
-        <div class="modal">
-          <div class="modal-header">
-            <h3>📤 Tải lên tài liệu</h3>
-            <button class="modal-close" onclick="closeModal('uploadDocModal')">✕</button>
-          </div>
-
-          <div class="upload-area" id="uploadDropArea" onclick="document.getElementById('uploadFileInput').click()">
-            <div class="upload-hint-icon">📁</div>
-            <p class="upload-hint-text">Kéo thả file vào đây hoặc <strong>bấm để chọn file</strong></p>
-            <p class="upload-hint-subtext">Chỉ hỗ trợ PDF, tối đa 20MB</p>
-            <input type="file" id="uploadFileInput" accept=".pdf" style="display:none;">
-          </div>
-
-          <div id="uploadFileSelectedBox" class="file-selected-box" style="display:none;">
-            <div>
-              <div class="file-selected-name" id="uploadFileName">—</div>
-              <div class="file-selected-size" id="uploadFileSize">—</div>
-            </div>
-            <button class="btn-icon-danger" onclick="clearSelectedUploadFile()">✕</button>
-          </div>
-
-          <div id="uploadProgressWrap" style="display:none; margin-top:12px;">
-            <div class="upload-progress-text" id="uploadProgressText">Đang tải lên...</div>
-            <div class="upload-progress-bar">
-              <div class="upload-progress-fill" id="uploadProgressFill"></div>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal('uploadDocModal')">Hủy</button>
-            <button class="btn-primary-sm" id="uploadSubmitBtn" onclick="submitUploadDocument()">Tải lên</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- MODAL: Quản lý quyền -->
-      <div class="modal-overlay" id="permissionModal">
-        <div class="modal modal-lg">
-          <div class="modal-header">
-            <h3 id="permissionModalTitle">Quản lý Quyền Truy cập</h3>
-            <button class="modal-close" onclick="closeModal('permissionModal')">✕</button>
-          </div>
-
-          <div class="modal-body">
-            <!-- Section chia sẻ -->
-            <div class="share-section"
-              style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
-              <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Chia sẻ tài liệu</h4>
-              <div style="display: flex; gap: 12px; align-items: flex-end;">
-                <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                  <label for="departmentSelect">Chọn phòng ban</label>
-                  <select id="departmentSelect" class="form-input">
-                    <option value="">-- Đang tải danh sách... --</option>
-                  </select>
-                </div>
-                <button class="btn btn-primary" id="btnShareDoc" onclick="shareDocumentPermission()">Chia sẻ</button>
+              <div class="form-group">
+                <label>Định dạng ngày tháng</label>
+                <select class="form-input">
+                  <option>DD/MM/YYYY</option>
+                  <option>MM/DD/YYYY</option>
+                </select>
               </div>
+              <button class="btn-primary-sm" onclick="alert('Đã lưu thay đổi!')">Lưu thay đổi</button>
             </div>
+          </div>
 
-            <!-- Section danh sách đã chia sẻ -->
-            <div>
-              <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Đang chia sẻ cho</h4>
-              <div class="table-responsive">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>Phòng ban</th>
-                      <th>Ngày chia sẻ</th>
-                      <th>Người chia sẻ</th>
-                      <th style="width: 100px; text-align: center;">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody id="permissionListBody">
-                    <tr>
-                      <td colspan="4" class="empty-state" style="text-align:center; padding: 20px;">Đang tải dữ liệu...
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+          <!-- Thông báo -->
+          <div id="stNotifications" class="settings-card">
+            <div class="settings-header">
+              <h3>Cài đặt thông báo</h3>
+              <p>Tùy chỉnh cách bạn nhận thông báo từ hệ thống.</p>
+            </div>
+            <div class="settings-form">
+              <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <label style="margin-bottom:0;">Thông báo trong ứng dụng</label>
+                  <p style="font-size:0.875rem; color:var(--text-muted);">Nhận thông báo push khi đang mở ứng dụng.
+                  </p>
+                </div>
+                <input type="checkbox" checked style="width:20px; height:20px; cursor:pointer;">
+              </div>
+              <div style="border-top: 1px solid var(--border-color); margin: 16px 0;"></div>
+              <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <label style="margin-bottom:0;">Thông báo qua Email</label>
+                  <p style="font-size:0.875rem; color:var(--text-muted);">Nhận email khi có tài liệu mới hoặc cập nhật
+                    quan trọng.</p>
+                </div>
+                <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
               </div>
             </div>
           </div>
 
-          <div class="modal-actions">
-            <button class="btn-cancel" onclick="closeModal('permissionModal')">Đóng</button>
+          <!-- Giao diện -->
+          <div id="stAppearance" class="settings-card">
+            <div class="settings-header">
+              <h3>Cài đặt giao diện</h3>
+              <p>Tùy chỉnh hiển thị theo sở thích của bạn.</p>
+            </div>
+            <div class="settings-form">
+              <div class="form-group">
+                <label>Mật độ hiển thị (Density)</label>
+                <select class="form-input">
+                  <option>Thoải mái (Comfortable)</option>
+                  <option>Thu gọn (Compact)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Chủ đề (Theme)</label>
+                <select class="form-input" id="settingsThemeSelect" onchange="setTheme(this.value)">
+                  <option value="system">Hệ thống</option>
+                  <option value="light">Sáng</option>
+                  <option value="dark">Tối</option>
+                </select>
+              </div>
+            </div>
           </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MODALS ===== -->
+
+    <!-- MODAL: Xem chi tiết tài liệu -->
+    <div class="modal-overlay" id="docViewerModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3 id="docViewerTitle">Chi tiết tài liệu</h3>
+          <button class="modal-close" onclick="closeModal('docViewerModal')">✕</button>
+        </div>
+        <div id="docViewerContent" class="modal-body-scroll"></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('docViewerModal')">Đóng</button>
+          <button class="btn-primary-sm" id="docDownloadBtn">⬇ Tải xuống</button>
+          <button class="btn-primary-sm bg-sky" onclick="askAIAboutDoc()" id="btnAskAI">💬 Hỏi AI về tài liệu
+            này</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Đổi tên hội thoại -->
+    <div class="modal-overlay" id="renameChatModal">
+      <div class="modal max-w-sm">
+        <div class="modal-header">
+          <h3>✏️ Đổi tên hội thoại</h3>
+          <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
+        </div>
+        <div class="form-group">
+          <label for="newChatTitle">Tên mới</label>
+          <input type="text" id="newChatTitle" class="form-input" placeholder="Nhập tên hội thoại...">
+        </div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
+          <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Upload tài liệu -->
+    <div class="modal-overlay" id="uploadDocModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>📤 Tải lên tài liệu</h3>
+          <button class="modal-close" onclick="closeModal('uploadDocModal')">✕</button>
+        </div>
+
+        <div class="upload-area" id="uploadDropArea" onclick="document.getElementById('uploadFileInput').click()">
+          <div class="upload-hint-icon">📁</div>
+          <p class="upload-hint-text">Kéo thả file vào đây hoặc <strong>bấm để chọn file</strong></p>
+          <p class="upload-hint-subtext">Chỉ hỗ trợ PDF, tối đa 20MB</p>
+          <input type="file" id="uploadFileInput" accept=".pdf" style="display:none;">
+        </div>
+
+        <div id="uploadFileSelectedBox" class="file-selected-box" style="display:none;">
+          <div>
+            <div class="file-selected-name" id="uploadFileName">—</div>
+            <div class="file-selected-size" id="uploadFileSize">—</div>
+          </div>
+          <button class="btn-icon-danger" onclick="clearSelectedUploadFile()">✕</button>
+        </div>
+
+        <div id="uploadProgressWrap" style="display:none; margin-top:12px;">
+          <div class="upload-progress-text" id="uploadProgressText">Đang tải lên...</div>
+          <div class="upload-progress-bar">
+            <div class="upload-progress-fill" id="uploadProgressFill"></div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('uploadDocModal')">Hủy</button>
+          <button class="btn-primary-sm" id="uploadSubmitBtn" onclick="submitUploadDocument()">Tải lên</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Quản lý quyền -->
+    <div class="modal-overlay" id="permissionModal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3 id="permissionModalTitle">Quản lý Quyền Truy cập</h3>
+          <button class="modal-close" onclick="closeModal('permissionModal')">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Section chia sẻ -->
+          <div class="share-section"
+            style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+            <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Chia sẻ tài liệu</h4>
+            <div style="display: flex; gap: 12px; align-items: flex-end;">
+              <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label for="departmentSelect">Chọn phòng ban</label>
+                <select id="departmentSelect" class="form-input">
+                  <option value="">-- Đang tải danh sách... --</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" id="btnShareDoc" onclick="shareDocumentPermission()">Chia sẻ</button>
+            </div>
+          </div>
+
+          <!-- Section danh sách đã chia sẻ -->
+          <div>
+            <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Đang chia sẻ cho</h4>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Phòng ban</th>
+                    <th>Ngày chia sẻ</th>
+                    <th>Người chia sẻ</th>
+                    <th style="width: 100px; text-align: center;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="permissionListBody">
+                  <tr>
+                    <td colspan="4" class="empty-state" style="text-align:center; padding: 20px;">Đang tải dữ liệu...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal('permissionModal')">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- kết thúc content fragment -->
+  </main>
+  </div>
+</body>
+
+</html>
+</div>
+</div>
+
+<!-- MODAL: Đổi tên hội thoại -->
+<div class="modal-overlay" id="renameChatModal">
+  <div class="modal max-w-sm">
+    <div class="modal-header">
+      <h3>✏️ Đổi tên hội thoại</h3>
+      <button class="modal-close" onclick="closeModal('renameChatModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label for="newChatTitle">Tên mới</label>
+      <input type="text" id="newChatTitle" class="form-input" placeholder="Nhập tên hội thoại...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('renameChatModal')">Hủy</button>
+      <button class="btn-primary-sm" onclick="submitRenameChat()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Quản lý quyền -->
+<div class="modal-overlay" id="permissionModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="permissionModalTitle">Quản lý Quyền Truy cập</h3>
+      <button class="modal-close" onclick="closeModal('permissionModal')">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Section chia sẻ -->
+      <div class="share-section" style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+        <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Chia sẻ tài liệu</h4>
+        <div style="display: flex; gap: 12px; align-items: flex-end;">
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label for="departmentSelect">Chọn phòng ban</label>
+            <select id="departmentSelect" class="form-input">
+              <option value="">-- Đang tải danh sách... --</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btnShareDoc" onclick="shareDocumentPermission()">Chia sẻ</button>
         </div>
       </div>
 
-    </div><!-- kết thúc content fragment -->
+      <!-- Section danh sách đã chia sẻ -->
+      <div>
+        <h4 style="margin-bottom: 12px; font-size: 1rem; color: #1e293b;">Đang chia sẻ cho</h4>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Phòng ban</th>
+                <th>Ngày chia sẻ</th>
+                <th>Người chia sẻ</th>
+                <th style="width: 100px; text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="permissionListBody">
+              <tr>
+                <td colspan="4" class="empty-state" style="text-align:center; padding: 20px;">Đang tải dữ liệu...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('permissionModal')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- kết thúc content fragment -->
+</main>
+</div>
+</body>
+
+</html>

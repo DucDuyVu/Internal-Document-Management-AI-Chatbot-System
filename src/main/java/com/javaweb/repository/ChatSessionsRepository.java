@@ -22,4 +22,6 @@ public interface ChatSessionsRepository extends JpaRepository<ChatSessionsEntity
      */
     List<ChatSessionsEntity> findByUserChatId_IdAndDeletedAtIsNullOrderByUpdatedAtDesc(Long userId);
     int countByUserChatId_IdAndDeletedAtIsNull(Long userId);
+    int countByDeletedAtIsNull();
+    List<ChatSessionsEntity> findByDeletedAtIsNull();
 }
