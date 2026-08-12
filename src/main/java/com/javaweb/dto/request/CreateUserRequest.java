@@ -18,5 +18,11 @@ public class CreateUserRequest {
 
     private Long departmentId;
 
+    private String employeeCode;
+
+    private String jobTitle;
+
+    private Long managerId;
+
     private String phone;
 }

@@ -23,6 +23,10 @@ public class ProfileResponse {
 		
 		private String avatarUrl;
 
+		private String signatureUrl;
+
+		private String jobTitle;
+
 		private String departmentName;
 
 		private LocalDateTime createdAt;
@@ -42,4 +46,5 @@ public class ProfileResponse {
 		private int pendingRequestCount;
 		private int activeSessionsCount;
 		private int departmentDocumentsCount;
+		private int departmentOnlineUsersCount;
 }

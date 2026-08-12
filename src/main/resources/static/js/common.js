@@ -179,6 +179,10 @@ function showToast(message, type = "success") {
 
             position: "right",
 
+            offset: {
+                y: 75 // Đẩy toast xuống để không đè lên thanh navbar (thường cao ~70px)
+            },
+
             style: {
 
                 background: type === "success"
@@ -656,13 +660,47 @@ function renderUserProfileModal(profile) {
                 <h3 style="margin-top: 0; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;"><i class="fa-regular fa-clock"></i> Lịch sử hoạt động</h3>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     ${profile.recentActivities && profile.recentActivities.length > 0 ? 
-                        profile.recentActivities.slice(0, 5).map(act => `
-                        <div style="display: flex; gap: 12px; font-size: 0.9rem;">
-                            <span style="color: var(--text-muted); min-width: 45px;">${escapeHtml(act.time)}</span>
-                            <span style="color: var(--text-muted); min-width: 70px;">${escapeHtml(act.date)}</span>
-                            <span style="font-weight: 500; color: var(--text-primary, #111827);">${escapeHtml(act.action)}</span>
-                        </div>
-                        `).join('')
+                        `<div style="position: relative; padding-left: 24px; border-left: 2px solid #e2e8f0; margin-left: 12px; margin-top: 8px;">` +
+                        profile.recentActivities.slice(0, 5).map(act => {
+                            let actionText = act.action;
+                            let icon = 'fa-bolt';
+                            let color = '#64748b';
+                            let bg = '#f1f5f9';
+                            
+                            switch(act.action) {
+                                case 'LOGIN': 
+                                    actionText = 'Đăng nhập hệ thống'; icon = 'fa-right-to-bracket'; color = '#10b981'; bg = '#dcfce7'; break;
+                                case 'UPLOAD_DOCUMENT': 
+                                    actionText = 'Tải lên tài liệu mới'; icon = 'fa-file-arrow-up'; color = '#4f46e5'; bg = '#e0e7ff'; break;
+                                case 'DOWNLOAD_DOCUMENT': 
+                                    actionText = 'Tải xuống tài liệu'; icon = 'fa-file-arrow-down'; color = '#0ea5e9'; bg = '#e0f2fe'; break;
+                                case 'DELETE_DOCUMENT': 
+                                    actionText = 'Xóa tài liệu'; icon = 'fa-trash'; color = '#ef4444'; bg = '#fee2e2'; break;
+                                case 'APPROVE_DOCUMENT': 
+                                    actionText = 'Phê duyệt tài liệu'; icon = 'fa-check-double'; color = '#10b981'; bg = '#dcfce7'; break;
+                                case 'REJECT_DOCUMENT': 
+                                    actionText = 'Từ chối tài liệu'; icon = 'fa-xmark'; color = '#ef4444'; bg = '#fee2e2'; break;
+                            }
+                            
+                            return `
+                            <div style="position: relative; margin-bottom: 24px;">
+                                <!-- Timeline Dot -->
+                                <div style="position: absolute; left: -31px; top: 6px; width: 12px; height: 12px; background: ${color}; border: 2px solid #ffffff; border-radius: 50%; box-shadow: 0 0 0 2px #e2e8f0; z-index: 2;"></div>
+                                
+                                <div style="display: flex; flex-direction: column;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                                        <div style="width: 28px; height: 28px; border-radius: 8px; background: ${bg}; color: ${color}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                            <i class="fa-solid ${icon}"></i>
+                                        </div>
+                                        <span style="font-weight: 700; font-size: 0.95rem; color: #1e293b;">${actionText}</span>
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: #64748b; margin-left: 38px; font-weight: 500;">
+                                        ${escapeHtml(act.time)} <span style="margin: 0 4px; color: #cbd5e1;">•</span> ${escapeHtml(act.date)}
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }).join('') + `</div>`
                     : '<div style="font-size: 0.85rem; color: var(--text-muted);">Không có hoạt động gần đây.</div>'}
                     ${profile.recentActivities && profile.recentActivities.length > 5 ? 
                         `<div style="margin-top: 8px; text-align: center;">
@@ -857,9 +895,14 @@ function renderDocumentDetailModal(doc) {
     } else if (doc.status === 'PROCESSING') {
         aiStatusBadge = '<span style="background:#e0e7ff;color:#4338ca;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;"><i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...</span>';
         aiPlaceholder = 'Hệ thống AI đang tiến hành trích xuất dữ liệu...';
-    } else if (doc.status === 'FAILED') {
-        aiStatusBadge = '<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Lỗi xử lý</span>';
-        aiPlaceholder = 'Quá trình trích xuất gặp lỗi.';
+    } else if (doc.status === 'FAILED' || doc.approvalStatus === 'REJECTED') {
+        if (doc.approvalStatus === 'REJECTED') {
+            aiStatusBadge = '<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Bị từ chối</span>';
+            aiPlaceholder = 'Không trích xuất do tài liệu bị từ chối.';
+        } else {
+            aiStatusBadge = '<span style="background:#fee2e2;color:#ef4444;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Lỗi xử lý AI</span>';
+            aiPlaceholder = 'Quá trình trích xuất gặp lỗi.';
+        }
     } else {
         aiStatusBadge = '<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:700;">Chưa kích hoạt</span>';
         aiPlaceholder = 'AI sẽ tự động kích hoạt sau khi tài liệu được phê duyệt.';
@@ -978,13 +1021,13 @@ function renderDocumentDetailModal(doc) {
                             </div>
                             <div>
                                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-                                    <span style="font-weight:800;color:#6b21a8;font-size:1rem;">IDMS AI OCR Engine (Gemini 2.5 Flash)</span>
+                                    <span style="font-weight:800;color:#6b21a8;font-size:1rem;">IDMS AI</span>
                                     ${aiStatusBadge}
                                 </div>
                                 <div style="font-size:0.85rem;color:#7e22ce;font-weight:500;">Tự động trích xuất cấu trúc văn bản, nhận diện từ khóa chính và rà soát độ chính xác 99.8%.</div>
                             </div>
                         </div>
-                        ${doc.status === 'FAILED' ? `<button onclick="retryOCR(${doc.id})" style="background:#9333ea;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Tải lại kết quả OCR</button>` : ''}
+                        ${(doc.status === 'FAILED' && doc.approvalStatus !== 'REJECTED') ? `<button onclick="retryOCR(${doc.id})" style="background:#9333ea;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Tải lại kết quả OCR</button>` : ''}
                     </div>
 
                     <div style="display:flex;gap:24px;flex-wrap:wrap;">
@@ -996,8 +1039,10 @@ function renderDocumentDetailModal(doc) {
                             
                             ${doc.status === 'FAILED' && doc.errorMessage ? `
                             <div style="background:#fee2e2; border-left:4px solid #ef4444; padding:16px; border-radius:8px; margin-bottom:20px; color:#991b1b; font-size:0.95rem;">
-                                <strong><i class="fa-solid fa-triangle-exclamation"></i> Chi tiết lỗi từ hệ thống AI:</strong><br/>
-                                <span style="font-family:monospace; margin-top:8px; display:inline-block; font-size:0.85rem;">${escapeHtml(doc.errorMessage)}</span>
+                                <strong><i class="fa-solid fa-triangle-exclamation"></i> ${doc.approvalStatus === 'REJECTED' ? 'Lý do từ chối từ Quản lý:' : 'Lỗi xử lý AI:'}</strong><br/>
+                                <span style="font-family:monospace; margin-top:8px; display:inline-block; font-size:0.85rem;">
+                                    ${doc.approvalStatus === 'REJECTED' ? escapeHtml(doc.errorMessage) : 'Hệ thống AI hiện đang quá tải hoặc gặp sự cố kết nối. Vui lòng bấm "Tải lại kết quả OCR" ở trên để thử lại sau.'}
+                                </span>
                             </div>
                             ` : ''}
 
@@ -1043,16 +1088,7 @@ function renderDocumentDetailModal(doc) {
 
                 <!-- TAB 2: Xem Trước Tài Liệu -->
                 <div id="tab-preview" class="modal-tab-content flex-layout" style="padding:0;height:100%;">
-                    <div style="display:flex;justify-content:space-between;padding:12px 24px;border-bottom:1px solid #e2e8f0;background:#f8fafc;">
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <button style="background:white;border:1px solid #cbd5e1;border-radius:6px;padding:4px 12px;cursor:pointer;color:#475569;font-weight:600;">&lt; Trang 1 &gt;</button>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <button style="background:white;border:1px solid #cbd5e1;border-radius:6px;width:32px;height:32px;cursor:pointer;color:#475569;font-weight:600;"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-                            <span style="font-weight:700;color:#0f172a;font-size:0.9rem;">100%</span>
-                            <button style="background:white;border:1px solid #cbd5e1;border-radius:6px;width:32px;height:32px;cursor:pointer;color:#475569;font-weight:600;"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-                        </div>
-                    </div>
+
                     <div style="flex:1;background:#e2e8f0;padding:24px;overflow-y:auto;display:flex;justify-content:center;">
                         <!-- Using API Endpoint to view PDF directly in Modal -->
                         <iframe src="/api/documents/${doc.id}/view?token=${token}" style="width:100%;max-width:850px;height:100%;min-height:500px;border:none;background:white;box-shadow:0 10px 25px rgba(0,0,0,0.1);border-radius:8px;"></iframe>

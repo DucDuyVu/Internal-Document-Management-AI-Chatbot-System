@@ -38,11 +38,23 @@ public class UsersEntity {
 	@Column(name = "username")
 	private String userName;
 
+	@Column(name = "employee_code")
+	private String employeeCode;
+
+	@Column(name = "manager_id")
+	private Long managerId;
+
 	@Column(name = "phone")
 	private String phone;
 
 	@Column(name = "avatar_url")
 	private String avatarURL;
+
+	@Column(name = "signature_url")
+	private String signatureUrl;
+
+	@Column(name = "job_title")
+	private String jobTitle;
 
 	@Column(name = "email")
 	private String email;

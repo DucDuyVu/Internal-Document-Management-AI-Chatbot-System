@@ -106,6 +106,45 @@ public class UsersController {
 		}
 	}
 
+	@PostMapping("/upload-signature")
+	public ResponseEntity<Map<String, String>> uploadSignature(@RequestParam("file") MultipartFile file) {
+		try {
+			if (file.isEmpty()) {
+				throw new RuntimeException("File rỗng");
+			}
+			
+			if (file.getSize() > 5 * 1024 * 1024) {
+				throw new RuntimeException("Kích thước ảnh tối đa là 5MB");
+			}
+
+			Path uploadPath = Paths.get("uploads/signatures");
+			if (!Files.exists(uploadPath)) {
+				Files.createDirectories(uploadPath);
+			}
+
+			String originalFilename = file.getOriginalFilename();
+			String extension = "";
+			if (originalFilename != null && originalFilename.contains(".")) {
+				extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
+			}
+			
+			if (!extension.equals(".jpg") && !extension.equals(".jpeg") && !extension.equals(".png") && !extension.equals(".webp")) {
+				throw new RuntimeException("Chỉ hỗ trợ định dạng ảnh JPG, PNG hoặc WEBP");
+			}
+
+			String uniqueName = UUID.randomUUID().toString() + extension;
+			Path targetPath = uploadPath.resolve(uniqueName);
+			Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+			Map<String, String> response = new HashMap<>();
+			response.put("signatureUrl", "/uploads/signatures/" + uniqueName);
+
+			return ResponseEntity.ok(response);
+		} catch (IOException e) {
+			throw new RuntimeException("Lỗi khi lưu file: " + e.getMessage());
+		}
+	}
+
 	@GetMapping("/{id}/profile-details")
 	public ResponseEntity<UserProfileDetailsDto> getUserProfileDetails(
 			@PathVariable("id") Long id,

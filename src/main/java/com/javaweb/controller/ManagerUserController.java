@@ -84,6 +84,11 @@ public class ManagerUserController {
         // Ép buộc không được đổi phòng ban hoặc quyền (Role)
         request.setDepartmentId(manager.getDepartment().getId());
         request.setRole("USER");
+        
+        // Ép buộc không được thay đổi Người quản lý (giữ nguyên managerId cũ)
+        UsersEntity targetUser = usersRepository.findById(userId).orElseThrow();
+        request.setManagerId(targetUser.getManagerId());
+        
         return usersService.updateUser(userId, request);
     }
 
