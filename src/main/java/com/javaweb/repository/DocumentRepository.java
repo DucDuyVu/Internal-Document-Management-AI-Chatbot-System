@@ -11,7 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-
+import org.springframework.data.jpa.repository.Modifying;
 @Repository
 public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> {
 
@@ -124,4 +124,15 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
 
        List<DocumentEntity> findByStatusAndUpdatedAtBefore(DocumentStatus status, java.time.LocalDateTime dateTime);
        List<DocumentEntity> findByStatusAndApprovalStatusAndUpdatedAtBefore(DocumentStatus status, ApprovalStatus approvalStatus, java.time.LocalDateTime dateTime);
+
+       @Modifying
+       @Query("UPDATE DocumentEntity d SET d.status = :newStatus, d.aiPurpose = :aiPurpose, d.aiSummary = :aiSummary, d.aiTags = :aiTags, d.updatedAt = :updatedAt WHERE d.id IN :ids")
+       void updateDocumentsStatusAndAiInfo(
+               @Param("ids") List<Long> ids,
+               @Param("newStatus") DocumentStatus newStatus,
+               @Param("aiPurpose") String aiPurpose,
+               @Param("aiSummary") String aiSummary,
+               @Param("aiTags") String aiTags,
+               @Param("updatedAt") java.time.LocalDateTime updatedAt
+       );
 }

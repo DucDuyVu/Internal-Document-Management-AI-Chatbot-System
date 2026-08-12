@@ -13,8 +13,6 @@ public interface StorageService {
     String uploadFile(MultipartFile file) throws IOException;
 
     InputStream downloadFile(String fileName);
-  
-    ResponseInputStream<GetObjectResponse> downloadFile(String fileName);
 
     /**
      * Ghi đè nội dung mới lên một file đã tồn tại trên MinIO/S3 theo đúng tên (key) của file gốc.

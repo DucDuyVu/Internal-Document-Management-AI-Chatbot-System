@@ -107,12 +107,10 @@ function setupUserSidebar() {
             const tabId = this.getAttribute('data-tab');
             UserState.currentTab = tabId;
 
-            // Sử dụng hàm switchTab từ common.js
+            // switchTab từ common.js sẽ dispatch 'tabSwitched' event -> loadUserTabData
             if (typeof switchTab !== 'undefined') {
                 switchTab(tabId, this);
             }
-
-            loadUserTabData(tabId);
         });
     });
 }
@@ -1568,7 +1566,8 @@ async function loadManagerData() {
 
         const profile = await apiRequest('/api/users/profile');
 
-        if (profile.manager) {
+        // profile.manager is how Jackson serializes boolean isManager
+        if (profile.manager === true || profile.isManager === true) {
             // Welcome name
             const welcomeName = document.getElementById('welcomeName');
             if (welcomeName) welcomeName.textContent = profile.fullName || 'Quản lý';
@@ -2484,6 +2483,159 @@ async function revokeAllPermissions() {
     }
 }
 
+function renderEmployees(users, total, currentPage = 1, size = 10) {
+    const grid = document.getElementById('employeeGrid');
+    if (!grid) return;
+
+    const pageInfo = document.getElementById('employeePageInfo');
+
+    if (!users || users.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+            <span style="font-size: 2rem; display: block; margin-bottom: 8px;">👥</span>
+            <p style="font-size:0.95rem;">Không có nhân viên nào trong phòng ban</p>
+        </div>`;
+        if (pageInfo) pageInfo.textContent = 'Hiển thị 0 nhân viên';
+        const pagination = document.getElementById('employeePagination');
+        if (pagination) pagination.innerHTML = '';
+        return;
+    }
+
+    grid.innerHTML = users.map(u => {
+        const initials = (u.fullName || 'U').charAt(0).toUpperCase();
+        const avatarBg = u.isActive ? '#6366f1' : '#9ca3af';
+        const statusBadge = u.isActive
+            ? '<span class="status-badge" style="background:#dcfce7;color:#166534;"><i class="fa-solid fa-check"></i> Hoạt động</span>'
+            : '<span class="status-badge" style="background:#fee2e2;color:#b91c1c;"><i class="fa-solid fa-lock"></i> Đã khóa</span>';
+
+        return `
+        <div style="background:#fff; border-radius:16px; border:1px solid #e2e8f0; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; gap:12px; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <div style="width:48px; height:48px; border-radius:50%; background:${avatarBg}; color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; flex-shrink:0; box-shadow:0 4px 10px rgba(99,102,241,0.3);">
+                    ${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : initials}
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div style="font-weight:700; color:#111827; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.fullName || '—'}</div>
+                    <div style="font-size:0.8rem; color:#6b7280; margin-top:2px;"><i class="fa-solid fa-at" style="color:#a5b4fc;"></i> ${u.username}</div>
+                </div>
+                ${statusBadge}
+            </div>
+            <div style="border-top:1px solid #f1f5f9; padding-top:10px; display:flex; flex-direction:column; gap:6px; font-size:0.82rem; color:#6b7280;">
+                <div><i class="fa-solid fa-envelope" style="color:#a5b4fc; width:16px;"></i> ${u.email || '<span style="color:#d1d5db; font-style:italic;">Chưa có email</span>'}</div>
+                <div><i class="fa-solid fa-phone" style="color:#a5b4fc; width:16px;"></i> ${u.phone || '<span style="color:#d1d5db; font-style:italic;">Chưa cập nhật SĐT</span>'}</div>
+                ${u.departmentName ? `<div><i class="fa-solid fa-building" style="color:#a5b4fc; width:16px;"></i> ${u.departmentName}</div>` : ''}
+            </div>
+            <div style="display:flex; gap:8px; margin-top:4px;">
+                <button class="btn-icon" onclick="editEmployee(${u.id})" title="Chỉnh sửa"
+                    style="flex:1; padding:8px; border-radius:8px; border:1px solid #e2e8f0; background:#f8fafc; color:#4f46e5; cursor:pointer; font-size:0.82rem; font-weight:600; transition:all 0.2s;"
+                    onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background='#f8fafc'">
+                    <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    if (pageInfo) {
+        pageInfo.textContent = total !== undefined
+            ? `Hiển thị ${users.length} / ${total} nhân viên`
+            : `Hiển thị ${users.length} nhân viên`;
+    }
+
+    updateEmployeePagination(currentPage, total, size);
+}
+
+function loadReports() {
+    loadManagerReportStats();
+}
+
+async function loadManagerReportStats() {
+    try {
+        const stats = await apiRequest('/api/manager/reports/stats');
+
+        // Stat cards
+        const repTotalDocs = document.getElementById('repTotalDocs');
+        if (repTotalDocs) repTotalDocs.textContent = stats.totalDocuments || 0;
+
+        const repApprovalRate = document.getElementById('repApprovalRate');
+        if (repApprovalRate) {
+            const rate = stats.approvalRate || 0;
+            repApprovalRate.textContent = rate.toFixed(1) + '%';
+        }
+
+        const repAvgTime = document.getElementById('repAvgTime');
+        if (repAvgTime) {
+            const hrs = stats.avgProcessingHours || 0;
+            repAvgTime.textContent = hrs > 0 ? hrs.toFixed(1) + ' giờ' : '0 giờ';
+        }
+
+        // Trend chart (line chart)
+        const trendCtx = document.getElementById('trendChart');
+        if (trendCtx && stats.trendLabels && typeof Chart !== 'undefined') {
+            if (window._trendChart) window._trendChart.destroy();
+            window._trendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: stats.trendLabels || [],
+                    datasets: [
+                        {
+                            label: 'Tài liệu khởi tạo',
+                            data: stats.trendDataCreated || [],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99,102,241,0.08)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#6366f1'
+                        },
+                        {
+                            label: 'Đã phê duyệt',
+                            data: stats.trendDataApproved || [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16,185,129,0.08)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#10b981'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        // Status donut chart
+        const typeCtx = document.getElementById('typeChart');
+        if (typeCtx && stats.statusLabels && typeof Chart !== 'undefined') {
+            if (window._typeChart) window._typeChart.destroy();
+            window._typeChart = new Chart(typeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: stats.statusLabels || [],
+                    datasets: [{
+                        data: stats.statusData || [],
+                        backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } },
+                    cutout: '65%'
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('Error loading report stats:', error);
+        if (typeof showToast !== 'undefined') showToast('Không thể tải dữ liệu báo cáo: ' + error.message, 'error');
+    }
+}
+
 // =============================================
 // EMPLOYEES MANAGEMENT
 // =============================================
@@ -2513,38 +2665,6 @@ async function loadEmployees(page = 1, size = 10, search = '') {
     }
 }
 
-function renderEmployees(users, total, currentPage = 1, size = 10) {
-    const tbody = document.getElementById('employeeTableBody');
-    if (!tbody) return;
-
-    if (!users || users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center; padding: 40px 0;"><i class="fa-solid fa-users" style="font-size:2rem; color:#d1d5db; margin-bottom:12px;"></i><p>Không có nhân viên nào</p></td></tr>';
-
-        const pageInfo = document.getElementById('employeePageInfo');
-        if (pageInfo) pageInfo.textContent = 'Hiển thị 0 nhân viên';
-
-        const pagination = document.getElementById('employeePagination');
-        if (pagination) pagination.innerHTML = '';
-        return;
-    }
-
-    tbody.innerHTML = users.map(u => {
-        const statusBadge = u.isActive
-            ? '<span class="status-badge" style="background:#dcfce7;color:#166534;"><i class="fa-solid fa-check"></i> Hoạt động</span>'
-            : '<span class="status-badge" style="background:#fee2e2;color:#b91c1c;"><i class="fa-solid fa-lock"></i> Đã khóa</span>';
-
-        return `
-        <tr>
-            <td>
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="width:36px; height:36px; border-radius:50%; background:#6366f1; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">
-                        ${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : (u.fullName || 'U').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <div style="font-weight:600; color:#111827; margin-bottom: 2px;">${u.fullName}</div>
-                        <div style="font-size:0.8rem; color:#6b7280; display:flex; align-items:center; gap:8px;">
-                            <span title="Tên đăng nhập"><i class="fa-solid fa-at" style="color:#9ca3af;"></i> ${u.username}</span>
-                            ${u.phone ? `<span style="color:#e5e7eb;">|</span><span title="Số điện thoại"><i class="fa-solid fa-phone" style="color:#9ca3af; font-size: 0.75rem;"></i> ${u.phone}</span>` : '<span style="color:#e5e7eb;">|</span><span title="Số điện thoại" style="color:#d1d5db; font-style:italic;">Chưa cập nhật SĐT</span>'}
                         </div>
                     </div>
                 </div>
@@ -2601,10 +2721,7 @@ function updateEmployeePagination(currentPage, total, size) {
     container.innerHTML = html;
 }
 
-function loadReports() {
-    // Placeholder for reports tab
-    console.log("Loading reports...");
-}
+
 
 // Gọi loadManagerData nếu form init chạy lại
 if (typeof loadManagerData === 'function' && document.getElementById('tabManager')?.style.display === 'block') {
@@ -2715,20 +2832,8 @@ async function deleteEmployee(id) {
     }
 }
 
-// Attach to switchTab so it loads data when switching to Employee tab
-document.addEventListener('DOMContentLoaded', () => {
-    // Monkey-patch switchTab to load employees when tab is active
-    if (typeof window.switchTab === 'function') {
-        const originalSwitchTab = window.switchTab;
-        window.switchTab = function (tabId, menuItem) {
-            originalSwitchTab(tabId, menuItem);
-            if (tabId === 'tabEmployees') {
-                loadEmployees(1);
-            } else if (tabId === 'tabApprovals') {
-                if (typeof loadPendingApprovals === 'function') {
-                    loadPendingApprovals();
-                }
-            }
-        };
-    }
+// Listen to tabSwitched event from common.js switchTab
+document.addEventListener('tabSwitched', function(e) {
+    loadUserTabData(e.detail.tabId);
 });
+

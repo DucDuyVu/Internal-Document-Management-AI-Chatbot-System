@@ -108,8 +108,6 @@ function setupAdminSidebar() {
             if (typeof switchTab !== 'undefined') {
                 switchTab(tabId, this);
             }
-
-            loadTabData(tabId);
         });
     });
 }
@@ -205,6 +203,11 @@ function loadTabData(tabId) {
             break;
     }
 }
+
+// Listen to tabSwitched event dispatched by common.js switchTab
+document.addEventListener('tabSwitched', function(e) {
+    loadTabData(e.detail.tabId);
+});
 
 // =============================================
 // OVERVIEW STATISTICS
@@ -985,7 +988,7 @@ async function loadDepartmentsForFilter(selectId) {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const response = await apiRequest('/api/departments');
+        const response = await apiRequest('/api/admin/departments');
         const departments = response.content || response;
         const select = document.getElementById(selectId);
 
@@ -1009,13 +1012,13 @@ async function loadDepartmentsForSelect(selectId) {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const response = await apiRequest('/api/departments');
+        const response = await apiRequest('/api/admin/departments');
         const departments = response.content || response;
         const select = document.getElementById(selectId);
 
         if (!select) return;
 
-        select.innerHTML = '<option value="">-- Tất cả phòng ban --</option>';
+        select.innerHTML = '<option value="">-- Áp dụng cho tất cả phòng ban --</option>';
 
         departments.forEach(dept => {
             const option = document.createElement('option');
@@ -1539,13 +1542,15 @@ async function uploadDocument() {
             showToast('Upload tài liệu thành công! Hệ thống đang xử lý...', 'success');
         }
 
+        const fileName = AdminState.selectedFile.name;
+
         // Clear form
         clearFile();
         if (uploadStatus) uploadStatus.style.display = 'none';
 
         // Reload documents
         loadRecentUploads();
-        logAdminActivity('UPLOAD_DOCUMENT', 'DOCUMENT', result.id, { fileName: AdminState.selectedFile.name });
+        logAdminActivity('UPLOAD_DOCUMENT', 'DOCUMENT', result.id, { fileName: fileName });
 
     } catch (error) {
         console.error('Upload error:', error);

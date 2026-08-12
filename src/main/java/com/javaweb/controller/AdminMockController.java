@@ -23,10 +23,6 @@ public class AdminMockController {
         return ResponseEntity.ok(Collections.emptyList());
     }
 
-    @GetMapping("/chat-sessions")
-    public ResponseEntity<?> getChatSessions() {
-        return ResponseEntity.ok(Map.of("content", Collections.emptyList(), "totalPages", 0));
-    }
 
     @GetMapping("/audit-logs")
     public ResponseEntity<?> getAuditLogs() {

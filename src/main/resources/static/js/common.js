@@ -253,6 +253,9 @@ function switchTab(tabId, menuItem = null) {
         tab.classList.remove("active");
     });
 
+    // Let each dashboard JS handle its own data loading via event
+    document.dispatchEvent(new CustomEvent('tabSwitched', { detail: { tabId } }));
+
     // Show the target tab
     const current = document.getElementById(tabId);
     if (current) {

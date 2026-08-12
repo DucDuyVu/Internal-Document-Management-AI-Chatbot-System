@@ -154,6 +154,7 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         if (session.getDeletedAt() != null) {
             throw new BadRequestException("Chat session này đã bị xóa trước đó");
         }
+String newTitle = request.getTitle();
 String title = (newTitle == null || newTitle.trim().isEmpty())
         ? "Cuộc trò chuyện mới"
         : newTitle.trim();

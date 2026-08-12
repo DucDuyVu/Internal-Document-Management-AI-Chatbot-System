@@ -30,10 +30,6 @@ public interface ChatSessionService {
      */
     List<ChatSessionResponse> getSessions(UsersEntity currentUser);
 
-    /**
-     * Đổi tên chat session.
-     */
-    ChatSessionResponse renameSession(Long sessionId, String newTitle, UsersEntity currentUser);
 
     /**
      * Xóa mềm 1 chat session (set deleted_at, không xóa dòng thật khỏi DB).

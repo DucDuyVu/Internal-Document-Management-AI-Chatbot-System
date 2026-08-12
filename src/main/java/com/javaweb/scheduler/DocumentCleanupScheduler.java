@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
+
 @Component
 public class DocumentCleanupScheduler {
 
@@ -28,6 +31,7 @@ public class DocumentCleanupScheduler {
      * Quét tất cả document đang ở trạng thái PROCESSING và chuyển về FAILED.
      * Lý do: Do server bị tắt ngang nên tiến trình async đã bị huỷ.
      */
+    @Transactional
     @EventListener(ApplicationReadyEvent.class)
     public void cleanupOnStartup() {
         log.info("STARTUP CLEANUP: Kiểm tra các tài liệu bị kẹt ở trạng thái PROCESSING...");
@@ -36,19 +40,20 @@ public class DocumentCleanupScheduler {
         stuckDocuments.addAll(stuckPendingDocs);
         
         if (!stuckDocuments.isEmpty()) {
+            List<Long> ids = stuckDocuments.stream().map(DocumentEntity::getId).collect(Collectors.toList());
             for (DocumentEntity doc : stuckDocuments) {
-                DocumentStatus oldStatus = doc.getStatus();
-                doc.setStatus(DocumentStatus.FAILED);
-                // Giữ nguyên ApprovalStatus (nếu là APPROVED thì vẫn là APPROVED)
-                // để hiển thị lỗi thống nhất, hoặc tuỳ chọn chuyển về PENDING.
-                // Ở đây ta giữ nguyên và chỉ báo lỗi xử lý AI.
-                doc.setAiPurpose("LỖI HỆ THỐNG: Hệ thống bị khởi động lại hoặc gián đoạn trong quá trình xử lý.");
-                doc.setAiSummary("Không thể hoàn tất phân tích tài liệu.");
-                doc.setAiTags("#Error");
-                doc.setUpdatedAt(LocalDateTime.now());
-                log.warn("Đã chuyển Document ID={} từ {} sang FAILED do kẹt từ trước khi khởi động", doc.getId(), oldStatus);
+                log.warn("Đã chuyển Document ID={} từ {} sang FAILED do kẹt từ trước khi khởi động", doc.getId(), doc.getStatus());
             }
-            documentRepository.saveAll(stuckDocuments);
+            
+            documentRepository.updateDocumentsStatusAndAiInfo(
+                    ids,
+                    DocumentStatus.FAILED,
+                    "LỖI HỆ THỐNG: Hệ thống bị khởi động lại hoặc gián đoạn trong quá trình xử lý.",
+                    "Không thể hoàn tất phân tích tài liệu.",
+                    "#Error",
+                    LocalDateTime.now()
+            );
+            
             log.info("STARTUP CLEANUP: Đã dọn dẹp {} tài liệu bị kẹt.", stuckDocuments.size());
         } else {
             log.info("STARTUP CLEANUP: Không có tài liệu nào bị kẹt.");
@@ -59,6 +64,7 @@ public class DocumentCleanupScheduler {
      * Chạy định kỳ mỗi 15 phút (900000 ms) sau khi tác vụ trước đó hoàn thành.
      * Quét các document đang ở PROCESSING nhưng đã không cập nhật quá 30 phút.
      */
+    @Transactional
     @Scheduled(initialDelay = 60000, fixedDelay = 900000)
     public void cleanupPeriodic() {
         log.info("PERIODIC CLEANUP: Kiểm tra tài liệu bị kẹt quá hạn...");
@@ -69,15 +75,20 @@ public class DocumentCleanupScheduler {
         stuckDocuments.addAll(stuckPendingDocs);
 
         if (!stuckDocuments.isEmpty()) {
+            List<Long> ids = stuckDocuments.stream().map(DocumentEntity::getId).collect(Collectors.toList());
             for (DocumentEntity doc : stuckDocuments) {
-                doc.setStatus(DocumentStatus.FAILED);
-                doc.setAiPurpose("LỖI TIMEOUT: Tiến trình xử lý AI vượt quá thời gian cho phép (30 phút).");
-                doc.setAiSummary("Hệ thống tự động hủy do quá tải hoặc mất kết nối tới AI.");
-                doc.setAiTags("#Timeout");
-                doc.setUpdatedAt(LocalDateTime.now());
                 log.warn("Đã chuyển Document ID={} sang FAILED do timeout (>30m)", doc.getId());
             }
-            documentRepository.saveAll(stuckDocuments);
+            
+            documentRepository.updateDocumentsStatusAndAiInfo(
+                    ids,
+                    DocumentStatus.FAILED,
+                    "LỖI TIMEOUT: Tiến trình xử lý AI vượt quá thời gian cho phép (30 phút).",
+                    "Hệ thống tự động hủy do quá tải hoặc mất kết nối tới AI.",
+                    "#Timeout",
+                    LocalDateTime.now()
+            );
+            
             log.info("PERIODIC CLEANUP: Đã dọn dẹp {} tài liệu quá hạn.", stuckDocuments.size());
         }
     }
