@@ -7,7 +7,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title layout:title-pattern="$layout_title - $content_title">IDMS</title>
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">DocuMind</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -28,7 +28,7 @@
     <script>
       (function () {
         try {
-          const theme = localStorage.getItem("idms_theme") || "system";
+          const theme = localStorage.getItem("documind_theme") || "system";
           const isDark =
             theme === "dark" ||
             (theme === "system" &&
@@ -44,10 +44,8 @@
       <!-- ==================== SIDEBAR ==================== -->
       <aside class="sidebar" id="sidebar">
         <a href="/" class="sidebar-logo">
-          <div class="sidebar-logo-icon">
-            <i class="fa-solid fa-folder-tree"></i>
-          </div>
-          <span class="sidebar-logo-name">IDMS <em>AI</em></span>
+          <img src="/images/logo.png" alt="DocuMind Logo" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex-shrink: 0;">
+          <span class="sidebar-logo-name">DocuMind <em>AI</em></span>
         </a>
 
         <p class="nav-section-label">Menu chính</p>

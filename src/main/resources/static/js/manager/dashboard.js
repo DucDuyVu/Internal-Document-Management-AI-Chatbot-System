@@ -319,12 +319,21 @@ async function loadHomeData() {
         const data = await apiRequest('/api/dashboard/stats');
 
         // Bỏ skeleton loaders
-        document.querySelectorAll('.stat-value').forEach(el => el.classList.remove('skeleton-loader'));
+        document.querySelectorAll('.stat-value, .kpi-value').forEach(el => el.classList.remove('skeleton-loader'));
 
-        document.getElementById('statDocCount').textContent = data.documentCount || 0;
-        document.getElementById('statChatCount').textContent = data.chatSessionCount || 0;
-        document.getElementById('statViewCount').textContent = data.viewCount || 0;
-        document.getElementById('statSearchCount').textContent = data.searchCount || 0;
+        const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        
+        // Cập nhật các ID của Admin (nếu có)
+        setEl('statDocCount', data.documentCount || 0);
+        setEl('statChatCount', data.chatSessionCount || 0);
+        setEl('statViewCount', data.viewCount || 0);
+        setEl('statSearchCount', data.searchCount || 0);
+
+        // Cập nhật các ID của Manager
+        setEl('msEmployeeCount', data.employeeCount || 0);
+        setEl('msTotalDocs', data.documentCount || 0);
+        setEl('msPendingDocs', data.pendingApprovalCount || 0);
+        setEl('msOnlineUsers', data.onlineUsers || 0);
 
         // Render activities
         const list = document.getElementById('activityList');
@@ -390,13 +399,17 @@ async function loadHomeData() {
         if (currentUser) {
             document.getElementById('welcomeName').textContent = currentUser.fullName || currentUser.username;
             if (currentUser.departmentName) {
-                document.getElementById('wDept').textContent = currentUser.departmentName;
-                document.getElementById('wDeptWrap').style.display = 'inline';
+                const wDept = document.getElementById('wDept');
+                if (wDept) wDept.textContent = currentUser.departmentName;
+                const wDeptWrap = document.getElementById('wDeptWrap');
+                if (wDeptWrap) wDeptWrap.style.display = 'inline';
             }
             if (currentUser.role) {
                 const roleLabels = { 'USER': 'Nhân viên', 'MANAGER': 'Trưởng phòng', 'ADMIN': 'Quản trị viên' };
-                document.getElementById('wRole').textContent = roleLabels[currentUser.role] || currentUser.role;
-                document.getElementById('wRoleWrap').style.display = 'inline';
+                const wRole = document.getElementById('wRole');
+                if (wRole) wRole.textContent = roleLabels[currentUser.role] || currentUser.role;
+                const wRoleWrap = document.getElementById('wRoleWrap');
+                if (wRoleWrap) wRoleWrap.style.display = 'inline';
             }
         }
 
@@ -1044,7 +1057,7 @@ function renderChatSessionList() {
         <div class="chat-session-item ${session.id === UserState.chat.currentSessionId ? 'active' : ''}"
              onclick="openChatSession(${session.id})">
             <div class="chat-session-title">${session.title || 'Cuộc hội thoại mới'}</div>
-            <div class="chat-session-meta">${session.messageCount || 0} tin nhắn · ${typeof formatDate !== 'undefined' ? formatDate(session.updatedAt) : session.updatedAt}</div>
+            <div class="chat-session-meta">${typeof formatDate !== 'undefined' ? formatDate(session.updatedAt) : session.updatedAt}</div>
         </div>
     `).join('');
 }
@@ -1096,7 +1109,7 @@ async function openChatSession(sessionId) {
         if (emptyState) emptyState.style.display = 'none';
         if (active) active.style.display = 'flex';
         if (title) title.textContent = session.title || 'Cuộc hội thoại';
-        if (meta) meta.textContent = `${session.messageCount || 0} tin nhắn`;
+        // (Bỏ phần hiển thị số tin nhắn)
 
         renderChatMessages();
         renderChatSessionList();
