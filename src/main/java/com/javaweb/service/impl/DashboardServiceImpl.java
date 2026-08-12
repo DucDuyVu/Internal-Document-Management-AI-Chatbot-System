@@ -55,12 +55,18 @@ public class DashboardServiceImpl implements DashboardService {
     private final GeminiChatService geminiChatService;
     private final UserSessionsRepository userSessionsRepository;
 
-    @Override
     public DashboardDataResponse getDashboardStats() {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String username = auth.getName();
-            UsersEntity user = usersRepository.findByUserName(username).orElse(null);
+            UsersEntity user = null;
+            Object principal = auth.getPrincipal();
+            
+            if (principal instanceof com.javaweb.security.CustomUserDetails) {
+                user = ((com.javaweb.security.CustomUserDetails) principal).getUser();
+            } else if (principal instanceof UsersEntity) {
+                user = (UsersEntity) principal;
+            }
+            
             if (user == null)
                 return null;
 

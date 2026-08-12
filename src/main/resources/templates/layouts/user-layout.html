@@ -7,7 +7,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title layout:title-pattern="$layout_title - $content_title">IDMS</title>
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">DocuMind</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -32,10 +32,8 @@
       <!-- ==================== SIDEBAR ==================== -->
       <aside class="sidebar" id="sidebar">
         <a href="/" class="sidebar-logo">
-          <div class="sidebar-logo-icon">
-            <i class="fa-solid fa-folder-tree"></i>
-          </div>
-          <span class="sidebar-logo-name">IDMS <em>AI</em></span>
+          <img src="/images/logo.png" alt="DocuMind Logo" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex-shrink: 0;">
+          <span class="sidebar-logo-name">DocuMind <em>AI</em></span>
         </a>
 
         <p class="nav-section-label">Menu chính</p>
@@ -385,9 +383,11 @@
   </div>
 </div>
 
-<script src="/js/common.js?v=4"></script>
+<script src="/js/lib/marked.min.js"></script>
+  <script src="/js/lib/purify.min.js"></script>
+  <script src="/js/common.js?v=4"></script>
 <script src="/js/auth.js?v=4"></script>
-<script src="/js/user/dashboard.js?v=5"></script>
+<script src="/js/user/dashboard.js?v=7"></script>
 
 <!-- JS riêng của từng trang -->
 <th:block layout:fragment="custom-js"></th:block>
@@ -472,72 +472,7 @@
          return "Vừa xong";
       };
 
-      // 3. Fetch all notifications
-      const fetchNotifications = () => {
-          fetch('/api/notifications/all', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-            .then((res) => {
-              if (res.ok) return res.json();
-              throw new Error("Lỗi khi tải profile");
-            })
-            .then((freshUser) => {
-              localStorage.setItem("user", JSON.stringify(freshUser));
-              if (typeof updateUserUI !== "undefined") {
-                updateUserUI(freshUser);
-              }
-            })
-            .catch((e) => console.error(e));
 
-          // 2. Xử lý UI Chuông thông báo
-          const bell = document.getElementById("notificationBell");
-          const dropdown = document.getElementById("notificationDropdown");
-          const badge = document.getElementById("notificationBadge");
-          const notifList = document.getElementById("notificationList");
-
-          // Toggle dropdown
-          bell.addEventListener("click", (e) => {
-            if (e.target.closest("#notificationDropdown")) return; // ignore clicks inside dropdown
-            dropdown.style.display =
-              dropdown.style.display === "none" ? "block" : "none";
-          });
-
-          // Đóng dropdown khi click ra ngoài
-          document.addEventListener("click", (e) => {
-            if (!bell.contains(e.target)) {
-              dropdown.style.display = "none";
-            }
-          });
-
-          // Hàm định dạng thời gian
-          const timeAgo = (dateInput) => {
-            if (!dateInput) return "";
-            let date;
-            if (Array.isArray(dateInput)) {
-              date = new Date(
-                dateInput[0],
-                dateInput[1] - 1,
-                dateInput[2],
-                dateInput[3] || 0,
-                dateInput[4] || 0,
-                dateInput[5] || 0,
-              );
-            } else {
-              date = new Date(dateInput);
-            }
-            const seconds = Math.floor((new Date() - date) / 1000);
-            let interval = Math.floor(seconds / 31536000);
-            if (interval >= 1) return interval + " năm trước";
-            interval = Math.floor(seconds / 2592000);
-            if (interval >= 1) return interval + " tháng trước";
-            interval = Math.floor(seconds / 86400);
-            if (interval >= 1) return interval + " ngày trước";
-            interval = Math.floor(seconds / 3600);
-            if (interval >= 1) return interval + " giờ trước";
-            interval = Math.floor(seconds / 60);
-            if (interval >= 1) return interval + " phút trước";
-            return "Vừa xong";
-          };
 
           // 3. Fetch all notifications
           const fetchNotifications = () => {
@@ -560,7 +495,7 @@
                   notifList.innerHTML = notifications
                     .map(
                       (notif) => `
-                <div class="notif-item" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor:pointer; background: ${notif.read ? "#ffffff" : "#e0f2fe"}" onclick="openNotification(${notif.id}, '${notif.title.replace(/'/g, "\\'")}', '${notif.message.replace(/\n/g, "\\n").replace(/'/g, "\\'")}')">
+                <div class="notif-item" style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; cursor:pointer; background: ${notif.read ? "#ffffff" : "#e0f2fe"}" onclick="openNotification(${notif.id}, '${(notif.title || '').replace(/'/g, "\\'")}', '${(notif.message || '').replace(/\n/g, "\\n").replace(/'/g, "\\'")}')">
                    <div style="font-weight: ${notif.read ? "500" : "700"}; font-size:0.875rem; color:#0f172a; margin-bottom:4px; display: flex; justify-content: space-between; align-items: start;">
                      <div style="padding-right: 8px;">
                        ${notif.read ? "" : '<span style="display:inline-block; width:8px; height:8px; background:#ef4444; border-radius:50%; margin-right:6px;"></span>'}

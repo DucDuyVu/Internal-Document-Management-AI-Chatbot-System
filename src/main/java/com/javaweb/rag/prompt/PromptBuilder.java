@@ -51,14 +51,30 @@ public class PromptBuilder {
      * không liên quan thành 1 đoạn văn liền mạch.
      */
     public String build(String question, List<SearchResult> results) {
-        String context = results.stream()
-                .map(chunkFormatter::format)
-                .collect(Collectors.joining("\n---\n"));
+        StringBuilder contextBuilder = new StringBuilder();
+        for (int i = 0; i < results.size(); i++) {
+            SearchResult r = results.get(i);
+            contextBuilder.append("[Nguồn ")
+                          .append(i)
+                          .append("] Tài liệu: ")
+                          .append(r.fileName());
+            if (r.chunk().getPageNumber() != null) {
+                contextBuilder.append(", Trang: ").append(r.chunk().getPageNumber());
+            }
+            contextBuilder.append("\n")
+                          .append(chunkFormatter.format(r))
+                          .append("\n---\n");
+        }
 
-        return "Chỉ trả lời dựa trên ngữ cảnh được cung cấp bên dưới. " +
-                "Nếu ngữ cảnh không chứa thông tin liên quan, hãy trả lời " +
-                "\"Tôi không tìm thấy thông tin này trong tài liệu.\"\n\n" +
-                "Ngữ cảnh:\n" + context +
+        return "Bạn là một trợ lý AI tận tâm. Hãy trả lời câu hỏi dựa trên các ngữ cảnh được cung cấp bên dưới.\n" +
+                "YÊU CẦU QUAN TRỌNG:\n" +
+                "1. FORMAT: Trình bày câu trả lời đẹp mắt bằng Markdown (in đậm, danh sách).\n" +
+                "2. SOFT REFUSAL: Nếu câu hỏi chỉ liên quan một phần, KHÔNG từ chối cứng nhắc. Hãy nêu rõ phần nào tài liệu không có, đồng thời chủ động cung cấp các thông tin liên quan CÓ THẬT trong ngữ cảnh để hỗ trợ người dùng.\n" +
+                "3. DENSE CITATION: BẮT BUỘC gắn thẻ trích dẫn nằm trong DẤU NGOẶC VUÔNG, ví dụ [0], [1] ngay sau MỖI CÂU hoặc MỖI SỐ LIỆU cụ thể. Tuyệt đối KHÔNG viết số trơn (như 0, 1) mà không có ngoặc vuông.\n" +
+                "4. MAPPING CHÍNH XÁC: Phải sử dụng đúng số ID của [Nguồn X] đã cho (từ 0 đến " + (results.size() - 1) + "), tuyệt đối không tự bịa số trích dẫn.\n" +
+                "5. KHÔNG tạo mục \"Nguồn tham khảo\" ở cuối câu trả lời.\n" +
+                "6. GIỚI HẠN: Trả lời đúng trọng tâm, súc tích trong khoảng 5-10 câu.\n\n" +
+                "Ngữ cảnh:\n" + contextBuilder.toString() +
                 "\n\nCâu hỏi: " + question;
     }
 }

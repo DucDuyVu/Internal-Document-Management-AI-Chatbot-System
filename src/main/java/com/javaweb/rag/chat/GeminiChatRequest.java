@@ -22,16 +22,34 @@ import java.util.List;
 public class GeminiChatRequest {
 
     private List<Content> contents;
+    private GenerationConfig generationConfig;
 
     /**
      * @param prompt chuỗi prompt hoàn chỉnh do PromptBuilder.build() tạo ra
      */
     public GeminiChatRequest(String prompt) {
         this.contents = List.of(new Content(List.of(new Content.Part(prompt))));
+        this.generationConfig = new GenerationConfig(0.1);
     }
 
     public List<Content> getContents() {
         return contents;
+    }
+
+    public GenerationConfig getGenerationConfig() {
+        return generationConfig;
+    }
+
+    public static class GenerationConfig {
+        private double temperature;
+
+        public GenerationConfig(double temperature) {
+            this.temperature = temperature;
+        }
+
+        public double getTemperature() {
+            return temperature;
+        }
     }
 
     public static class Content {

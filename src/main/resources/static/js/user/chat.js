@@ -136,7 +136,7 @@
         "/api/chat/sessions/" + sessionId + "/messages",
       );
       (messages || []).forEach(function (msg) {
-        appendMessageBubble(msg.role, msg.content, msg.createdAt);
+        appendMessageBubble(msg.role, msg.content, msg.createdAt, msg.sources || msg.fileRefs);
       });
       messageListEl.scrollTop = messageListEl.scrollHeight;
     } catch (err) {
@@ -148,17 +148,21 @@
     }
   }
 
-  function appendMessageBubble(role, content, createdAt) {
+  function appendMessageBubble(role, content, createdAt, sources) {
     const isUser = String(role).toUpperCase() === "USER";
     const wrapper = document.createElement("div");
     wrapper.className = "chat-message " + (isUser ? "user" : "assistant");
+    
+    // Parse markdown for assistant messages
+    const finalContent = isUser ? escapeHtml(content) : formatMessageContent(content, sources);
+    
     wrapper.innerHTML =
       '<div class="chat-message-avatar">' +
       (isUser ? "🧑" : "🤖") +
       "</div>" +
       '<div class="chat-message-content">' +
       '  <div class="chat-message-text">' +
-      escapeHtml(content) +
+      finalContent +
       "</div>" +
       '  <div class="chat-message-time">' +
       formatTime(createdAt) +
@@ -225,7 +229,7 @@
           question: question,
         },
       });
-      appendMessageBubble("ASSISTANT", data.answer, new Date().toISOString());
+      appendMessageBubble("ASSISTANT", data.answer, new Date().toISOString(), data.sources);
     } catch (err) {
       appendMessageBubble(
         "ASSISTANT",
@@ -286,3 +290,93 @@
   }
 
 })();
+
+// ===== NOTEBOOKLM CITATION POPOVER =====
+function initCitationPopover() {
+    if (document.getElementById('citation-popover')) return;
+    const popover = document.createElement('div');
+    popover.id = 'citation-popover';
+    popover.className = 'citation-popover';
+    popover.innerHTML = `
+        <div class='citation-popover-title'><i class='fa-solid fa-file-lines'></i> <span id='citation-popover-title-text'></span></div>
+        <div id='citation-popover-excerpt' class='citation-popover-excerpt'></div>
+    `;
+    document.body.appendChild(popover);
+}
+
+window.showCitationPopover = function(element, title, excerpt) {
+    const popover = document.getElementById('citation-popover');
+    if (!popover) return;
+    document.getElementById('citation-popover-title-text').textContent = title;
+    document.getElementById('citation-popover-excerpt').textContent = '"' + excerpt + '"';
+    
+    const rect = element.getBoundingClientRect();
+    popover.style.display = 'block';
+    const popoverHeight = popover.offsetHeight;
+    
+    popover.style.left = Math.max(10, rect.left - 130) + 'px';
+    popover.style.top = (rect.top - popoverHeight - 10) + 'px';
+    
+    if (rect.top - popoverHeight - 10 < 0) {
+        popover.style.top = (rect.bottom + 10) + 'px';
+    }
+    
+    requestAnimationFrame(() => {
+        popover.classList.add('visible');
+    });
+};
+
+window.hideCitationPopover = function() {
+    const popover = document.getElementById('citation-popover');
+    if (popover) {
+        popover.classList.remove('visible');
+        setTimeout(() => {
+            if (!popover.classList.contains('visible')) {
+                popover.style.display = 'none';
+            }
+        }, 200);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', initCitationPopover);
+
+function formatMessageContent(content, sources) {
+    if (!content) return '';
+    if (typeof marked === "undefined") {
+        return content.replace(/\*\*(.*?)\*\*/g, '<strong></strong>').replace(/\n/g, '<br>');
+    }
+    let rawHtml = marked.parse(content);
+    let cleanHtml = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['data-index', 'onmouseenter', 'onmouseleave'] });
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = cleanHtml;
+    
+    function processTextNodes(node) {
+        if (node.nodeType === 1) {
+            const tag = node.tagName.toLowerCase();
+            if (["code", "pre", "a"].includes(tag)) return;
+            Array.from(node.childNodes).forEach(processTextNodes);
+        } else if (node.nodeType === 3) {
+            if (/\[(\d+)\]/.test(node.nodeValue)) {
+                const spanWrapper = document.createElement('span');
+                const escapedText = node.nodeValue;
+                spanWrapper.innerHTML = escapedText.replace(/\[(\d+)\]/g, function(m, numStr) {
+                    const num = parseInt(numStr, 10);
+                    if (sources && sources[num]) {
+                        const source = sources[num];
+                        const title = source.fileName || "Tài liệu";
+                        const excerpt = source.excerpt || "";
+                        const t = title.replace(/'/g, "\\\'").replace(/"/g, '&quot;');
+                        const e = excerpt.replace(/'/g, "\\\'").replace(/"/g, '&quot;');
+                        return '<span class="citation-badge" data-index="' + num + '" ' +
+                            'onmouseenter="if(window.showCitationPopover) window.showCitationPopover(this, \'' + t + '\', \'' + e + '\')" ' +
+                            'onmouseleave="if(window.hideCitationPopover) window.hideCitationPopover()">' + (num + 1) + '</span>';
+                    }
+                    return m;
+                });
+                node.replaceWith(...spanWrapper.childNodes);
+            }
+        }
+    }
+    Array.from(tempDiv.childNodes).forEach(processTextNodes);
+    return tempDiv.innerHTML;
+}

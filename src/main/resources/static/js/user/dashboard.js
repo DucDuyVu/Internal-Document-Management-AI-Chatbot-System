@@ -119,6 +119,8 @@ function setupUserSidebar() {
 }
 
 function setupUserEventListeners() {
+    if (typeof initCitationPopover === 'function') initCitationPopover();
+    if (typeof initCitationPopover === 'function') initCitationPopover();
     // Document search
     const docSearch = document.getElementById('docSearchInput');
     if (docSearch && typeof debounce !== 'undefined') {
@@ -126,10 +128,16 @@ function setupUserEventListeners() {
     }
 
     // Document filters
-    ['docTypeFilter', 'docSortFilter'].forEach(id => {
+    ['docTypeFilter', 'docSortFilter', 'docDeptFilter', 'docStartDateFilter', 'docEndDateFilter'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', filterUserDocuments);
     });
+
+    // Pagination buttons
+    const prevBtn = document.getElementById('prevDocPage');
+    const nextBtn = document.getElementById('nextDocPage');
+    if (prevBtn) prevBtn.addEventListener('click', () => { if (UserState.documents.page > 1) { UserState.documents.page--; renderUserDocuments(); } });
+    if (nextBtn) nextBtn.addEventListener('click', () => { const maxPage = Math.ceil(UserState.documents.filtered.length / UserState.documents.pageSize); if (UserState.documents.page < maxPage) { UserState.documents.page++; renderUserDocuments(); } });
 
     // Upload Document
     const uploadInput = document.getElementById('uploadDocInput');
@@ -149,7 +157,25 @@ function setupUserEventListeners() {
     // Global search
     const globalSearch = document.getElementById('globalSearchInput');
     if (globalSearch && typeof debounce !== 'undefined') {
-        globalSearch.addEventListener('input', debounce(performSearch, 500));
+        globalSearch.addEventListener('input', debounce(() => {
+            const dropdown = document.getElementById('globalSearchDropdown');
+            if (globalSearch.value.trim().length >= 2) {
+                if (dropdown) dropdown.style.display = 'block';
+                performSearch();
+            } else {
+                if (dropdown) dropdown.style.display = 'none';
+                const res = document.getElementById('globalSearchResults');
+                if (res) res.innerHTML = '';
+            }
+        }, 500));
+        
+        // Hide dropdown when click outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.topbar-search')) {
+                const dropdown = document.getElementById('globalSearchDropdown');
+                if (dropdown) dropdown.style.display = 'none';
+            }
+        });
     }
 
     // Logout
@@ -181,6 +207,7 @@ function loadUserTabData(tabId) {
             break;
         case 'tabDocuments':
             loadUserDocuments();
+            loadSearchFilters();
             break;
         case 'tabChat':
             loadChatSessions();
@@ -326,13 +353,16 @@ async function loadUserDocuments() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/documents?page=${UserState.documents.page - 1}&size=${UserState.documents.pageSize}`);
+        // Tải toàn bộ danh sách (ví dụ 5000) để Frontend tự xử lý phân trang và lọc
+        const response = await apiRequest(`/api/documents?page=0&size=5000`);
 
         UserState.documents.data = response.content || response;
-        UserState.documents.total = response.totalElements || response.length;
         UserState.documents.filtered = [...UserState.documents.data];
-
-        renderUserDocuments();
+        
+        // Reset về trang 1 mỗi lần tải mới
+        UserState.documents.page = 1;
+        
+        filterUserDocuments();
 
     } catch (error) {
         console.error('Error loading documents:', error);
@@ -343,7 +373,23 @@ async function loadUserDocuments() {
 }
 
 function renderUserDocuments() {
-    const docs = UserState.documents.filtered;
+    const allDocs = UserState.documents.filtered;
+    const page = UserState.documents.page || 1;
+    const pageSize = UserState.documents.pageSize || 20;
+    
+    // Tính tổng số trang và slice
+    const totalItems = allDocs.length;
+    const maxPage = Math.ceil(totalItems / pageSize) || 1;
+    
+    // Nếu page hiện tại lớn hơn maxPage (do lọc), reset về 1
+    if (page > maxPage) {
+        UserState.documents.page = 1;
+    }
+    
+    const startIndex = (UserState.documents.page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const docs = allDocs.slice(startIndex, endIndex);
+
     const currentUser = JSON.parse(localStorage.getItem('user'));
 
     const canManagePerms = (doc) => {
@@ -352,12 +398,20 @@ function renderUserDocuments() {
         return currentUser.role === 'ADMIN' || (currentUser.role === 'MANAGER' && doc.departmentId && currentUser.departmentId && Number(doc.departmentId) === Number(currentUser.departmentId));
     };
 
+    // Cập nhật phân trang UI
+    const prevBtn = document.getElementById('prevDocPage');
+    const nextBtn = document.getElementById('nextDocPage');
+    const pageInfo = document.getElementById('pageInfo');
+    if (prevBtn) prevBtn.disabled = UserState.documents.page <= 1;
+    if (nextBtn) nextBtn.disabled = UserState.documents.page >= maxPage;
+    if (pageInfo) pageInfo.textContent = `Trang ${UserState.documents.page} / ${maxPage}`;
+
     // Update Summary Bar
     const totalCountEl = document.getElementById('docTotalCount');
     const failedCountEl = document.getElementById('docFailedCount');
-    if (totalCountEl) totalCountEl.textContent = UserState.documents.total || docs.length;
+    if (totalCountEl) totalCountEl.textContent = totalItems;
     if (failedCountEl) {
-        const failedDocs = docs.filter(d => d.status === 'FAILED');
+        const failedDocs = allDocs.filter(d => d.status === 'FAILED');
         failedCountEl.textContent = failedDocs.length;
     }
 
@@ -502,7 +556,7 @@ function renderUserDocuments() {
     }
 
     if (typeof updatePagination !== 'undefined') {
-        updatePagination('docPagination', UserState.documents.page, Math.ceil(UserState.documents.total / UserState.documents.pageSize));
+        
     }
 }
 
@@ -514,6 +568,9 @@ function filterUserDocuments() {
     const typeFilter = activePill ? activePill.getAttribute('data-filter') : '';
     
     const sortFilter = document.getElementById('docSortFilter')?.value || 'newest';
+    const deptFilter = document.getElementById('docDeptFilter')?.value || '';
+    const startDateFilter = document.getElementById('docStartDateFilter')?.value || '';
+    const endDateFilter = document.getElementById('docEndDateFilter')?.value || '';
 
     UserState.documents.filtered = UserState.documents.data.filter(doc => {
         const matchesSearch = !searchTerm || 
@@ -533,7 +590,28 @@ function filterUserDocuments() {
             }
             matchesType = (combinedStatus === typeFilter);
         }
-        return matchesSearch && matchesType;
+
+        let matchesDept = true;
+        if (deptFilter) {
+            matchesDept = (doc.departmentId && String(doc.departmentId) === String(deptFilter));
+        }
+
+        let matchesDate = true;
+        if (startDateFilter || endDateFilter) {
+            const docDate = new Date(doc.createdAt);
+            if (startDateFilter) {
+                const start = new Date(startDateFilter);
+                start.setHours(0, 0, 0, 0);
+                if (docDate < start) matchesDate = false;
+            }
+            if (endDateFilter) {
+                const end = new Date(endDateFilter);
+                end.setHours(23, 59, 59, 999);
+                if (docDate > end) matchesDate = false;
+            }
+        }
+
+        return matchesSearch && matchesType && matchesDept && matchesDate;
     });
 
     // Sort
@@ -551,6 +629,9 @@ function filterUserDocuments() {
             UserState.documents.filtered.sort((a, b) => (b.fileSize || 0) - (a.fileSize || 0));
             break;
     }
+
+    // Always go back to page 1 after filtering
+    UserState.documents.page = 1;
 
     renderUserDocuments();
 }
@@ -639,13 +720,16 @@ async function viewUserDocument(docId) {
         if (titleEl) titleEl.textContent = doc.fileName;
         if (contentEl) {
             contentEl.innerHTML = `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
                     <div><strong>Tên file:</strong> ${doc.fileName}</div>
                     <div><strong>Loại:</strong> ${doc.fileType?.toUpperCase()}</div>
                     <div><strong>Kích thước:</strong> ${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</div>
-                    <div><strong>Phòng ban:</strong> ${doc.departmentName || '—'}</div>
+                    <div><strong>Phòng ban:</strong> ${doc.departmentName || 'Chung'}</div>
                     <div><strong>Ngày upload:</strong> ${typeof formatDate !== 'undefined' ? formatDate(doc.createdAt) : doc.createdAt}</div>
                     <div><strong>Phiên bản:</strong> ${doc.version || 1}</div>
+                </div>
+                <div id="docViewerIframeContainer" style="height:500px;width:100%;border:1px solid #e5e7eb;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#f9fafb;">
+                    <span>Đang tải nội dung tài liệu... <i class="fa-solid fa-spinner fa-spin"></i></span>
                 </div>
             `;
         }
@@ -670,6 +754,32 @@ async function viewUserDocument(docId) {
 
         if (typeof openModal !== 'undefined') {
             openModal('docViewerModal');
+        }
+
+        // Fetch document content as blob for viewing
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('access_token');
+        if (token) {
+            fetch(`${typeof API_BASE !== 'undefined' ? API_BASE : ''}/api/documents/${docId}/view`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Cannot load document view');
+                return res.blob();
+            })
+            .then(blob => {
+                const objectUrl = URL.createObjectURL(blob);
+                const iframeContainer = document.getElementById('docViewerIframeContainer');
+                if (iframeContainer) {
+                    iframeContainer.innerHTML = `<iframe src="${objectUrl}" style="width:100%;height:100%;border:none;border-radius:8px;"></iframe>`;
+                }
+            })
+            .catch(err => {
+                console.error('Error loading doc view:', err);
+                const iframeContainer = document.getElementById('docViewerIframeContainer');
+                if (iframeContainer) {
+                    iframeContainer.innerHTML = `<span style="color:var(--error);">Không thể hiển thị tài liệu này trực tiếp. Vui lòng tải về để xem.</span>`;
+                }
+            });
         }
 
     } catch (error) {
@@ -735,7 +845,7 @@ function renderChatSessionList() {
         <div class="chat-session-item ${session.id === UserState.chat.currentSessionId ? 'active' : ''}"
              onclick="openChatSession(${session.id})">
             <div class="chat-session-title">${session.title || 'Cuộc hội thoại mới'}</div>
-            <div class="chat-session-meta">${session.messageCount || 0} tin nhắn · ${typeof formatDate !== 'undefined' ? formatDate(session.updatedAt) : session.updatedAt}</div>
+            <div class="chat-session-meta">${typeof formatDate !== 'undefined' ? formatDate(session.updatedAt) : session.updatedAt}</div>
         </div>
     `).join('');
 }
@@ -769,6 +879,13 @@ async function openChatSession(sessionId) {
         }
 
         const messages = await apiRequest(`/api/user/chat-sessions/${sessionId}/messages`);
+        
+        const sessionMeta = UserState.chat.sessions.find(s => s.id === sessionId);
+        const session = {
+            title: sessionMeta ? sessionMeta.title : 'Cuộc hội thoại',
+            messageCount: messages ? messages.length : 0
+        };
+        
         const sessionInfo = UserState.chat.sessions.find(s => s.id === sessionId) || {};
 
         UserState.chat.currentSessionId = sessionId;
@@ -806,49 +923,79 @@ function renderChatMessages() {
         return;
     }
 
-    container.innerHTML = messages.map(msg => `
+    container.innerHTML = messages.map(msg => {
+        const refs = msg.fileRefs || msg.sources;
+        return `
         <div class="chat-message ${msg.role === 'USER' ? 'user' : 'assistant'}">
             <div class="chat-message-avatar">
                 ${msg.role === 'USER' ? '👤' : '🤖'}
             </div>
             <div class="chat-message-content">
-                <div class="chat-message-text">${formatMessageContent(msg.content)}</div>
-                ${msg.fileRefs ? renderFileRefs(msg.fileRefs) : ''}
+                <div class="chat-message-text">${formatMessageContent(msg.content, refs)}</div>
                 <div class="chat-message-time">${typeof formatDate !== 'undefined' ? formatDate(msg.createdAt) : msg.createdAt}</div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
+    
+    // Trigger notebook-style popover init if function exists
+    if (typeof initNotebookPopover === 'function') initNotebookPopover();
 }
 
-function formatMessageContent(content) {
+function formatMessageContent(content, sources) {
     if (!content) return '';
-    // Convert markdown-like syntax
-    return content
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        .replace(/`(.*?)`/g, '<code>$1</code>')
-        .replace(/\n/g, '<br>');
+    if (typeof marked === "undefined") {
+        return content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
+    
+    let rawHtml = marked.parse(content);
+    let cleanHtml = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['data-index'] });
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = cleanHtml;
+    
+    function processTextNodes(node) {
+        if (node.nodeType === 1) { // Element
+            const tag = node.tagName.toLowerCase();
+            if (["code", "pre", "a"].includes(tag)) return;
+            Array.from(node.childNodes).forEach(processTextNodes);
+        } else if (node.nodeType === 3) { // Text
+            if (/\[(\d+)\]/.test(node.nodeValue)) {
+                const spanWrapper = document.createElement('span');
+                const escapedText = node.nodeValue; 
+                
+                spanWrapper.innerHTML = escapedText.replace(/\[(\d+)\]/g, function(m, numStr) {
+                    const num = parseInt(numStr, 10);
+                    if (sources && sources[num]) {
+                        const source = sources[num];
+                        const title = source.fileName || "Tài liệu";
+                        const excerpt = source.excerpt || "";
+                        const t = title.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ').replace(/\r/g, '');
+                        const e = excerpt.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ').replace(/\r/g, '');
+                        const docId = source.documentId || '';
+                        const p = source.pageNumber || '';
+                        return '<span class="citation-badge" data-index="' + num + '" ' +
+                            'onmouseenter="showCitationPopover(this, \'' + t + '\', \'' + e + '\', \'' + docId + '\', \'' + p + '\')" ' +
+                            'onmouseleave="hideCitationPopover()">' + (num + 1) + '</span>';
+                    }
+                    return m;
+                });
+                node.replaceWith(...spanWrapper.childNodes);
+            }
+        }
+    }
+    Array.from(tempDiv.childNodes).forEach(processTextNodes);
+    return tempDiv.innerHTML;
 }
 
-function renderFileRefs(refs) {
-    if (!refs || refs.length === 0) return '';
 
-    return `
-        <div class="chat-file-refs">
-            <div style="font-size:0.78rem;font-weight:600;color:#4f46e5;margin-bottom:4px;">📚 Nguồn tham khảo:</div>
-            ${refs.map(ref => `
-                <div class="chat-file-ref" onclick="viewUserDocument(${ref.documentId})" style="cursor:pointer;">
-                    📄 ${ref.documentName || 'Tài liệu'} - Trang ${ref.pageNumber || '—'}
-                    ${ref.excerpt ? `<div style="font-size:0.72rem;color:#6b7280;margin-top:2px;">"${ref.excerpt.substring(0, 100)}..."</div>` : ''}
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
 
 async function sendChatMessage() {
     const input = document.getElementById('chatInput');
@@ -891,19 +1038,19 @@ async function sendChatMessage() {
             await loadChatSessions();
         }
 
-        // Send message - SỬA LẠI: trỏ đúng API của ChatController
+        // Send message
         const response = await apiRequest(`/api/chat/ask`, {
             method: 'POST',
-            body: {
+            body: JSON.stringify({
                 sessionId: UserState.chat.currentSessionId,
                 question: message
-            }
+            })
         });
 
         // Remove loading
         removeLoadingMessage(loadingMsg);
 
-        // Add AI response - SỬA LẠI: map đúng trường trả về từ ChatAnswerResponse (answer, sources)
+        // Add AI response
         const aiMessage = {
             role: 'ASSISTANT',
             content: response.answer,
@@ -1105,26 +1252,53 @@ async function loadSearchFilters() {
 
         const departments = await apiRequest('/api/user/departments');
         const select = document.getElementById('searchDeptFilter');
+        const docSelect = document.getElementById('docDeptFilter');
 
-        if (!select) return;
-
-        select.innerHTML = '<option value="">Tất cả phòng ban</option>';
-        departments.forEach(dept => {
-            const option = document.createElement('option');
-            option.value = dept.id;
-            option.textContent = dept.name;
-            select.appendChild(option);
-        });
+        if (select) {
+            select.innerHTML = '<option value="">Tất cả phòng ban</option>';
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                select.appendChild(option);
+            });
+        }
+        
+        if (docSelect) {
+            docSelect.innerHTML = '<option value="">Tất cả phòng ban</option>';
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.name;
+                docSelect.appendChild(option);
+            });
+        }
 
     } catch (error) {
         console.error('Error loading search filters:', error);
     }
 }
 
+function removeAccents(str) {
+    if (!str) return '';
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 async function performSearch() {
-    const query = document.getElementById('globalSearchInput')?.value?.trim();
+    const dropdown = document.getElementById('globalSearchDropdown');
+    const isGlobal = dropdown && dropdown.style.display !== 'none';
+    
+    let query = '';
+    if (isGlobal) {
+        query = document.getElementById('globalSearchInput')?.value?.trim();
+    } else {
+        query = document.getElementById('tabSearchInput')?.value?.trim();
+    }
+
+    const searchTabContainer = document.getElementById('searchResults');
+    const container = isGlobal ? document.getElementById('globalSearchResults') : searchTabContainer;
+
     if (!query || query.length < 2) {
-        const container = document.getElementById('searchResults');
         if (container) {
             container.innerHTML = `
                 <div class="search-hint">
@@ -1142,20 +1316,50 @@ async function performSearch() {
     UserState.search.loading = true;
 
     try {
-        if (typeof apiRequest === 'undefined') {
-            throw new Error('apiRequest() không tồn tại');
+        if (!UserState.documents.data || !Array.isArray(UserState.documents.data) || UserState.documents.data.length === 0) {
+            if (typeof apiRequest !== 'undefined') {
+                const response = await apiRequest(`/api/documents?page=0&size=5000`);
+                UserState.documents.data = Array.isArray(response) ? response : (response.content || []);
+            }
         }
 
-        const results = await apiRequest('/api/user/search', {
-            method: 'POST',
-            body: JSON.stringify({
-                query,
-                departmentId: deptFilter || null,
-                fileType: typeFilter || null
-            })
+        const dataArray = Array.isArray(UserState.documents.data) ? UserState.documents.data : [];
+        const normQuery = query ? removeAccents(query) : '';
+
+        const filtered = dataArray.filter(doc => {
+            if (!doc) return false;
+            const name = removeAccents(String(doc.fileName || doc.title || ''));
+            const content = removeAccents(String(doc.content || doc.aiSummary || ''));
+            
+            let matchesQ = true;
+            if (normQuery.length > 0) {
+                matchesQ = name.includes(normQuery) || content.includes(normQuery);
+            }
+            
+            let matchesD = true;
+            if (deptFilter) {
+                matchesD = String(doc.departmentId) === String(deptFilter);
+            }
+            
+            let matchesT = true;
+            if (typeFilter) {
+                matchesT = String(doc.fileType).toLowerCase().includes(typeFilter.toLowerCase());
+            }
+            
+            return matchesQ && matchesD && matchesT;
         });
 
-        UserState.search.results = results || [];
+        UserState.search.results = filtered.map(doc => ({
+            documentId: doc.id || Math.random(),
+            fileName: doc.fileName || doc.title || 'Tài liệu không tên',
+            fileType: doc.fileType || 'unknown',
+            departmentName: doc.departmentName || 'Chung',
+            createdAt: doc.createdAt || new Date().toISOString(),
+            excerpt: doc.aiSummary ? String(doc.aiSummary).substring(0, 200) + '...' : 'Không có nội dung trích xuất',
+            score: 1.0,
+            pageNumber: 1
+        }));
+
         renderSearchResults();
 
     } catch (error) {
@@ -1169,7 +1373,7 @@ async function performSearch() {
 }
 
 function renderSearchResults() {
-    const container = document.getElementById('searchResults');
+    const container = document.getElementById('globalSearchDropdown') && document.getElementById('globalSearchDropdown').style.display !== 'none' ? document.getElementById('globalSearchResults') : document.getElementById('searchResults');
     if (!container) return;
 
     const results = UserState.search.results;
@@ -1934,6 +2138,90 @@ async function revokeDocumentPermission(deptId) {
         showToast(error.message || 'Có lỗi xảy ra khi thu hồi', 'error');
     }
 }
+
+// ===== NOTEBOOKLM CITATION POPOVER =====
+function initCitationPopover() {
+    if (document.getElementById('citation-popover')) return;
+    const popover = document.createElement('div');
+    popover.id = 'citation-popover';
+    popover.className = 'citation-popover';
+    
+    popover.onmouseenter = function() {
+        this.classList.add('visible');
+    };
+    popover.onmouseleave = function() {
+        hideCitationPopover();
+    };
+
+    popover.innerHTML = `
+        <div class='citation-popover-title'><i class='fa-solid fa-file-lines'></i> <span id='citation-popover-title-text'></span></div>
+        <div id='citation-popover-excerpt' class='citation-popover-excerpt'></div>
+        <div style="margin-top: 10px; text-align: right;">
+            <button id="citation-popover-link" class="btn-primary-sm" style="font-size: 0.75rem; padding: 4px 8px; display: none;"><i class="fa-solid fa-book-open"></i> Xem tài liệu gốc</button>
+        </div>
+    `;
+    document.body.appendChild(popover);
+}
+
+window.showCitationPopover = function(element, title, excerpt, docId, pageNumber) {
+    const popover = document.getElementById('citation-popover');
+    if (!popover) return;
+    
+    let displayTitle = title;
+    if (pageNumber && pageNumber !== 'null' && pageNumber !== '') {
+        displayTitle += ` (Trang ${pageNumber})`;
+    }
+    
+    document.getElementById('citation-popover-title-text').textContent = displayTitle;
+    document.getElementById('citation-popover-excerpt').textContent = '"' + excerpt + '"';
+    
+    const linkBtn = document.getElementById('citation-popover-link');
+    if (linkBtn) {
+        if (docId) {
+            linkBtn.style.display = 'inline-block';
+            linkBtn.onclick = function() {
+                const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+                
+                // User will scroll manually based on the page number shown in the popover title
+                window.open('/api/documents/' + docId + '/view?token=' + token, '_blank');
+            };
+        } else {
+            linkBtn.style.display = 'none';
+        }
+    }
+    
+    // Position it
+    const rect = element.getBoundingClientRect();
+    popover.style.display = 'block';
+    const popoverHeight = popover.offsetHeight;
+    
+    popover.style.left = Math.max(10, rect.left - 130) + 'px';
+    popover.style.top = (rect.top - popoverHeight - 10) + 'px';
+    
+    // If it goes off top, show below
+    if (rect.top - popoverHeight - 10 < 0) {
+        popover.style.top = (rect.bottom + 10) + 'px';
+    }
+    
+    requestAnimationFrame(() => {
+        popover.classList.add('visible');
+    });
+};
+
+window.hideCitationPopover = function() {
+    const popover = document.getElementById('citation-popover');
+    if (popover) {
+        popover.classList.remove('visible');
+        setTimeout(() => {
+            if (!popover.classList.contains('visible')) {
+                popover.style.display = 'none';
+            }
+        }, 300);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', initCitationPopover);
+
 
 // --- Xử lý sự kiện Upload Modal (Tài liệu của tôi) ---
 let selectedUploadFile = null;

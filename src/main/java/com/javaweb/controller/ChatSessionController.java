@@ -147,20 +147,17 @@ public class ChatSessionController {
     }
 
     /**
-     * Đổi tên chat session của user đang đăng nhập.
-     *
-     * Được gọi từ: PUT /api/user/chat-sessions/{id}
+     * Đổi tên 1 chat session.
      */
-    @PutMapping({"/sessions/{id}", "/chat-sessions/{id}"})
+    @org.springframework.web.bind.annotation.PutMapping({"/sessions/{id}", "/chat-sessions/{id}"})
     public ResponseEntity<ChatSessionResponse> renameSession(
             @PathVariable Long id,
-            @RequestBody(required = false) ChatSessionRequest request) {
+            @RequestBody ChatSessionRequest request) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UsersEntity currentUser = getCurrentUser(authentication);
 
-        String newTitle = (request != null) ? request.getTitle() : null;
-        ChatSessionResponse response = chatSessionService.renameSession(id, newTitle, currentUser);
+        ChatSessionResponse response = chatSessionService.renameSession(id, request, currentUser);
 
         return ResponseEntity.ok(response);
     }

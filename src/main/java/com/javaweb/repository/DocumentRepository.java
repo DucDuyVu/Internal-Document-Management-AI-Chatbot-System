@@ -118,4 +118,10 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
         * có phân trang và sắp xếp theo thời gian tạo mới nhất.
         */
        List<DocumentEntity> findByUploadedByAndDeletedAtIsNullOrderByCreatedAtDesc(Long uploadedBy, Pageable pageable);
+
+       List<DocumentEntity> findByStatus(DocumentStatus status);
+       List<DocumentEntity> findByStatusAndApprovalStatus(DocumentStatus status, ApprovalStatus approvalStatus);
+
+       List<DocumentEntity> findByStatusAndUpdatedAtBefore(DocumentStatus status, java.time.LocalDateTime dateTime);
+       List<DocumentEntity> findByStatusAndApprovalStatusAndUpdatedAtBefore(DocumentStatus status, ApprovalStatus approvalStatus, java.time.LocalDateTime dateTime);
 }

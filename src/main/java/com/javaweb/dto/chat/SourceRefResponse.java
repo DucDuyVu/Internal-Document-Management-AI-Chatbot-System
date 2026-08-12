@@ -16,5 +16,5 @@ package com.javaweb.dto.chat;
  * @param excerpt    đoạn trích đã cắt sẵn (đã lưu trong message_file_refs,
  *                   không cắt lại ở đây)
  */
-public record SourceRefResponse(Long documentId, String fileName, Long chunkId, String excerpt) {
+public record SourceRefResponse(Long documentId, String fileName, Long chunkId, String excerpt, Integer pageNumber) {
 }

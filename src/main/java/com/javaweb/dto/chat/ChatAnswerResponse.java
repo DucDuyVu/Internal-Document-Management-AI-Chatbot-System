@@ -23,5 +23,5 @@ import java.util.List;
  *                 càng tốt", trong khi thực tế ở đây NHỎ mới là tốt. 0.0
  *                 nếu không có nguồn nào (trường hợp "không tìm thấy").
  */
-public record ChatAnswerResponse(String answer, List<SourceInfo> sources, double distance) {
+public record ChatAnswerResponse(String answer, List<SourceRefResponse> sources, double distance) {
 }

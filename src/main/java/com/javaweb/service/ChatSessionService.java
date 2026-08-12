@@ -6,6 +6,10 @@ import com.javaweb.dto.chat.ChatSessionRequest;
 import com.javaweb.dto.chat.ChatSessionResponse;
 import com.javaweb.entity.UsersEntity;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import com.javaweb.dto.chat.AdminChatSessionResponse;
 public interface ChatSessionService {
     /**
      * Tạo chat session mới cho user đang đăng nhập.
@@ -55,5 +59,17 @@ public interface ChatSessionService {
      */
     void deleteSession(Long sessionId, UsersEntity currentUser);
 
-    org.springframework.data.domain.Page<com.javaweb.dto.chat.AdminChatSessionResponse> getAllSessionsForAdmin(org.springframework.data.domain.Pageable pageable);
+   /**
+ * Đổi tên chat session.
+ */
+ChatSessionResponse renameSession(
+        Long sessionId,
+        ChatSessionRequest request,
+        UsersEntity currentUser
+);
+
+/**
+ * Lấy tất cả chat session cho admin.
+ */
+Page<AdminChatSessionResponse> getAllSessionsForAdmin(Pageable pageable);
 }

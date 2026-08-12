@@ -72,7 +72,7 @@ public interface ChatMessageService {
      * DocumentChunkEntity thật từ DB (không chỉ dùng id) để lấy được
      * content làm excerpt — SourceInfo không mang theo nội dung text.
      */
-    ChatMessageEntity saveAssistantMessage(ChatSessionsEntity session, String answer, List<SourceInfo> sources);
+    ChatMessageEntity saveAssistantMessage(ChatSessionsEntity session, String answer, List<com.javaweb.dto.chat.SourceRefResponse> sources);
 
     /**
      * Lấy toàn bộ lịch sử tin nhắn của 1 session, kèm nguồn trích dẫn.

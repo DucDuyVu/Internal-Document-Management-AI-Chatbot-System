@@ -98,6 +98,7 @@ public class ManagerDocumentController {
 
         // Đổi trạng thái và lưu
         document.setApprovalStatus(ApprovalStatus.APPROVED);
+        document.setStatus(DocumentStatus.PROCESSING);
         documentRepository.save(document);
 
         // CHÍNH THỨC GỌI AI XỬ LÝ (CHẠY NỀN)
@@ -160,7 +161,7 @@ public class ManagerDocumentController {
         }
 
         // Khôi phục trạng thái
-        document.setStatus(DocumentStatus.PENDING);
+        document.setStatus(DocumentStatus.PROCESSING);
         document.setErrorMessage(null);
         documentRepository.save(document);
 

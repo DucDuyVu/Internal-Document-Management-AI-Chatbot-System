@@ -15,7 +15,14 @@ import com.javaweb.service.ChatSessionService;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import com.javaweb.dto.chat.AdminChatSessionResponse;
+import java.time.LocalDateTime;
+
+import com.javaweb.dto.chat.ChatSessionResponse;
+import com.javaweb.entity.ChatSessionsEntity;
 /**
  * ChatSessionServiceImpl — Triển khai ChatSessionService, chứa toàn bộ
  * business logic liên quan đến quản lý chat session.
@@ -133,54 +140,71 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     }
 
     @Override
-    public ChatSessionResponse renameSession(Long sessionId, String newTitle, UsersEntity currentUser) {
+    public ChatSessionResponse renameSession(Long sessionId, ChatSessionRequest request, UsersEntity currentUser) {
+
         ChatSessionsEntity session = chatSessionsRepository.findById(sessionId)
-                .orElseThrow(() -> new BadRequestException("Chat session không tồn tại hoặc bạn không có quyền truy cập"));
+                .orElseThrow(() -> new BadRequestException(
+                        "Chat session không tồn tại hoặc bạn không có quyền truy cập"));
 
         if (!session.getUserChatId().getId().equals(currentUser.getId())) {
-            throw new BadRequestException("Chat session không tồn tại hoặc bạn không có quyền truy cập");
+            throw new BadRequestException(
+                    "Chat session không tồn tại hoặc bạn không có quyền truy cập");
         }
 
         if (session.getDeletedAt() != null) {
             throw new BadRequestException("Chat session này đã bị xóa trước đó");
         }
+String title = (newTitle == null || newTitle.trim().isEmpty())
+        ? "Cuộc trò chuyện mới"
+        : newTitle.trim();
 
-        String title = (newTitle == null || newTitle.trim().isEmpty()) ? "Cuộc trò chuyện mới" : newTitle.trim();
-        session.setTitle(title);
-        session.setUpdatedAt(LocalDateTime.now());
-        
-        ChatSessionsEntity saved = chatSessionsRepository.save(session);
-        return mapToResponse(saved);
-    }
+session.setTitle(title);
+session.setUpdatedAt(LocalDateTime.now());
 
-    private ChatSessionResponse mapToResponse(ChatSessionsEntity entity) {
-        return new ChatSessionResponse(
+ChatSessionsEntity saved = chatSessionsRepository.save(session);
+return mapToResponse(saved);
+}
+
+private ChatSessionResponse mapToResponse(ChatSessionsEntity entity) {
+    return new ChatSessionResponse(
             entity.getId(),
             entity.getTitle(),
             entity.getCreatedAt(),
             entity.getUpdatedAt()
-        );
-    }
+    );
+}
 
-    @Override
-    public org.springframework.data.domain.Page<com.javaweb.dto.chat.AdminChatSessionResponse> getAllSessionsForAdmin(org.springframework.data.domain.Pageable pageable) {
-        return chatSessionsRepository.findAll(pageable).map(session -> {
-            com.javaweb.dto.chat.AdminChatSessionResponse response = new com.javaweb.dto.chat.AdminChatSessionResponse();
-            response.setId(session.getId());
-            response.setTitle(session.getTitle());
-            response.setCreatedAt(session.getCreatedAt());
-            response.setUpdatedAt(session.getUpdatedAt());
-            if (session.getUserChatId() != null) {
-                response.setUserName(session.getUserChatId().getFullName() != null ? session.getUserChatId().getFullName() : session.getUserChatId().getUserName());
-            }
-            if (session.getChatMessageEntities() != null) {
-                response.setMessageCount((long) session.getChatMessageEntities().size());
-            } else {
-                response.setMessageCount(0L);
-            }
-            return response;
-        });
-    }
+@Override
+public Page<AdminChatSessionResponse> getAllSessionsForAdmin(Pageable pageable) {
+    return chatSessionsRepository.findAll(pageable).map(session -> {
+
+        AdminChatSessionResponse response = new AdminChatSessionResponse();
+
+        response.setId(session.getId());
+        response.setTitle(session.getTitle());
+        response.setCreatedAt(session.getCreatedAt());
+        response.setUpdatedAt(session.getUpdatedAt());
+
+        if (session.getUserChatId() != null) {
+            response.setUserName(
+                    session.getUserChatId().getFullName() != null
+                            ? session.getUserChatId().getFullName()
+                            : session.getUserChatId().getUserName()
+            );
+        }
+
+        if (session.getChatMessageEntities() != null) {
+            response.setMessageCount(
+                    (long) session.getChatMessageEntities().size()
+            );
+        } else {
+            response.setMessageCount(0L);
+        }
+
+        return response;
+    });
+}
+
 }
 
 /*

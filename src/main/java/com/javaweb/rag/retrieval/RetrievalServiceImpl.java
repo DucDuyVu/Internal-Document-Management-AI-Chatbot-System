@@ -1,16 +1,19 @@
 package com.javaweb.rag.retrieval;
 
 import com.javaweb.dto.chat.ChatAnswerResponse;
-import com.javaweb.dto.chat.SourceInfo;
+import com.javaweb.dto.chat.SourceRefResponse;
 import com.javaweb.rag.chat.GeminiChatService;
 import com.javaweb.rag.embedding.EmbeddingService;
 import com.javaweb.rag.prompt.PromptBuilder;
 import com.javaweb.repository.DocumentChunkRepository;
+import com.javaweb.repository.DocumentRepository;
 import com.javaweb.utils.VectorUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * RetrievalServiceImpl — điều phối toàn bộ 4 phase của Query Pipeline:
@@ -39,6 +42,7 @@ public class RetrievalServiceImpl implements RetrievalService {
 
     private final EmbeddingService embeddingService;
     private final DocumentChunkRepository chunkRepository;
+    private final DocumentRepository documentRepository;
     private final PromptBuilder promptBuilder;
     private final GeminiChatService chatService;
 
@@ -59,10 +63,12 @@ public class RetrievalServiceImpl implements RetrievalService {
 
     public RetrievalServiceImpl(EmbeddingService embeddingService,
                                  DocumentChunkRepository chunkRepository,
+                                 DocumentRepository documentRepository,
                                  PromptBuilder promptBuilder,
                                  GeminiChatService chatService) {
         this.embeddingService = embeddingService;
         this.chunkRepository = chunkRepository;
+        this.documentRepository = documentRepository;
         this.promptBuilder = promptBuilder;
         this.chatService = chatService;
     }
@@ -84,11 +90,17 @@ public class RetrievalServiceImpl implements RetrievalService {
         String embeddingText = VectorUtils.toPgVectorString(queryEmbedding);
         List<SearchResult> results = chunkRepository.searchSimilarChunks(embeddingText, departmentId, topK);
 
-        // ===== Phase 2: So ngưỡng threshold =====
-        // Không gọi Gemini nếu không có chunk nào đủ liên quan, tránh tốn
-        // quota API cho những câu hỏi chắc chắn sẽ trả lời sai/bịa.
-        boolean noRelevantInfo = results.isEmpty() || results.get(0).similarity() > threshold;
-        if (noRelevantInfo) {
+        // ===== Phase 2: Lọc các chunk bằng threshold =====
+        System.out.println("====== ĐO ĐẠC DISTANCE TỪNG CHUNK ======");
+        for (SearchResult r : results) {
+            System.out.println("File: " + r.fileName() + ", Chunk: " + r.chunk().getChunkIndex() + ", Distance: " + r.distance());
+        }
+        System.out.println("==========================================");
+
+        // Loại bỏ mọi chunk có khoảng cách (distance) lớn hơn threshold
+        results.removeIf(r -> r.distance() > threshold);
+
+        if (results.isEmpty()) {
             return new ChatAnswerResponse(NO_RELEVANT_INFO_MESSAGE, List.of(), 0.0);
         }
 
@@ -98,14 +110,87 @@ public class RetrievalServiceImpl implements RetrievalService {
         // ===== Phase 4: Gọi Gemini sinh câu trả lời =====
         String answer = chatService.generateAnswer(prompt);
 
-        List<SourceInfo> sources = results.stream()
-                .map(r -> new SourceInfo(r.chunk().getDocumentId(), r.chunk().getId(), r.similarity()))
-                .toList();
+        // ===== Phase 4.5: Validate & Remap Citation Number =====
+        Pattern pattern = Pattern.compile("\\[(\\d+)\\]");
+        Matcher matcher = pattern.matcher(answer);
+        
+        // Pass 1: Thu thập tất cả các index hợp lệ
+        java.util.List<Integer> citedOriginalIndices = new java.util.ArrayList<>();
+        while (matcher.find()) {
+            try {
+                int citationIndex = Integer.parseInt(matcher.group(1));
+                if (citationIndex < results.size() && !citedOriginalIndices.contains(citationIndex)) {
+                    citedOriginalIndices.add(citationIndex);
+                }
+            } catch (NumberFormatException e) {
+                // Bỏ qua
+            }
+        }
+        
+        // Sort lại để giữ nguyên thứ tự chunk từ cao -> thấp
+        java.util.Collections.sort(citedOriginalIndices);
+        
+        // Lấy tên file một lần (tránh N+1 queries)
+        java.util.Set<Long> docIds = new java.util.HashSet<>();
+        for (int idx : citedOriginalIndices) {
+            docIds.add(results.get(idx).chunk().getDocumentId());
+        }
+        java.util.Map<Long, String> docIdToFileName = new java.util.HashMap<>();
+        if (!docIds.isEmpty()) {
+            java.util.List<com.javaweb.entity.DocumentEntity> docs = documentRepository.findAllById(docIds);
+            for (com.javaweb.entity.DocumentEntity doc : docs) {
+                docIdToFileName.put(doc.getId(), doc.getFileName());
+            }
+        }
+
+        // Tạo mapping từ originalIndex sang newIndex (0, 1, 2...) và build sources
+        java.util.Map<Integer, Integer> indexMapping = new java.util.HashMap<>();
+        List<SourceRefResponse> sources = new java.util.ArrayList<>();
+        for (int i = 0; i < citedOriginalIndices.size(); i++) {
+            int originalIdx = citedOriginalIndices.get(i);
+            indexMapping.put(originalIdx, i);
+            SearchResult r = results.get(originalIdx);
+            
+            // Xử lý excerpt an toàn: cắt ở khoảng trắng
+            String rawContent = r.chunk().getContent();
+            String excerpt = rawContent;
+            if (rawContent != null && rawContent.length() > 150) {
+                int cutIdx = 150;
+                while (cutIdx < rawContent.length() && !Character.isWhitespace(rawContent.charAt(cutIdx))) {
+                    cutIdx++;
+                }
+                excerpt = rawContent.substring(0, Math.min(cutIdx, rawContent.length())) + "...";
+            }
+            
+            String fileName = docIdToFileName.getOrDefault(r.chunk().getDocumentId(), "Tài liệu không xác định");
+            int estimatedPage = r.chunk().getPageNumber() != null ? r.chunk().getPageNumber() : (r.chunk().getChunkIndex() / 7) + 1;
+            sources.add(new SourceRefResponse(r.chunk().getDocumentId(), fileName, r.chunk().getId(), excerpt, estimatedPage));
+        }
+
+        // Pass 2: Rewrite lại câu trả lời với index mới, xóa index ảo
+        matcher = pattern.matcher(answer); // Reset matcher
+        StringBuilder cleanedAnswer = new StringBuilder();
+        while (matcher.find()) {
+            try {
+                int citationIndex = Integer.parseInt(matcher.group(1));
+                if (indexMapping.containsKey(citationIndex)) {
+                    int newIdx = indexMapping.get(citationIndex);
+                    matcher.appendReplacement(cleanedAnswer, "[" + newIdx + "]");
+                } else {
+                    matcher.appendReplacement(cleanedAnswer, "");
+                    System.out.println("CẢNH BÁO: Phát hiện citation ảo [" + citationIndex + "], đã tự động xóa.");
+                }
+            } catch (NumberFormatException e) {
+                matcher.appendReplacement(cleanedAnswer, matcher.group(0));
+            }
+        }
+        matcher.appendTail(cleanedAnswer);
+        answer = cleanedAnswer.toString();
 
         // Đặt tên "bestDistance" thay vì "topScore"/"score": Repository
         // dùng cosine DISTANCE (0 = tốt nhất, càng lớn càng tệ) - tên biến
         // "score" dễ khiến người đọc hiểu ngược thành "càng cao càng tốt".
-        double bestDistance = results.get(0).similarity();
+        double bestDistance = results.get(0).distance();
 
         return new ChatAnswerResponse(answer, sources, bestDistance);
     }

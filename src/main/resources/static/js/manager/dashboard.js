@@ -118,6 +118,7 @@ function setupUserSidebar() {
 }
 
 function setupUserEventListeners() {
+    if (typeof initCitationPopover === 'function') initCitationPopover();
     // Document search
     const docSearch = document.getElementById('docSearchInput');
     if (docSearch && typeof debounce !== 'undefined') {
@@ -148,7 +149,25 @@ function setupUserEventListeners() {
     // Global search
     const globalSearch = document.getElementById('globalSearchInput');
     if (globalSearch && typeof debounce !== 'undefined') {
-        globalSearch.addEventListener('input', debounce(performSearch, 500));
+        globalSearch.addEventListener('input', debounce(() => {
+            const dropdown = document.getElementById('globalSearchDropdown');
+            if (globalSearch.value.trim().length >= 2) {
+                if (dropdown) dropdown.style.display = 'block';
+                performSearch();
+            } else {
+                if (dropdown) dropdown.style.display = 'none';
+                const res = document.getElementById('globalSearchResults');
+                if (res) res.innerHTML = '';
+            }
+        }, 500));
+        
+        // Hide dropdown when click outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.topbar-search')) {
+                const dropdown = document.getElementById('globalSearchDropdown');
+                if (dropdown) dropdown.style.display = 'none';
+            }
+        });
     }
 
     // Logout
@@ -168,13 +187,58 @@ function setupUserEventListeners() {
             });
         }
     });
-
-    // AI Report Banner
-    const btnAiReport = document.getElementById('btnAiReport');
-    if (btnAiReport) {
-        btnAiReport.addEventListener('click', generateAiReport);
-    }
 }
+
+// ===== NOTEBOOKLM CITATION POPOVER =====
+function initCitationPopover() {
+    if (document.getElementById('citation-popover')) return;
+    const popover = document.createElement('div');
+    popover.id = 'citation-popover';
+    popover.className = 'citation-popover';
+    popover.innerHTML = `
+        <div class='citation-popover-title'><i class='fa-solid fa-file-lines'></i> <span id='citation-popover-title-text'></span></div>
+        <div id='citation-popover-excerpt' class='citation-popover-excerpt'></div>
+    `;
+    document.body.appendChild(popover);
+}
+
+window.showCitationPopover = function(element, title, excerpt) {
+    const popover = document.getElementById('citation-popover');
+    if (!popover) return;
+    document.getElementById('citation-popover-title-text').textContent = title;
+    document.getElementById('citation-popover-excerpt').textContent = '"' + excerpt + '"';
+    
+    // Position it
+    const rect = element.getBoundingClientRect();
+    popover.style.display = 'block';
+    const popoverHeight = popover.offsetHeight;
+    
+    popover.style.left = Math.max(10, rect.left - 130) + 'px';
+    popover.style.top = (rect.top - popoverHeight - 10) + 'px';
+    
+    // If it goes off top, show below
+    if (rect.top - popoverHeight - 10 < 0) {
+        popover.style.top = (rect.bottom + 10) + 'px';
+    }
+    
+    requestAnimationFrame(() => {
+        popover.classList.add('visible');
+    });
+};
+
+window.hideCitationPopover = function() {
+    const popover = document.getElementById('citation-popover');
+    if (popover) {
+        popover.classList.remove('visible');
+        setTimeout(() => {
+            if (!popover.classList.contains('visible')) {
+                popover.style.display = 'none';
+            }
+        }, 200);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', initCitationPopover);
 
 function loadUserTabData(tabId) {
     switch (tabId) {
@@ -213,24 +277,11 @@ async function viewRoleDetail(id) {
     alert('Tính năng đang phát triển');
 }
 
-function deleteDocumentManager(docId, fileName) {
-    if (typeof showConfirmDialog !== 'undefined') {
-        showConfirmDialog(
-            '🗑️ Xác nhận xoá tài liệu',
-            `Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${fileName}"? Hành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu AI liên quan.`,
-            async () => {
-                await executeDeleteDocumentManager(docId);
-            }
-        );
-    } else {
-        if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${fileName}"?\nHành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu AI liên quan.`)) {
-            return;
-        }
-        executeDeleteDocumentManager(docId);
+async function deleteDocumentManager(docId, fileName) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${fileName}"?\nHành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu AI liên quan.`)) {
+        return;
     }
-}
-
-async function executeDeleteDocumentManager(docId) {
+    
     try {
         const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || '');
         const res = await fetch(`/api/manager/documents/${docId}`, {
@@ -268,12 +319,21 @@ async function loadHomeData() {
         const data = await apiRequest('/api/dashboard/stats');
 
         // Bỏ skeleton loaders
-        document.querySelectorAll('.stat-value').forEach(el => el.classList.remove('skeleton-loader'));
+        document.querySelectorAll('.stat-value, .kpi-value').forEach(el => el.classList.remove('skeleton-loader'));
 
-        document.getElementById('statDocCount').textContent = data.documentCount || 0;
-        document.getElementById('statChatCount').textContent = data.chatSessionCount || 0;
-        document.getElementById('statViewCount').textContent = data.viewCount || 0;
-        document.getElementById('statSearchCount').textContent = data.searchCount || 0;
+        const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        
+        // Cập nhật các ID của Admin (nếu có)
+        setEl('statDocCount', data.documentCount || 0);
+        setEl('statChatCount', data.chatSessionCount || 0);
+        setEl('statViewCount', data.viewCount || 0);
+        setEl('statSearchCount', data.searchCount || 0);
+
+        // Cập nhật các ID của Manager
+        setEl('msEmployeeCount', data.employeeCount || 0);
+        setEl('msTotalDocs', data.documentCount || 0);
+        setEl('msPendingDocs', data.pendingApprovalCount || 0);
+        setEl('msOnlineUsers', data.onlineUsers || 0);
 
         // Render activities
         const list = document.getElementById('activityList');
@@ -339,13 +399,17 @@ async function loadHomeData() {
         if (currentUser) {
             document.getElementById('welcomeName').textContent = currentUser.fullName || currentUser.username;
             if (currentUser.departmentName) {
-                document.getElementById('wDept').textContent = currentUser.departmentName;
-                document.getElementById('wDeptWrap').style.display = 'inline';
+                const wDept = document.getElementById('wDept');
+                if (wDept) wDept.textContent = currentUser.departmentName;
+                const wDeptWrap = document.getElementById('wDeptWrap');
+                if (wDeptWrap) wDeptWrap.style.display = 'inline';
             }
             if (currentUser.role) {
                 const roleLabels = { 'USER': 'Nhân viên', 'MANAGER': 'Trưởng phòng', 'ADMIN': 'Quản trị viên' };
-                document.getElementById('wRole').textContent = roleLabels[currentUser.role] || currentUser.role;
-                document.getElementById('wRoleWrap').style.display = 'inline';
+                const wRole = document.getElementById('wRole');
+                if (wRole) wRole.textContent = roleLabels[currentUser.role] || currentUser.role;
+                const wRoleWrap = document.getElementById('wRoleWrap');
+                if (wRoleWrap) wRoleWrap.style.display = 'inline';
             }
         }
 
@@ -476,25 +540,11 @@ function renderUserDocuments() {
                             <i class="fa-regular fa-circle-xmark"></i> Xem lỗi
                         </button>`;
                 } else if (combinedStatusClass === 'status-pending') {
-                    actionBtnHtml = `<button style="background:#f59e0b;color:#ffffff;border:none;font-weight:700;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(245,158,11,0.2);" onmouseover="this.style.background='#d97706'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#f59e0b'; this.style.transform='translateY(0)'" onclick="event.stopPropagation(); approveDocument(${doc.id})">
-                            <i class="fa-solid fa-signature"></i> Phê duyệt
+                    actionBtnHtml = `<button style="background:transparent;border:none;color:#d97706;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})">
+                            <i class="fa-solid fa-pen-to-square"></i> Phê duyệt
                         </button>`;
                 } else {
-                    let canManagePerms = false;
-                    try {
-                        const userStr = localStorage.getItem('user');
-                        if (userStr) {
-                            const u = JSON.parse(userStr);
-                            const isSystemAdmin = u.role === 'ADMIN' || (u.roles && u.roles.includes('ROLE_ADMIN'));
-                            const isOwnerManager = (u.role === 'MANAGER' || (u.roles && u.roles.includes('ROLE_MANAGER'))) && doc.departmentId && u.departmentId === doc.departmentId;
-                            canManagePerms = isSystemAdmin || isOwnerManager;
-                        }
-                    } catch(e) {}
-                    
-                    const cannotShare = doc.status === 'FAILED' || doc.status === 'PENDING' || doc.approvalStatus !== 'APPROVED' || !canManagePerms;
-                    const shareBtnHtml = cannotShare ? '' : `<button style="background:transparent;border:none;color:#10b981;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#d1fae5'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); openPermissionModal(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\\\'")}')" title="Chia sẻ"><i class="fa-solid fa-share-nodes"></i> Chia sẻ</button>`;
-                    
-                    actionBtnHtml = `${shareBtnHtml}<button style="background:transparent;border:none;color:#4f46e5;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})">
+                    actionBtnHtml = `<button style="background:transparent;border:none;color:#4f46e5;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})">
                             <i class="fa-regular fa-eye"></i> Xem chi tiết
                         </button>`;
                 }
@@ -520,8 +570,8 @@ function renderUserDocuments() {
                     
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:12px; border-top:1px solid #f1f5f9;">
                         <span style="font-size:0.85rem;color:#94a3b8;font-weight:600;">${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</span>
-                        <div style="display:flex; gap:16px; align-items:center;">
-                            <button style="background:transparent;border:none;color:#ef4444;font-weight:700;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); deleteDocumentManager(${doc.id}, '${doc.fileName ? doc.fileName.replace(/'/g, "\\'") : ''}')" title="Xóa tài liệu"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                        <div style="display:flex; gap:8px;">
+                            <button style="background:transparent;border:none;color:#ef4444;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); deleteDocumentManager(${doc.id}, '${doc.fileName ? doc.fileName.replace(/'/g, "\\'") : ''}')" title="Xóa tài liệu"><i class="fa-solid fa-trash-can"></i> Xóa</button>
                             ${actionBtnHtml}
                         </div>
                     </div>
@@ -568,10 +618,9 @@ function renderUserDocuments() {
                     <td>
                         <button class="btn-icon" onclick="event.stopPropagation(); ${isManagerPending ? `approveDocument(${doc.id})` : 'return false;'}" title="${isManagerPending ? 'Duyệt tài liệu' : 'Đã xử lý'}" style="color:${isManagerPending ? '#10b981' : '#cbd5e1'}; ${isManagerPending ? '' : 'cursor:not-allowed;'}">✅</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); ${isManagerPending ? `rejectDocument(${doc.id})` : 'return false;'}" title="${isManagerPending ? 'Từ chối' : 'Đã xử lý'}" style="color:${isManagerPending ? '#ef4444' : '#cbd5e1'}; ${isManagerPending ? '' : 'cursor:not-allowed;'}">❌</button>
-                        <button class="btn-icon" onclick="event.stopPropagation(); ${cannotShare ? 'return false;' : `openPermissionModal(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\\\'")}')`}" title="${cannotShare ? 'Không thể chia sẻ' : 'Chia sẻ'}" style="color:${cannotShare ? '#cbd5e1' : '#10b981'}; ${cannotShare ? 'cursor:not-allowed;' : ''}">🔗</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); viewDocumentInline(${doc.id})" title="Xem chi tiết">👁️</button>
-                        <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\\\'")}')" title="Tải xuống">⬇️</button>
-                        <button class="btn-icon" onclick="event.stopPropagation(); deleteDocumentManager(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\\\'")}')" title="Xóa tài liệu" style="color:#ef4444;">🗑️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Tải xuống">⬇️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); deleteDocumentManager(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Xóa tài liệu" style="color:#ef4444;">🗑️</button>
                     </td>
                 </tr>
             `}).join('');
@@ -671,6 +720,8 @@ async function handleUploadDocument(event) {
     }
 
     try {
+        if (typeof showToast !== 'undefined') showToast('Đang tải lên...', 'info');
+
         const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
         const url = `${typeof API_BASE !== 'undefined' ? API_BASE : ''}/api/documents/upload`;
 
@@ -687,7 +738,7 @@ async function handleUploadDocument(event) {
             throw new Error(err || 'Upload thất bại');
         }
 
-        if (typeof showToast !== 'undefined') showToast('Tải tài liệu thành công!', 'success');
+        if (typeof showToast !== 'undefined') showToast('Tải lên thành công! Đang chờ duyệt.', 'success');
 
         // Refresh danh sách
         loadUserDocuments();
@@ -896,62 +947,30 @@ async function loadPendingApprovals() {
 }
 
 async function approveDocument(docId) {
-    try {
-        if (typeof apiRequest === 'undefined') throw new Error('apiRequest not found');
-        const doc = await apiRequest(`/api/documents/${docId}`);
-        const isPdf = doc.fileName && doc.fileName.toLowerCase().endsWith('.pdf');
-        
-        if (isPdf) {
-            if (typeof showConfirmDialog !== 'undefined') {
-                showConfirmDialog('Xác nhận duyệt', 'Hệ thống sẽ tự động thêm 1 trang "Phê duyệt" vào cuối file PDF. Bạn có chắc chắn muốn duyệt?', async () => {
-                    await executeApprove(docId, null, null, null);
-                });
-            } else if (confirm('Hệ thống sẽ tự động thêm 1 trang "Phê duyệt" vào cuối file PDF. Bạn có chắc chắn muốn duyệt?')) {
-                await executeApprove(docId, null, null, null);
-            }
-        } else {
-            // Confirm normally cho file không phải PDF
-            if (typeof showConfirmDialog !== 'undefined') {
-                showConfirmDialog('Xác nhận duyệt', 'Bạn có chắc chắn muốn duyệt tài liệu này?', async () => {
-                    await executeApprove(docId, null, null, null);
-                });
-            } else if (confirm('Bạn có chắc chắn muốn duyệt tài liệu này?')) {
-                await executeApprove(docId, null, null, null);
-            }
-        }
-    } catch(e) {
-        console.error(e);
-        if (typeof showToast !== 'undefined') showToast('Không thể tải thông tin tài liệu', 'error');
+    if (typeof showConfirmDialog !== 'undefined') {
+        showConfirmDialog('Xác nhận duyệt', 'Bạn có chắc chắn muốn duyệt tài liệu này? Hệ thống sẽ bắt đầu gửi tài liệu cho AI xử lý.', async () => {
+            await executeApprove(docId);
+        });
+    } else if (confirm('Bạn có chắc chắn muốn duyệt tài liệu này?')) {
+        await executeApprove(docId);
     }
 }
 
-async function executeApprove(docId, x = null, y = null, pageNumber = null) {
+async function executeApprove(docId) {
     try {
         if (typeof apiRequest === 'undefined') throw new Error('apiRequest not found');
 
-        const payload = (x != null && y != null && pageNumber != null) 
-            ? { x: parseFloat(x), y: parseFloat(y), pageNumber: parseInt(pageNumber) } 
-            : null;
-
         await apiRequest(`/api/manager/documents/${docId}/approve`, {
-            method: 'PUT',
-            body: payload ? JSON.stringify(payload) : null
+            method: 'PUT'
         });
 
         if (typeof showToast !== 'undefined') showToast('Duyệt tài liệu thành công!', 'success');
 
         // Refresh lists
         loadPendingApprovals();
-        if (typeof loadManagerData === 'function') {
-            loadManagerData();
-        }
-        if (typeof UserState !== 'undefined' && (UserState?.currentTab === 'tabDocuments' || document.getElementById('tabDocuments')?.style?.display === 'block')) {
+        if (UserState?.currentTab === 'tabDocuments' || document.getElementById('tabDocuments')?.style?.display === 'block') {
             loadUserDocuments();
         }
-        
-        // Đóng modal chữ ký nếu có
-        const modal = document.getElementById('visualSignatureModal');
-        if (modal) modal.remove();
 
     } catch (error) {
         console.error('Lỗi khi duyệt:', error);
@@ -995,9 +1014,6 @@ async function executeRejectFallback(docId, reason) {
 
         // Refresh lists
         loadPendingApprovals();
-        if (typeof loadManagerData === 'function') {
-            loadManagerData();
-        }
         if (UserState?.currentTab === 'tabDocuments' || document.getElementById('tabDocuments')?.style?.display === 'block') {
             loadUserDocuments();
         }
@@ -1041,7 +1057,7 @@ function renderChatSessionList() {
         <div class="chat-session-item ${session.id === UserState.chat.currentSessionId ? 'active' : ''}"
              onclick="openChatSession(${session.id})">
             <div class="chat-session-title">${session.title || 'Cuộc hội thoại mới'}</div>
-            <div class="chat-session-meta">${session.messageCount || 0} tin nhắn · ${typeof formatDate !== 'undefined' ? formatDate(session.updatedAt) : session.updatedAt}</div>
+            <div class="chat-session-meta">${typeof formatDate !== 'undefined' ? formatDate(session.updatedAt) : session.updatedAt}</div>
         </div>
     `).join('');
 }
@@ -1075,7 +1091,12 @@ async function openChatSession(sessionId) {
         }
 
         const messages = await apiRequest(`/api/user/chat-sessions/${sessionId}/messages`);
-        const sessionInfo = UserState.chat.sessions.find(s => s.id === sessionId) || {};
+
+        const sessionMeta = UserState.chat.sessions.find(s => s.id === sessionId);
+        const session = {
+            title: sessionMeta ? sessionMeta.title : 'Cuộc hội thoại',
+            messageCount: messages ? messages.length : 0
+        };
 
         UserState.chat.currentSessionId = sessionId;
         UserState.chat.messages = messages || [];
@@ -1087,8 +1108,8 @@ async function openChatSession(sessionId) {
 
         if (emptyState) emptyState.style.display = 'none';
         if (active) active.style.display = 'flex';
-        if (title) title.textContent = sessionInfo.title || 'Cuộc hội thoại';
-        if (meta) meta.textContent = `${sessionInfo.messageCount || messages.length || 0} tin nhắn`;
+        if (title) title.textContent = session.title || 'Cuộc hội thoại';
+        // (Bỏ phần hiển thị số tin nhắn)
 
         renderChatMessages();
         renderChatSessionList();
@@ -1112,49 +1133,74 @@ function renderChatMessages() {
         return;
     }
 
-    container.innerHTML = messages.map(msg => `
+    container.innerHTML = messages.map(msg => {
+        const refs = msg.fileRefs || msg.sources;
+        return `
         <div class="chat-message ${msg.role === 'USER' ? 'user' : 'assistant'}">
             <div class="chat-message-avatar">
                 ${msg.role === 'USER' ? '👤' : '🤖'}
             </div>
             <div class="chat-message-content">
-                <div class="chat-message-text">${formatMessageContent(msg.content)}</div>
-                ${msg.fileRefs ? renderFileRefs(msg.fileRefs) : ''}
+                <div class="chat-message-text">${formatMessageContent(msg.content, refs)}</div>
                 <div class="chat-message-time">${typeof formatDate !== 'undefined' ? formatDate(msg.createdAt) : msg.createdAt}</div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
 }
 
-function formatMessageContent(content) {
+function formatMessageContent(content, sources) {
     if (!content) return '';
-    // Convert markdown-like syntax
-    return content
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        .replace(/`(.*?)`/g, '<code>$1</code>')
-        .replace(/\n/g, '<br>');
+    if (typeof marked === "undefined") {
+        return content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
+    
+    let rawHtml = marked.parse(content);
+    let cleanHtml = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['data-index'] });
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = cleanHtml;
+    
+    function processTextNodes(node) {
+        if (node.nodeType === 1) { // Element
+            const tag = node.tagName.toLowerCase();
+            if (["code", "pre", "a"].includes(tag)) return;
+            Array.from(node.childNodes).forEach(processTextNodes);
+        } else if (node.nodeType === 3) { // Text
+            if (/\[(\d+)\]/.test(node.nodeValue)) {
+                const spanWrapper = document.createElement('span');
+                const escapedText = node.nodeValue; 
+                
+                spanWrapper.innerHTML = escapedText.replace(/\[(\d+)\]/g, function(m, numStr) {
+                    const num = parseInt(numStr, 10);
+                    if (sources && sources[num]) {
+                        const source = sources[num];
+                        const title = source.fileName || "Tài liệu";
+                        const excerpt = source.excerpt || "";
+                        const t = title.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ').replace(/\r/g, '');
+                        const e = excerpt.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ').replace(/\r/g, '');
+                        return '<span class="citation-badge" data-index="' + num + '" ' +
+                            'onmouseenter="showCitationPopover(this, \'' + t + '\', \'' + e + '\')" ' +
+                            'onmouseleave="hideCitationPopover()">' + (num + 1) + '</span>';
+                    }
+                    return m;
+                });
+                node.replaceWith(...spanWrapper.childNodes);
+            }
+        }
+    }
+    Array.from(tempDiv.childNodes).forEach(processTextNodes);
+    return tempDiv.innerHTML;
 }
 
-function renderFileRefs(refs) {
-    if (!refs || refs.length === 0) return '';
 
-    return `
-        <div class="chat-file-refs">
-            <div style="font-size:0.78rem;font-weight:600;color:#4f46e5;margin-bottom:4px;">📚 Nguồn tham khảo:</div>
-            ${refs.map(ref => `
-                <div class="chat-file-ref" onclick="viewUserDocument(${ref.documentId})" style="cursor:pointer;">
-                    📄 ${ref.documentName || 'Tài liệu'} - Trang ${ref.pageNumber || '—'}
-                    ${ref.excerpt ? `<div style="font-size:0.72rem;color:#6b7280;margin-top:2px;">"${ref.excerpt.substring(0, 100)}..."</div>` : ''}
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
 
 async function sendChatMessage() {
     const input = document.getElementById('chatInput');
@@ -1384,20 +1430,10 @@ async function executeDeleteChatSession() {
 }
 
 function askAIAboutDocument(docName) {
-    if (typeof switchTab !== 'undefined') {
-        const tabEl = document.querySelector('[data-tab="tabChat"]');
-        if (tabEl) {
-            switchTab('tabChat', tabEl);
-            if (typeof loadManagerTabData === 'function') loadManagerTabData('tabChat');
-        }
-    }
     const input = document.getElementById('chatInput');
     if (input) {
         input.value = `Cho tôi biết nội dung chính của tài liệu "${docName}"`;
         input.focus();
-    }
-    if (typeof closeModal !== 'undefined') {
-        closeModal('docViewerModal');
     }
 }
 
@@ -1432,7 +1468,7 @@ async function performSearch() {
         || document.getElementById('searchHeroInput')?.value?.trim()
         || document.getElementById('searchInput')?.value?.trim();
     if (!query || query.length < 2) {
-        const container = document.getElementById('searchResults');
+        const container = document.getElementById('globalSearchDropdown') && document.getElementById('globalSearchDropdown').style.display !== 'none' ? document.getElementById('globalSearchResults') : document.getElementById('searchResults');
         if (container) {
             container.innerHTML = `
                 <div class="search-hint">
@@ -1473,7 +1509,7 @@ async function performSearch() {
 }
 
 function renderSearchResults() {
-    const container = document.getElementById('searchResults');
+    const container = document.getElementById('globalSearchDropdown') && document.getElementById('globalSearchDropdown').style.display !== 'none' ? document.getElementById('globalSearchResults') : document.getElementById('searchResults');
     if (!container) return;
 
     const results = UserState.search.results;
@@ -1543,7 +1579,6 @@ async function loadManagerData() {
             const msEmployeeCount = document.getElementById('msEmployeeCount');
             const msPendingDocs = document.getElementById('msPendingDocs');
             const pendingDocCount = document.getElementById('pendingDocCount');
-            const btnPendingCount = document.getElementById('btnPendingCount');
             const msActiveSessions = document.getElementById('msActiveSessions');
             const msOnlineUsers = document.getElementById('msOnlineUsers');
             const msTotalDocs = document.getElementById('msTotalDocs');
@@ -1553,16 +1588,13 @@ async function loadManagerData() {
             const pendingCount = profile.pendingDocumentCount || 0;
             const totalDocs = profile.departmentDocumentsCount || 0;
             const sessions = profile.activeSessionsCount || 0;
-            const onlineUsers = profile.departmentOnlineUsersCount || 0;
 
             if (msDeptName) msDeptName.textContent = deptName;
             if (msDeptNameHeader) msDeptNameHeader.textContent = deptName;
             if (msEmployeeCount) msEmployeeCount.textContent = empCount;
             if (msPendingDocs) msPendingDocs.textContent = pendingCount;
             if (pendingDocCount) pendingDocCount.textContent = pendingCount;
-            if (btnPendingCount) btnPendingCount.textContent = pendingCount;
             if (msActiveSessions) msActiveSessions.textContent = sessions;
-            if (msOnlineUsers) msOnlineUsers.textContent = onlineUsers;
             if (msTotalDocs) {
                 msTotalDocs.textContent = totalDocs;
                 const trendEl = document.getElementById('msTotalDocsTrend');
@@ -1763,52 +1795,13 @@ async function loadUserProfile() {
         if (viewCreatedAt) viewCreatedAt.textContent = profile.createdAt ? (typeof formatDate !== 'undefined' ? formatDate(profile.createdAt) : profile.createdAt) : '—';
         if (viewLastLogin) viewLastLogin.textContent = profile.lastLogin ? (typeof formatDate !== 'undefined' ? formatDate(profile.lastLogin) : profile.lastLogin) : '—';
 
-        const viewJobTitle = document.getElementById('viewJobTitle');
-        const viewSignature = document.getElementById('viewSignature');
-
-        if (viewJobTitle) {
-            let defaultTitle = '';
-            if (profile.role === 'ADMIN') defaultTitle = 'Giám đốc';
-            else if (profile.role === 'MANAGER') defaultTitle = 'Trưởng phòng';
-            else if (profile.role === 'USER') defaultTitle = 'Nhân viên';
-            viewJobTitle.textContent = profile.jobTitle || defaultTitle || 'Chưa cập nhật chức danh';
-        }
-        if (viewSignature) {
-            if (profile.signatureUrl) {
-                viewSignature.innerHTML = `<img src="${profile.signatureUrl}" style="max-width:100%; max-height:80px; object-fit:contain;">`;
-                viewSignature.style.padding = '0';
-                viewSignature.style.background = 'transparent';
-                viewSignature.style.border = 'none';
-            } else {
-                viewSignature.innerHTML = 'Chưa thiết lập chữ ký';
-                viewSignature.style.padding = '12px';
-                viewSignature.style.background = '#f8fafc';
-                viewSignature.style.border = '1px dashed var(--border-color)';
-            }
-        }
-
         // Update form
         const fullNameInput = document.getElementById('editFullName');
         const phoneInput = document.getElementById('editPhone');
-        const jobTitleInput = document.getElementById('editJobTitle');
         const avatarInput = document.getElementById('editAvatarUrl');
-
-        const emailInput = document.getElementById('editEmail');
-        const deptInput = document.getElementById('editDept');
 
         if (fullNameInput) fullNameInput.value = profile.fullName || '';
         if (phoneInput) phoneInput.value = profile.phone || '';
-        
-        if (jobTitleInput) {
-            let defaultTitle = '';
-            if (profile.role === 'ADMIN') defaultTitle = 'Giám đốc';
-            else if (profile.role === 'MANAGER') defaultTitle = 'Trưởng phòng';
-            else if (profile.role === 'USER') defaultTitle = 'Nhân viên';
-            jobTitleInput.value = profile.jobTitle || defaultTitle;
-        }
-
-        if (emailInput) emailInput.value = profile.email || '';
-        if (deptInput) deptInput.value = profile.departmentName || 'Toàn hệ thống';
 
         // Load profile stats
         const docCount = document.getElementById('psDocCount');
@@ -1864,46 +1857,15 @@ async function loadProfileActivities() {
 async function updateProfile() {
     const fullName = document.getElementById('editFullName')?.value?.trim();
     const phone = document.getElementById('editPhone')?.value?.trim();
-    const jobTitle = document.getElementById('editJobTitle')?.value?.trim();
     const userName = document.getElementById('editUsername')?.value?.trim();
     const avatarInput = document.getElementById('editAvatarUrl');
-    const signatureInput = document.getElementById('editSignatureUrl');
     let avatarUrl = null;
-    let signatureUrl = null;
+
+
 
     try {
         if (typeof apiRequest === 'undefined') {
             throw new Error('apiRequest() không tồn tại');
-        }
-
-        // Ưu tiên chữ ký vẽ trên Canvas
-        if (typeof hasDrawnSignature !== 'undefined' && hasDrawnSignature && document.getElementById('signaturePad')) {
-            const dataUrl = document.getElementById('signaturePad').toDataURL('image/png');
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            const formData = new FormData();
-            formData.append('file', blob, 'signature.png');
-
-            const uploadRes = await apiRequest('/api/users/upload-signature', {
-                method: 'POST',
-                body: formData,
-                headers: { 'Accept': 'application/json' }
-            }, true);
-
-            signatureUrl = uploadRes.signatureUrl;
-        }
-        // Hoặc upload file ảnh nếu không vẽ
-        else if (signatureInput && signatureInput.files.length > 0) {
-            const formData = new FormData();
-            formData.append('file', signatureInput.files[0]);
-
-            const uploadRes = await apiRequest('/api/users/upload-signature', {
-                method: 'POST',
-                body: formData,
-                headers: { 'Accept': 'application/json' }
-            }, true);
-
-            signatureUrl = uploadRes.signatureUrl;
         }
 
         // Nếu có chọn ảnh mới, upload trước
@@ -1921,24 +1883,9 @@ async function updateProfile() {
             avatarUrl = uploadRes.avatarUrl;
         }
 
-        // Nếu có chọn chữ ký mới, upload trước
-        if (signatureInput && signatureInput.files.length > 0) {
-            const formData = new FormData();
-            formData.append('file', signatureInput.files[0]);
-
-            const uploadRes = await apiRequest('/api/users/upload-signature', {
-                method: 'POST',
-                body: formData,
-                headers: { 'Accept': 'application/json' }
-            }, true);
-
-            signatureUrl = uploadRes.signatureUrl;
-        }
-
         // Cập nhật profile
-        const payload = { fullName, phone, userName, jobTitle };
+        const payload = { fullName, phone, userName };
         if (avatarUrl) payload.avatarUrl = avatarUrl;
-        if (signatureUrl) payload.signatureUrl = signatureUrl;
 
         await apiRequest('/api/users/profile', {
             method: 'PATCH',
@@ -2336,7 +2283,7 @@ async function loadPermissionTargets() {
         // Departments
         const optgroupDept = document.createElement('optgroup');
         optgroupDept.label = "Phòng ban";
-        optgroupDept.appendChild(new Option("Nội bộ công ty (Tất cả)", "dept_all"));
+        optgroupDept.appendChild(new Option("Nội bộ công ty (Tất cả)", "public_0"));
 
         if (Array.isArray(departments)) {
             departments.forEach(dept => {
@@ -2395,7 +2342,7 @@ async function loadDocumentPermissions(docId) {
                 name = perm.userName;
                 icon = "👤";
             } else {
-                name = perm.departmentName || "Nội bộ công ty (Tất cả)";
+                name = perm.departmentName || "Tất cả phòng ban";
                 icon = "🏢";
             }
 
@@ -2410,9 +2357,9 @@ async function loadDocumentPermissions(docId) {
                     </div>
                 </td>
                 <td>${dateStr}</td>
-                <td>${escapeHtml(perm.grantedByName || 'Admin')}</td>
+                <td>${perm.sharedByName || 'Admin'}</td>
                 <td style="text-align:center;">
-                    <button class="btn-cancel" onclick="revokeDocumentPermission(${perm.departmentId || 0})" style="font-size: 0.85rem; padding: 4px 8px; color: #ef4444; border-color: #fca5a5;">
+                    <button class="btn-cancel" onclick="revokeDocumentPermission(${perm.id})" style="font-size: 0.85rem; padding: 4px 8px; color: #ef4444; border-color: #fca5a5;">
                         Thu hồi
                     </button>
                 </td>
@@ -2449,10 +2396,7 @@ async function shareDocumentPermission() {
         isPublicLink: false
     };
 
-    if (target === 'dept_all') {
-        payload.departmentId = null;
-        payload.isPublicLink = false;
-    } else if (target.startsWith('dept_')) {
+    if (target.startsWith('dept_')) {
         payload.departmentId = parseInt(target.replace('dept_', ''));
     } else if (target.startsWith('public_')) {
         payload.isPublicLink = true;
@@ -2508,22 +2452,11 @@ async function createPublicLink() {
     }
 }
 
-async function revokeDocumentPermission(deptId) {
-    if (!currentPermissionDocId) return;
-    
-    if (typeof showConfirmDialog !== 'undefined') {
-        showConfirmDialog('Xác nhận thu hồi', 'Bạn có chắc chắn muốn thu hồi quyền truy cập này?', async () => {
-            await executeRevoke(deptId);
-        });
-    } else {
-        if (!confirm('Bạn có chắc chắn muốn thu hồi quyền truy cập này?')) return;
-        await executeRevoke(deptId);
-    }
-}
+async function revokeDocumentPermission(permissionId) {
+    if (!currentPermissionDocId || !confirm('Bạn có chắc chắn muốn thu hồi quyền truy cập này?')) return;
 
-async function executeRevoke(deptId) {
     try {
-        await apiRequest(`/api/documents/${currentPermissionDocId}/permissions/${deptId}`, {
+        await apiRequest(`/api/documents/${currentPermissionDocId}/permissions/${permissionId}`, {
             method: 'DELETE'
         });
 
@@ -2581,11 +2514,11 @@ async function loadEmployees(page = 1, size = 10, search = '') {
 }
 
 function renderEmployees(users, total, currentPage = 1, size = 10) {
-    const grid = document.getElementById('employeeGrid');
-    if (!grid) return;
+    const tbody = document.getElementById('employeeTableBody');
+    if (!tbody) return;
 
     if (!users || users.length === 0) {
-        grid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);"><span style="font-size: 2rem; display: block; margin-bottom: 8px;">👥</span>Không có nhân viên nào</div>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center; padding: 40px 0;"><i class="fa-solid fa-users" style="font-size:2rem; color:#d1d5db; margin-bottom:12px;"></i><p>Không có nhân viên nào</p></td></tr>';
 
         const pageInfo = document.getElementById('employeePageInfo');
         if (pageInfo) pageInfo.textContent = 'Hiển thị 0 nhân viên';
@@ -2595,67 +2528,35 @@ function renderEmployees(users, total, currentPage = 1, size = 10) {
         return;
     }
 
-    grid.innerHTML = users.map(u => {
-        const statusColor = u.isActive ? '#10b981' : '#ef4444';
-        const statusText = u.isActive ? 'Đang hoạt động' : 'Đã khóa';
-
-        const colors = [
-            'linear-gradient(135deg, #6366f1, #a855f7)', // Indigo - Purple
-            'linear-gradient(135deg, #3b82f6, #06b6d4)', // Blue - Cyan
-            'linear-gradient(135deg, #10b981, #3b82f6)', // Emerald - Blue
-            'linear-gradient(135deg, #f59e0b, #ef4444)', // Amber - Red
-            'linear-gradient(135deg, #8b5cf6, #ec4899)'  // Violet - Pink
-        ];
-        const initial = (u.fullName || u.username || 'U').charAt(0).toUpperCase();
-        const charCode = initial.charCodeAt(0);
-        const bgGradient = colors[charCode % colors.length];
-
-        const roleDisplay = u.role === 'MANAGER' 
-            ? '<span style="color:#4338ca;background:#e0e7ff;font-size:0.75rem;padding:2px 10px;border-radius:12px;font-weight:700;">Quản lý / Admin</span>' 
-            : '<span style="color:#475569;background:#f1f5f9;font-size:0.75rem;padding:2px 10px;border-radius:12px;font-weight:700;">Nhân viên</span>';
+    tbody.innerHTML = users.map(u => {
+        const statusBadge = u.isActive
+            ? '<span class="status-badge" style="background:#dcfce7;color:#166534;"><i class="fa-solid fa-check"></i> Hoạt động</span>'
+            : '<span class="status-badge" style="background:#fee2e2;color:#b91c1c;"><i class="fa-solid fa-lock"></i> Đã khóa</span>';
 
         return `
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); overflow:hidden; display:flex; flex-direction:column; transition:all 0.2s ease-in-out;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'; this.style.borderColor='#e2e8f0'">
-            <!-- Top Section -->
-            <div style="padding:24px; display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="display:flex; gap:16px; align-items:center;">
-                    <div style="position:relative;">
-                        <div style="width:60px; height:60px; border-radius:50%; background:${bgGradient}; color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.6rem; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.5), 0 4px 10px rgba(0,0,0,0.1);">
-                            ${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : initial}
-                        </div>
-                        <div style="position:absolute; bottom:2px; right:2px; width:14px; height:14px; background:${statusColor}; border-radius:50%; border:3px solid #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.2);" title="${statusText}"></div>
+        <tr>
+            <td>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:36px; height:36px; border-radius:50%; background:#6366f1; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                        ${u.avatarUrl ? `<img src="${u.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : (u.fullName || 'U').charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <div style="font-weight:700; color:#0f172a; font-size:1.15rem; margin-bottom: 6px;">${u.fullName}</div>
-                        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
-                            ${roleDisplay}
-                            <span style="font-size:0.8rem; color:#64748b; font-weight:500;"><i class="fa-solid fa-building" style="margin-right:4px; opacity:0.7;"></i>${u.departmentName || 'Chưa phân phòng ban'}</span>
+                        <div style="font-weight:600; color:#111827; margin-bottom: 2px;">${u.fullName}</div>
+                        <div style="font-size:0.8rem; color:#6b7280; display:flex; align-items:center; gap:8px;">
+                            <span title="Tên đăng nhập"><i class="fa-solid fa-at" style="color:#9ca3af;"></i> ${u.username}</span>
+                            ${u.phone ? `<span style="color:#e5e7eb;">|</span><span title="Số điện thoại"><i class="fa-solid fa-phone" style="color:#9ca3af; font-size: 0.75rem;"></i> ${u.phone}</span>` : '<span style="color:#e5e7eb;">|</span><span title="Số điện thoại" style="color:#d1d5db; font-style:italic;">Chưa cập nhật SĐT</span>'}
                         </div>
                     </div>
                 </div>
-                <button onclick="editEmployee(${u.id})" title="Chỉnh sửa thông tin" style="background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;width:34px;height:34px;border-radius:10px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;font-size:1rem;" onmouseover="this.style.background='#4f46e5';this.style.color='#ffffff';this.style.borderColor='#4f46e5'" onmouseout="this.style.background='#f8fafc';this.style.color='#64748b';this.style.borderColor='#e2e8f0'">
-                    <i class="fa-solid fa-pen"></i>
-                </button>
-            </div>
-            
-            <!-- Metrics Section -->
-            <div style="background:#f8fafc; padding:16px 24px; border-top:1px solid #f1f5f9; display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:auto;">
-                <div style="background:#ffffff; padding:12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                    <div style="font-size:0.7rem; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Đã tải lên</div>
-                    <div style="display:flex; align-items:baseline; gap:4px;">
-                        <span style="font-size:1.25rem; font-weight:800; color:#1e293b; line-height:1;">${u.uploadedFilesCount || 0}</span>
-                        <span style="font-size:0.8rem; font-weight:600; color:#94a3b8;">file</span>
-                    </div>
-                </div>
-                <div style="background:#ffffff; padding:12px; border-radius:12px; border:1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                    <div style="font-size:0.7rem; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Được duyệt</div>
-                    <div style="display:flex; align-items:baseline; gap:4px;">
-                        <span style="font-size:1.25rem; font-weight:800; color:#10b981; line-height:1;">${u.approvedFilesCount || 0}</span>
-                        <span style="font-size:0.8rem; font-weight:600; color:#94a3b8;">file</span>
-                    </div>
-                </div>
-            </div>
-        </div>`;
+            </td>
+            <td style="color:#4b5563;">
+                <div>${u.email || 'Chưa có email'}</div>
+            </td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right;">
+                <button class="btn-icon" onclick="editEmployee(${u.id})" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+            </td>
+        </tr>`;
     }).join('');
 
     const pageInfo = document.getElementById('employeePageInfo');
@@ -2718,39 +2619,9 @@ async function editEmployee(id) {
         document.getElementById('empId').value = user.id;
         document.getElementById('employeeModalTitle').textContent = 'Chỉnh sửa nhân viên';
 
-        // Populate read-only fields
-        const initial = (user.fullName || user.email || 'U').charAt(0).toUpperCase();
-        document.getElementById('roAvatar').innerHTML = user.avatarUrl 
-            ? `<img src="${user.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` 
-            : initial;
-        
-        // Remove updating redundant badges
-        document.getElementById('roEmail').textContent = user.email || 'Chưa có';
-
         document.getElementById('empFullName').value = user.fullName || '';
         document.getElementById('empEmail').value = user.email || '';
         document.getElementById('empPhone').value = user.phone || '';
-        document.getElementById('empEmployeeCode').value = user.employeeCode || ('NV' + user.id);
-        document.getElementById('empJobTitle').value = user.jobTitle || '';
-        document.getElementById('empIsActive').value = user.isActive !== false ? 'true' : 'false';
-
-        // Populate read-only badges
-        const roles = { ADMIN: 'Quản trị viên', MANAGER: 'Quản lý', USER: 'Nhân viên' };
-        document.getElementById('roRole').textContent = roles[user.role] || user.role || 'Nhân viên';
-        document.getElementById('roDepartment').textContent = user.departmentName || 'Chưa phân phòng ban';
-        
-        const roManager = document.getElementById('roManagerName');
-        if (user.managerName) {
-            roManager.textContent = user.managerName;
-            roManager.style.color = '#1e293b';
-            roManager.style.fontWeight = '700';
-            roManager.style.fontStyle = 'normal';
-        } else {
-            roManager.textContent = 'Chưa có';
-            roManager.style.color = '#94a3b8';
-            roManager.style.fontWeight = '500';
-            roManager.style.fontStyle = 'italic';
-        }
 
         // Disable editing username and password
         document.getElementById('groupEmpUsername').style.display = 'none';
@@ -2794,10 +2665,7 @@ async function saveEmployee() {
     const data = {
         fullName: document.getElementById('empFullName').value.trim(),
         email: document.getElementById('empEmail').value.trim(),
-        phone: document.getElementById('empPhone').value.trim(),
-        employeeCode: document.getElementById('empEmployeeCode').value.trim(),
-        jobTitle: document.getElementById('empJobTitle').value.trim(),
-        isActive: document.getElementById('empIsActive').value === 'true'
+        phone: document.getElementById('empPhone').value.trim()
     };
 
     try {
@@ -2860,616 +2728,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof loadPendingApprovals === 'function') {
                     loadPendingApprovals();
                 }
-            } else if (tabId === 'tabReports') {
-                if (typeof loadReportStats === 'function') {
-                    loadReportStats();
-                }
             }
         };
     }
 });
-
-// ==========================================
-// REPORTS DASHBOARD (tabReports)
-// ==========================================
-let reportTrendChart = null;
-let reportTypeChart = null;
-
-async function loadReportStats() {
-    try {
-        const stats = await apiRequest('/api/manager/reports/stats');
-        if (!stats) return;
-
-        // Update department filter if not admin
-        const deptFilter = document.getElementById('repDeptFilter');
-        if (deptFilter) {
-            if (!stats.admin) {
-                deptFilter.innerHTML = `<option>${stats.departmentName || 'Phòng ban của tôi'}</option>`;
-                deptFilter.disabled = true; // Lock it since they can't change it
-            } else {
-                deptFilter.innerHTML = `<option>Tất cả phòng ban</option>`;
-                deptFilter.disabled = false;
-            }
-        }
-
-        // Update Stat Cards safely
-        const totalDocsEl = document.getElementById('repTotalDocs');
-        if (totalDocsEl) totalDocsEl.textContent = stats.totalDocuments.toLocaleString();
-        
-        const approvalRateEl = document.getElementById('repApprovalRate');
-        if (approvalRateEl) approvalRateEl.textContent = stats.approvalRate.toFixed(1) + '%';
-        
-        const avgTimeEl = document.getElementById('repAvgTime');
-        if (avgTimeEl) avgTimeEl.textContent = stats.avgProcessingHours.toFixed(1) + ' giờ';
-        
-        const aiSavedEl = document.getElementById('repAiSaved');
-        if (aiSavedEl) aiSavedEl.textContent = stats.aiTimeSavedHours.toFixed(1) + '+ giờ';
-
-        // Initialize Charts if Chart.js is loaded
-        if (typeof Chart !== 'undefined') {
-            initReportCharts(stats);
-        } else {
-            console.warn("Chart.js is not loaded. Please include Chart.js in the HTML.");
-            // Dynamically load Chart.js just in case
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js';
-            script.onload = () => initReportCharts(stats);
-            document.head.appendChild(script);
-        }
-    } catch (e) {
-        console.error("Lỗi khi tải dữ liệu báo cáo:", e);
-    }
-}
-
-function initReportCharts(stats) {
-    const trendCtx = document.getElementById('trendChart');
-    if (trendCtx) {
-        if (reportTrendChart) reportTrendChart.destroy();
-        
-        // Kiểm tra xem có dữ liệu không (tránh chart trắng tinh)
-        const totalTrendData = stats.trendDataCreated.reduce((a, b) => a + b, 0) + stats.trendDataApproved.reduce((a, b) => a + b, 0);
-        if (totalTrendData === 0) {
-            trendCtx.style.display = 'none';
-            let emptyState = document.getElementById('trendEmptyState');
-            if (!emptyState) {
-                emptyState = document.createElement('div');
-                emptyState.id = 'trendEmptyState';
-                emptyState.style = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-size:0.9rem;';
-                emptyState.innerHTML = '<i class="fa-solid fa-chart-line" style="font-size:2rem;margin-bottom:8px;color:#cbd5e1;"></i><span>Chưa có dữ liệu trong tuần qua</span>';
-                trendCtx.parentElement.appendChild(emptyState);
-            }
-            emptyState.style.display = 'flex';
-        } else {
-            trendCtx.style.display = 'block';
-            const emptyState = document.getElementById('trendEmptyState');
-            if (emptyState) emptyState.style.display = 'none';
-            
-            try {
-                // Gradient for Created (Purple)
-                let gradientCreated = trendCtx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-                gradientCreated.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
-                gradientCreated.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
-                
-                // Gradient for Approved (Green)
-                let gradientApproved = trendCtx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-                gradientApproved.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
-                gradientApproved.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
-
-                reportTrendChart = new Chart(trendCtx.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: stats.trendLabels,
-                        datasets: [
-                            {
-                                label: 'Tài liệu tạo mới',
-                                data: stats.trendDataCreated,
-                                borderColor: '#8b5cf6',
-                                backgroundColor: gradientCreated,
-                                borderWidth: 3,
-                                pointBackgroundColor: '#fff',
-                                pointBorderColor: '#8b5cf6',
-                                pointBorderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                fill: true,
-                                tension: 0.4
-                            },
-                            {
-                                label: 'Đã duyệt',
-                                data: stats.trendDataApproved,
-                                borderColor: '#10b981',
-                                backgroundColor: gradientApproved,
-                                borderWidth: 3,
-                                pointBackgroundColor: '#fff',
-                                pointBorderColor: '#10b981',
-                                pointBorderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                fill: true,
-                                tension: 0.4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        plugins: { 
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                                titleColor: '#1f2937',
-                                titleFont: { size: 14, weight: 'bold' },
-                                bodyColor: '#4b5563',
-                                bodyFont: { size: 13 },
-                                borderColor: '#e5e7eb',
-                                borderWidth: 1,
-                                padding: 12,
-                                boxPadding: 6,
-                                usePointStyle: true,
-                                callbacks: {
-                                    labelColor: function(context) {
-                                        return {
-                                            borderColor: context.dataset.borderColor,
-                                            backgroundColor: context.dataset.borderColor
-                                        };
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: { 
-                                beginAtZero: true, 
-                                grid: { borderDash: [4, 4], color: '#f3f4f6', drawBorder: false },
-                                border: { display: false }
-                            },
-                            x: { 
-                                grid: { display: false, drawBorder: false },
-                                border: { display: false }
-                            }
-                        }
-                    }
-                });
-            } catch (err) {
-                console.error("Lỗi vẽ biểu đồ Trend:", err);
-                trendCtx.style.display = 'none';
-                let errorState = document.getElementById('trendErrorState');
-                if (!errorState) {
-                    errorState = document.createElement('div');
-                    errorState.id = 'trendErrorState';
-                    errorState.style = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:0.9rem;font-weight:bold;';
-                    errorState.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i> Lỗi hiển thị biểu đồ';
-                    trendCtx.parentElement.appendChild(errorState);
-                }
-                errorState.style.display = 'flex';
-            }
-        }
-    }
-
-    const typeCtx = document.getElementById('typeChart');
-    if (typeCtx) {
-        if (reportTypeChart) reportTypeChart.destroy();
-        
-        const totalStatusData = stats.statusData.reduce((a, b) => a + b, 0);
-        if (totalStatusData === 0) {
-            typeCtx.style.display = 'none';
-            let emptyState = document.getElementById('typeEmptyState');
-            if (!emptyState) {
-                emptyState = document.createElement('div');
-                emptyState.id = 'typeEmptyState';
-                emptyState.style = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-size:0.9rem;';
-                emptyState.innerHTML = '<i class="fa-solid fa-chart-pie" style="font-size:2rem;margin-bottom:8px;color:#cbd5e1;"></i><span>Chưa có dữ liệu xử lý</span>';
-                typeCtx.parentElement.appendChild(emptyState);
-            }
-            emptyState.style.display = 'flex';
-        } else {
-            typeCtx.style.display = 'block';
-            const emptyState = document.getElementById('typeEmptyState');
-            if (emptyState) emptyState.style.display = 'none';
-            
-            try {
-                reportTypeChart = new Chart(typeCtx.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: stats.statusLabels,
-                        datasets: [{
-                            data: stats.statusData,
-                            backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#8b5cf6'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'right' }
-                        },
-                        cutout: '70%'
-                    }
-                });
-            } catch (err) {
-                console.error("Lỗi vẽ biểu đồ Type:", err);
-                typeCtx.style.display = 'none';
-                let errorState = document.getElementById('typeErrorState');
-                if (!errorState) {
-                    errorState = document.createElement('div');
-                    errorState.id = 'typeErrorState';
-                    errorState.style = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ef4444;font-size:0.9rem;font-weight:bold;';
-                    errorState.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i> Lỗi hiển thị biểu đồ';
-                    typeCtx.parentElement.appendChild(errorState);
-                }
-                errorState.style.display = 'flex';
-            }
-        }
-    }
-}
-
-function previewAvatar(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.getElementById('avatarPreviewImg');
-            const initials = document.getElementById('avatarPreviewInitials');
-            if (img && initials) {
-                img.src = e.target.result;
-                img.style.display = 'block';
-                initials.style.display = 'none';
-            }
-        }
-        reader.readAsDataURL(file);
-    }
-}
-
-function clearUploadedSignature() {
-    const signatureInput = document.getElementById('editSignatureUrl');
-    const img = document.getElementById('signaturePreviewImg');
-    const initials = document.getElementById('signaturePreviewInitials');
-    if (signatureInput) {
-        signatureInput.value = ''; // Xóa file đã chọn
-    }
-    if (img && initials) {
-        img.src = '';
-        img.style.display = 'none';
-        initials.style.display = 'block';
-    }
-}
-
-function previewSignature(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.getElementById('signaturePreviewImg');
-            const initials = document.getElementById('signaturePreviewInitials');
-            if (img && initials) {
-                img.src = e.target.result;
-                img.style.display = 'block';
-                initials.style.display = 'none';
-            }
-            // Xóa chữ ký vẽ trên canvas để đảm bảo chỉ chọn 1 trong 2
-            if (typeof clearSignature === 'function') {
-                clearSignature();
-            }
-        }
-        reader.readAsDataURL(file);
-    }
-}
-
-// --- SIGNATURE CANVAS LOGIC ---
-let isDrawingSignature = false;
-let hasDrawnSignature = false;
-let signatureCtx = null;
-
-document.addEventListener('DOMContentLoaded', () => {
-    initSignaturePad();
-});
-
-// Since the dashboard might load content dynamically, expose init globally
-window.initSignaturePad = function() {
-    const signaturePad = document.getElementById('signaturePad');
-    if (signaturePad && !signatureCtx) {
-        signatureCtx = signaturePad.getContext('2d');
-        signatureCtx.lineWidth = 2;
-        signatureCtx.lineJoin = 'round';
-        signatureCtx.lineCap = 'round';
-        signatureCtx.strokeStyle = '#000000';
-
-        signaturePad.addEventListener('mousedown', (e) => {
-            isDrawingSignature = true;
-            hasDrawnSignature = true;
-            signatureCtx.beginPath();
-            signatureCtx.moveTo(e.offsetX, e.offsetY);
-            
-            // Xóa ảnh đã upload (nếu có) để đảm bảo chỉ chọn 1 trong 2
-            clearUploadedSignature();
-        });
-
-        signaturePad.addEventListener('mousemove', (e) => {
-            if (isDrawingSignature) {
-                signatureCtx.lineTo(e.offsetX, e.offsetY);
-                signatureCtx.stroke();
-            }
-        });
-
-        signaturePad.addEventListener('mouseup', () => isDrawingSignature = false);
-        signaturePad.addEventListener('mouseout', () => isDrawingSignature = false);
-        
-        // Touch support
-        signaturePad.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = signaturePad.getBoundingClientRect();
-            isDrawingSignature = true;
-            hasDrawnSignature = true;
-            signatureCtx.beginPath();
-            signatureCtx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-            
-            // Xóa ảnh đã upload (nếu có) để đảm bảo chỉ chọn 1 trong 2
-            clearUploadedSignature();
-        }, {passive: false});
-
-        signaturePad.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if (isDrawingSignature) {
-                const touch = e.touches[0];
-                const rect = signaturePad.getBoundingClientRect();
-                signatureCtx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
-                signatureCtx.stroke();
-            }
-        }, {passive: false});
-
-        signaturePad.addEventListener('touchend', () => isDrawingSignature = false);
-    }
-}
-
-function clearSignature() {
-    const signaturePad = document.getElementById('signaturePad');
-    if (signatureCtx && signaturePad) {
-        signatureCtx.clearRect(0, 0, signaturePad.width, signaturePad.height);
-        hasDrawnSignature = false;
-    }
-}
-
-class VisualSignatureModal {
-    constructor(docId, doc) {
-        this.docId = docId;
-        this.doc = doc;
-        this.pdfDoc = null;
-        this.pageNum = 1;
-        this.currentScale = 1.2;
-        this.selectedX = null;
-        this.selectedY = null;
-        this.selectedPage = null;
-        this.init();
-    }
-
-    async init() {
-        this.renderModal();
-        this.bindEvents();
-        await this.loadPdf();
-    }
-
-    renderModal() {
-        const modalHTML = `
-        <div id="visualSignatureModal" style="position:fixed;inset:0;z-index:10005;display:flex;align-items:center;justify-content:center;background:rgba(15, 23, 42, 0.7);backdrop-filter:blur(4px);">
-            <div style="width:900px;max-width:95vw;height:85vh;background:#ffffff;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 48px rgba(0,0,0,0.2);">
-                
-                <div style="padding:16px 24px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;">
-                    <h3 style="margin:0;font-size:1.2rem;color:#0f172a;"><i class="fa-solid fa-pen-nib" style="color:#4f46e5;margin-right:8px;"></i> Chọn vị trí ký: ${this.doc.fileName}</h3>
-                    <button id="closeVisualModalBtn" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#64748b;">✕</button>
-                </div>
-                
-                <div style="padding:12px 24px;background:#fffbe0;border-bottom:1px solid #fde047;color:#854d0e;font-size:0.9rem;display:flex;align-items:center;gap:8px;">
-                    <i class="fa-solid fa-circle-info"></i> Bạn đang duyệt tài liệu PDF. Vui lòng click vào bất kỳ đâu trên trang tài liệu bên dưới để chọn vị trí dán mộc điện tử/chữ ký, sau đó bấm Xác nhận.
-                </div>
-
-                <div style="flex:1;background:#e2e8f0;overflow:auto;position:relative;display:flex;justify-content:center;padding:24px;" id="pdfCanvasContainer">
-                    <canvas id="pdfCanvas" style="background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.1);cursor:crosshair;"></canvas>
-                    <div id="signatureMarker" style="display:none;position:absolute;width:160px;height:70px;border:2px dashed #4f46e5;background:rgba(79,70,229,0.1);pointer-events:none;transform:translate(-50%, -50%);align-items:center;justify-content:center;color:#4f46e5;font-weight:bold;font-size:0.8rem;text-align:center;">Vị trí chữ ký<br>(Kích thước tham khảo)</div>
-                </div>
-
-                <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <button id="pdfPrevPage" style="padding:8px 16px;background:white;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-weight:600;color:#475569;">Trang trước</button>
-                        <span style="font-weight:600;color:#0f172a;">Trang <span id="pdfCurrentPage">1</span> / <span id="pdfTotalPages">1</span></span>
-                        <button id="pdfNextPage" style="padding:8px 16px;background:white;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;font-weight:600;color:#475569;">Trang sau</button>
-                    </div>
-                    <div style="display:flex;gap:12px;">
-                        <button id="cancelVisualModalBtn" style="padding:10px 20px;background:white;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;cursor:pointer;">Hủy bỏ</button>
-                        <button id="confirmVisualApproveBtn" disabled style="padding:10px 20px;background:#10b981;color:white;border:none;border-radius:8px;font-weight:600;cursor:not-allowed;opacity:0.6;transition:all 0.2s;">Xác nhận duyệt</button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-
-    bindEvents() {
-        document.getElementById('closeVisualModalBtn').addEventListener('click', () => this.close());
-        document.getElementById('cancelVisualModalBtn').addEventListener('click', () => this.close());
-        
-        document.getElementById('pdfPrevPage').addEventListener('click', () => {
-            if (this.pageNum <= 1) return;
-            this.pageNum--;
-            this.renderPage(this.pageNum);
-        });
-        
-        document.getElementById('pdfNextPage').addEventListener('click', () => {
-            if (this.pageNum >= this.pdfDoc.numPages) return;
-            this.pageNum++;
-            this.renderPage(this.pageNum);
-        });
-
-        const canvas = document.getElementById('pdfCanvas');
-        canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
-
-        document.getElementById('confirmVisualApproveBtn').addEventListener('click', () => this.confirmApprove());
-    }
-
-    async loadPdf() {
-        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || '');
-        const url = `/api/documents/${this.docId}/download?token=${token}`;
-        
-        if (typeof pdfjsLib === 'undefined') {
-            alert('Đang tải thư viện PDF, vui lòng thử lại sau giây lát!');
-            this.close();
-            return;
-        }
-
-        try {
-            const loadingTask = pdfjsLib.getDocument(url);
-            this.pdfDoc = await loadingTask.promise;
-            document.getElementById('pdfTotalPages').textContent = this.pdfDoc.numPages;
-            this.pageNum = this.pdfDoc.numPages; // Mặc định mở trang cuối
-            this.renderPage(this.pageNum);
-        } catch(e) {
-            console.error('Error loading PDF:', e);
-            alert('Không thể tải file PDF để xem trước.');
-            this.close();
-        }
-    }
-
-    async renderPage(num) {
-        const canvas = document.getElementById('pdfCanvas');
-        const ctx = canvas.getContext('2d');
-        const page = await this.pdfDoc.getPage(num);
-        const viewport = page.getViewport({ scale: this.currentScale });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        const renderContext = {
-            canvasContext: ctx,
-            viewport: viewport
-        };
-        await page.render(renderContext).promise;
-        document.getElementById('pdfCurrentPage').textContent = num;
-        
-        const marker = document.getElementById('signatureMarker');
-        const btn = document.getElementById('confirmVisualApproveBtn');
-
-        if (this.selectedPage !== num) {
-            marker.style.display = 'none';
-            btn.disabled = true;
-            btn.style.cursor = 'not-allowed';
-            btn.style.opacity = '0.6';
-        } else {
-            marker.style.display = 'flex';
-            btn.disabled = false;
-            btn.style.cursor = 'pointer';
-            btn.style.opacity = '1';
-        }
-    }
-
-    async handleCanvasClick(e) {
-        const canvas = document.getElementById('pdfCanvas');
-        const container = document.getElementById('pdfCanvasContainer');
-        const marker = document.getElementById('signatureMarker');
-        
-        const rect = canvas.getBoundingClientRect();
-        const xHTML = e.clientX - rect.left;
-        const yHTML = e.clientY - rect.top;
-
-        marker.style.display = 'flex';
-        const containerRect = container.getBoundingClientRect();
-        marker.style.left = (e.clientX - containerRect.left + container.scrollLeft) + 'px';
-        marker.style.top = (e.clientY - containerRect.top + container.scrollTop) + 'px';
-
-        const page = await this.pdfDoc.getPage(this.pageNum);
-        const viewport = page.getViewport({ scale: this.currentScale });
-        
-        const pdfX = xHTML / this.currentScale;
-        const pdfHeight = viewport.viewBox[3]; 
-        const pdfY = pdfHeight - (yHTML / this.currentScale);
-
-        this.selectedX = pdfX;
-        this.selectedY = pdfY;
-        this.selectedPage = this.pageNum;
-
-        const btn = document.getElementById('confirmVisualApproveBtn');
-        btn.disabled = false;
-        btn.style.cursor = 'pointer';
-        btn.style.opacity = '1';
-    }
-
-    confirmApprove() {
-        if (this.selectedX != null && this.selectedY != null && this.selectedPage != null) {
-            const adjustedX = this.selectedX - 80;
-            const adjustedY = this.selectedY - 35;
-            executeApprove(this.docId, adjustedX, adjustedY, this.selectedPage);
-            // executeApprove sẽ tự đóng modal
-        }
-    }
-
-    close() {
-        const modal = document.getElementById('visualSignatureModal');
-        if (modal) modal.remove();
-    }
-}
-
-// ==========================================
-// TÍNH NĂNG AI PHÂN TÍCH BÁO CÁO
-// ==========================================
-
-async function generateAiReport() {
-    const modal = document.getElementById('aiReportModal');
-    const loading = document.getElementById('aiReportLoading');
-    const contentWrapper = document.getElementById('aiReportContentWrapper');
-    const contentBox = document.getElementById('aiReportContent');
-    
-    if (!modal) return;
-    
-    // Reset UI
-    modal.style.display = '';
-    openModal('aiReportModal');
-    loading.style.display = 'flex';
-    contentWrapper.style.display = 'none';
-    contentBox.innerHTML = '';
-    
-    try {
-        const response = await apiRequest('/api/manager/reports/ai-analysis');
-        
-        if (response && response.content) {
-            loading.style.display = 'none';
-            contentWrapper.style.display = 'block';
-            
-            // Parse Markdown to HTML
-            const htmlContent = marked.parse(response.content);
-            
-            // Fade-in effect
-            contentBox.style.opacity = '0';
-            contentBox.innerHTML = htmlContent;
-            
-            let opacity = 0;
-            const interval = setInterval(() => {
-                opacity += 0.1;
-                contentBox.style.opacity = opacity;
-                if (opacity >= 1) clearInterval(interval);
-            }, 50);
-            
-        } else {
-            throw new Error("Không nhận được dữ liệu từ AI.");
-        }
-    } catch (error) {
-        loading.style.display = 'none';
-        contentWrapper.style.display = 'block';
-        contentBox.innerHTML = `<div style="color: #ef4444; padding: 16px; background: #fef2f2; border-radius: 8px;">
-            <i class="fa-solid fa-triangle-exclamation"></i> Có lỗi xảy ra khi gọi AI: ${error.message}
-        </div>`;
-    }
-}
-
-function copyAiReport() {
-    const contentBox = document.getElementById('aiReportContent');
-    if (!contentBox || !contentBox.innerText) return;
-    
-    navigator.clipboard.writeText(contentBox.innerText).then(() => {
-        showToast('Đã sao chép nội dung báo cáo!', 'success');
-    }).catch(err => {
-        console.error('Không thể sao chép: ', err);
-    });
-}

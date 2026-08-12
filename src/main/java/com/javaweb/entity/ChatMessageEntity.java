@@ -37,7 +37,7 @@ public class ChatMessageEntity {
 	
 	@Enumerated(EnumType.STRING)
 	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-	@Column(name = "role")
+	@Column(name = "role", columnDefinition = "chatmessagerole")
 	private ChatMessageRole role;
 	
 	@Column(name = "content", columnDefinition = "TEXT")
