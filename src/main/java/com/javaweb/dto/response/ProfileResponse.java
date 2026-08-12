@@ -46,4 +46,5 @@ public class ProfileResponse {
 		private int pendingRequestCount;
 		private int activeSessionsCount;
 		private int departmentDocumentsCount;
+		private int departmentOnlineUsersCount;
 }

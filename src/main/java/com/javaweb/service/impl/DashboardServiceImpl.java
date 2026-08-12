@@ -6,6 +6,8 @@ import com.javaweb.dto.response.DashboardDocumentDTO;
 import com.javaweb.dto.response.ReportStatsDTO;
 import com.javaweb.entity.ActivityLogsEntity;
 import com.javaweb.entity.ChatSessionsEntity;
+import com.javaweb.entity.ChatMessageEntity;
+import com.javaweb.enums.ChatMessageRole;
 import com.javaweb.entity.DocumentEntity;
 import com.javaweb.entity.UsersEntity;
 import com.javaweb.entity.DepartmentsEntity;
@@ -13,6 +15,7 @@ import com.javaweb.entity.enums.ApprovalStatus;
 import com.javaweb.entity.enums.DocumentStatus;
 import com.javaweb.repository.ActivityLogsRepository;
 import com.javaweb.repository.ChatSessionsRepository;
+import com.javaweb.repository.ChatMessageRepository;
 import com.javaweb.repository.DocumentRepository;
 import com.javaweb.repository.UsersRepository;
 import com.javaweb.repository.DepartmentsRepository;
@@ -45,6 +48,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final ActivityLogsRepository activityLogsRepository;
     private final ChatSessionsRepository chatSessionsRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final DocumentRepository documentRepository;
     private final UsersRepository usersRepository;
     private final DepartmentsRepository departmentsRepository;
@@ -127,7 +131,13 @@ public class DashboardServiceImpl implements DashboardService {
         boolean isManager = user.getRole() != null && user.getRole().name().equals("MANAGER");
         int managedEmployeeCount = 0;
         String departmentName = "";
-        int activeSessionsCount = userSessionsRepository.countByUserIdAndIsRevokedFalse(user);
+        
+        int activeSessionsCount;
+        if (user.getRole().name().equals("ADMIN")) {
+            activeSessionsCount = userSessionsRepository.countAllOnlineUsers();
+        } else {
+            activeSessionsCount = userSessionsRepository.countByUserIdAndIsRevokedFalse(user);
+        }
 
         if (isManager && user.getDepartment() != null) {
             managedEmployeeCount = (int) usersRepository.countByDepartmentId(user.getDepartment().getId());
@@ -150,15 +160,34 @@ public class DashboardServiceImpl implements DashboardService {
                     .mapToLong(DocumentEntity::getFileSize)
                     .sum();
         }
-        long storageQuotaBytes = 10L * 1024 * 1024 * 1024; // Giả lập giới hạn 10 GB
+        long storageQuotaBytes = 10L * 1024 * 1024 * 1024; // Giả lập giới hạn 10 GB (Chưa có module cấu hình hệ thống)
 
-        int totalSystemChatSessions = user.getRole().name().equals("ADMIN")
-                ? chatSessionsRepository.countByDeletedAtIsNull()
-                : chatSessionCount;
+        List<ChatMessageEntity> allMessagesForTrend = user.getRole().name().equals("ADMIN")
+                ? chatMessageRepository.findAll()
+                : chatMessageRepository.findBySessionId_UserChatId_Id(userId);
 
-        int aiTokensUsed = totalSystemChatSessions * 1250; // Tính toán giả lập dựa trên số phiên chat
+        int aiTokensUsed = 0;
+        for (ChatMessageEntity msg : allMessagesForTrend) {
+            if (msg.getTokenCount() != null) {
+                aiTokensUsed += msg.getTokenCount();
+            }
+        }
+        
         int aiTokensQuota = 50000;
         int documentQuota = 500;
+        
+        long errorDocCount = 0;
+        long unassignedDocCount = 0;
+        long lockedUsersCount = 0;
+        long pendingDocsCount = 0;
+        
+        if (user.getRole().name().equals("ADMIN")) {
+            errorDocCount = documentRepository.countByStatusAndDeletedAtIsNull(DocumentStatus.FAILED);
+            unassignedDocCount = documentRepository.countByDepartmentIdIsNullAndDeletedAtIsNull();
+            lockedUsersCount = usersRepository.countByIsActiveFalseAndDeletedAtIsNull();
+            pendingDocsCount = documentRepository.countByStatusAndDeletedAtIsNull(DocumentStatus.PENDING) 
+                             + documentRepository.countByStatusAndDeletedAtIsNull(DocumentStatus.PROCESSING);
+        }
 
         // Dữ liệu cho Biểu đồ hoạt động (7 ngày gần nhất)
         List<String> activityLabels = new ArrayList<>();
@@ -173,10 +202,6 @@ public class DashboardServiceImpl implements DashboardService {
                 : documentRepository.findVisibleToDepartmentWithSharing(deptId, deptIdLong, userId, isManager,
                         PageRequest.of(0, 10000)).getContent();
 
-        List<ChatSessionsEntity> allChatsForTrend = user.getRole().name().equals("ADMIN")
-                ? chatSessionsRepository.findByDeletedAtIsNull()
-                : chatSessionsRepository.findByUserChatId_IdAndDeletedAtIsNullOrderByUpdatedAtDesc(userId);
-
         for (int i = 6; i >= 0; i--) {
             LocalDate date = today.minusDays(i);
             activityLabels.add(date.format(formatter));
@@ -189,13 +214,21 @@ public class DashboardServiceImpl implements DashboardService {
             }
             uploadData.add(docsCreated);
 
-            int chatsCreated = 0;
-            for (ChatSessionsEntity c : allChatsForTrend) {
-                if (c.getCreatedAt() != null && c.getCreatedAt().toLocalDate().equals(date)) {
-                    chatsCreated++;
+            int aiInteractions = 0;
+            for (ChatMessageEntity msg : allMessagesForTrend) {
+                if (msg.getCreatedAt() != null && msg.getCreatedAt().toLocalDate().equals(date) && msg.getRole() == ChatMessageRole.USER) {
+                    aiInteractions++;
                 }
             }
-            aiData.add(chatsCreated);
+            
+            for (DocumentEntity d : allDocsForTrend) {
+                if (d.getAiSummary() != null && !d.getAiSummary().isEmpty()) {
+                    if (d.getUpdatedAt() != null && d.getUpdatedAt().toLocalDate().equals(date)) {
+                        aiInteractions++;
+                    }
+                }
+            }
+            aiData.add(aiInteractions);
         }
 
         return DashboardDataResponse.builder()
@@ -209,8 +242,10 @@ public class DashboardServiceImpl implements DashboardService {
                 .isManager(isManager)
                 .managedEmployeeCount(managedEmployeeCount)
                 .departmentName(departmentName)
-                .pendingDocumentCount(0) // TODO: Implement when approval workflow is added
-                .pendingRequestCount(0) // TODO: Implement when department requests are added
+                .errorDocumentCount(errorDocCount)
+                .unassignedDocumentCount(unassignedDocCount)
+                .lockedUserCount(lockedUsersCount)
+                .pendingDocumentCount((int) pendingDocsCount)
                 .activeSessionsCount(activeSessionsCount)
                 .storageUsedBytes(storageUsedBytes)
                 .storageQuotaBytes(storageQuotaBytes)

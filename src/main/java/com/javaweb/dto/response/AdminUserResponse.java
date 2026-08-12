@@ -18,6 +18,12 @@ public class AdminUserResponse {
     @JsonProperty("isActive")
     private boolean isActive;
     
+    private String employeeCode;
+    private String jobTitle;
+    private Long managerId;
+    private String managerName;
+    private String avatarURL;
+    
     private Long uploadedFilesCount;
     private Long approvedFilesCount;
 }

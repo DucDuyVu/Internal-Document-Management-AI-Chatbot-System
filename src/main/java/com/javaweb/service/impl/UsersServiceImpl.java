@@ -104,13 +104,15 @@ public class UsersServiceImpl implements UsersService {
 		profileResponse.setManager(isManager);
 		if (isManager && user.getDepartment() != null) {
 			Integer deptId = Math.toIntExact(user.getDepartment().getId());
-			profileResponse.setManagedEmployeeCount((int) usersRepository.countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(user.getDepartment().getId()));
+			profileResponse.setManagedEmployeeCount((int) usersRepository.countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrueAndRole(user.getDepartment().getId(), com.javaweb.enums.UserRole.USER));
 			profileResponse.setDepartmentDocumentsCount((int) documentRepository.countByDepartmentIdAndDeletedAtIsNull(deptId));
 			profileResponse.setPendingDocumentCount((int) documentRepository.countByDepartmentIdAndStatusAndDeletedAtIsNull(deptId, com.javaweb.entity.enums.DocumentStatus.PENDING));
+			profileResponse.setDepartmentOnlineUsersCount(userSessionsRepository.countOnlineUsersByDepartmentIdAndRole(user.getDepartment().getId(), com.javaweb.enums.UserRole.USER));
 		} else {
 			profileResponse.setManagedEmployeeCount(0);
 			profileResponse.setDepartmentDocumentsCount(0);
 			profileResponse.setPendingDocumentCount(0);
+			profileResponse.setDepartmentOnlineUsersCount(0);
 		}
 		profileResponse.setPendingRequestCount(0);
 		profileResponse.setActiveSessionsCount(userSessionsRepository.countByUserIdAndIsRevokedFalse(user));
@@ -302,6 +304,18 @@ public class UsersServiceImpl implements UsersService {
 				response.setDepartmentName(user.getDepartment().getName());
 			}
 			response.setActive(user.isActive());
+			response.setEmployeeCode(user.getEmployeeCode());
+			response.setJobTitle(user.getJobTitle());
+			response.setManagerId(user.getManagerId());
+			response.setAvatarURL(user.getAvatarURL());
+			if (user.getManagerId() != null) {
+				usersRepository.findById(user.getManagerId()).ifPresent(manager -> response.setManagerName(manager.getFullName()));
+			} else if (user.getDepartment() != null) {
+				List<UsersEntity> managers = usersRepository.findActiveManagersByDepartment(user.getDepartment().getId());
+				if (!managers.isEmpty()) {
+					response.setManagerName(managers.get(0).getFullName());
+				}
+			}
 			
 			// Map document counts
 			response.setUploadedFilesCount(documentRepository.countByUploadedByAndDeletedAtIsNull(user.getId()));
@@ -342,7 +356,14 @@ public class UsersServiceImpl implements UsersService {
 			user.setDepartment(depart);
 		}
 
-		usersRepository.save(user); // Save dữ liệu ở DB
+		user.setJobTitle(request.getJobTitle());
+		user.setManagerId(request.getManagerId());
+
+		user = usersRepository.save(user); // Lưu dưới DB để lấy ID
+		
+		// Tự động tạo mã nhân viên: NV + ID
+		user.setEmployeeCode("NV" + user.getId());
+		usersRepository.save(user);
 
 		// Trả dữ liệu ra client
 		AdminUserResponse response = new AdminUserResponse();
@@ -357,6 +378,20 @@ public class UsersServiceImpl implements UsersService {
 		if (user.getDepartment() != null) {
 			response.setDepartmentName(user.getDepartment().getName());
 		}
+		
+		response.setEmployeeCode(user.getEmployeeCode());
+		response.setJobTitle(user.getJobTitle());
+		response.setManagerId(user.getManagerId());
+		response.setAvatarURL(user.getAvatarURL());
+		if (user.getManagerId() != null) {
+			usersRepository.findById(user.getManagerId()).ifPresent(manager -> response.setManagerName(manager.getFullName()));
+		} else if (user.getDepartment() != null) {
+			List<UsersEntity> managers = usersRepository.findActiveManagersByDepartment(user.getDepartment().getId());
+			if (!managers.isEmpty()) {
+				response.setManagerName(managers.get(0).getFullName());
+			}
+		}
+
 		return response;
 	}
 
@@ -415,6 +450,32 @@ public class UsersServiceImpl implements UsersService {
 			}
 		}
 
+		// Mã nhân viên giờ là tự động (NV + ID), không cho phép sửa tay
+		if (user.getEmployeeCode() == null) {
+			user.setEmployeeCode("NV" + user.getId());
+			changes.append("- Tự động tạo Mã nhân viên: ").append(user.getEmployeeCode()).append("\n");
+		}
+
+		if (request.getJobTitle() != null && !request.getJobTitle().equals(user.getJobTitle())) {
+			changes.append("- Chức danh: ").append(request.getJobTitle()).append("\n");
+			user.setJobTitle(request.getJobTitle());
+		}
+
+		if (request.getManagerId() != null && !request.getManagerId().equals(user.getManagerId())) {
+			usersRepository.findById(request.getManagerId()).ifPresent(manager -> {
+				changes.append("- Quản lý trực tiếp: ").append(manager.getFullName()).append("\n");
+			});
+			user.setManagerId(request.getManagerId());
+		} else if (request.getManagerId() == null && user.getManagerId() != null) {
+		    changes.append("- Bỏ quản lý trực tiếp\n");
+		    user.setManagerId(null);
+		}
+		
+		if (request.getIsActive() != null && request.getIsActive() != user.isActive()) {
+		    changes.append("- Trạng thái hoạt động: ").append(request.getIsActive() ? "Hoạt động" : "Khóa").append("\n");
+		    user.setActive(request.getIsActive());
+		}
+
 		usersRepository.save(user); // Lưu dưới DB
 
         String actorRole = "Quản trị viên"; // Mặc định
@@ -444,6 +505,20 @@ public class UsersServiceImpl implements UsersService {
 		if (user.getDepartment() != null) {
 			response.setDepartmentName(user.getDepartment().getName());
 		}
+		
+		response.setEmployeeCode(user.getEmployeeCode());
+		response.setJobTitle(user.getJobTitle());
+		response.setManagerId(user.getManagerId());
+		response.setAvatarURL(user.getAvatarURL());
+		if (user.getManagerId() != null) {
+			usersRepository.findById(user.getManagerId()).ifPresent(manager -> response.setManagerName(manager.getFullName()));
+		} else if (user.getDepartment() != null) {
+			List<UsersEntity> managers = usersRepository.findActiveManagersByDepartment(user.getDepartment().getId());
+			if (!managers.isEmpty()) {
+				response.setManagerName(managers.get(0).getFullName());
+			}
+		}
+
 		return response;
 	}
 
@@ -474,6 +549,20 @@ public class UsersServiceImpl implements UsersService {
 		if (user.getDepartment() != null) {
 			response.setDepartmentName(user.getDepartment().getName());
 		}
+		
+		response.setEmployeeCode(user.getEmployeeCode());
+		response.setJobTitle(user.getJobTitle());
+		response.setManagerId(user.getManagerId());
+		response.setAvatarURL(user.getAvatarURL());
+		if (user.getManagerId() != null) {
+			usersRepository.findById(user.getManagerId()).ifPresent(manager -> response.setManagerName(manager.getFullName()));
+		} else if (user.getDepartment() != null) {
+			List<UsersEntity> managers = usersRepository.findActiveManagersByDepartment(user.getDepartment().getId());
+			if (!managers.isEmpty()) {
+				response.setManagerName(managers.get(0).getFullName());
+			}
+		}
+
 		return response;
 	}
 

@@ -219,15 +219,15 @@
           <div class="kpi-card" style="padding: 16px; gap: 0;">
              <div style="display:flex; align-items:center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
                 <div class="kpi-icon" style="background:var(--danger-bg); color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <div style="font-size: 0.9rem;"><strong class="text-danger">2</strong> tài liệu lỗi</div>
+                <div style="font-size: 0.9rem;"><strong id="statErrorDocs" class="text-danger">0</strong> tài liệu lỗi</div>
              </div>
              <div style="display:flex; align-items:center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-light);">
-                <div class="kpi-icon" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-file-shield"></i></div>
-                <div style="font-size: 0.9rem;"><strong class="text-warning">4</strong> tài liệu chưa phân quyền</div>
+                <div class="kpi-icon" style="background:var(--success-bg, #d1fae5); color:var(--success, #10b981);"><i class="fa-solid fa-users"></i></div>
+                <div style="font-size: 0.9rem;"><strong id="statUnassignedDocs" style="color:var(--success, #10b981);">0</strong> tài liệu dùng chung</div>
              </div>
              <div style="display:flex; align-items:center; gap: 12px; padding: 12px 0;">
                 <div class="kpi-icon" style="background:var(--info-bg); color:var(--info);"><i class="fa-solid fa-user-lock"></i></div>
-                <div style="font-size: 0.9rem;"><strong class="text-info">1</strong> tài khoản bị khóa</div>
+                <div style="font-size: 0.9rem;"><strong id="statLockedUsers" class="text-info">0</strong> tài khoản bị khóa</div>
              </div>
           </div>
         </div>
@@ -257,7 +257,6 @@
             <i class="fa-regular fa-calendar" style="position: absolute; left: 12px; color: #64748b; pointer-events: none;"></i>
             <input type="text" id="adminRepDateFilter" placeholder="Chọn ngày (All time)" style="padding:8px 16px 8px 36px; border:1px solid #cbd5e1; border-radius:8px; outline:none; background:white; color:#334155; font-weight:500; width: 270px; cursor: pointer;">
           </div>
-          <button class="btn-export" style="background:#10b981; color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-file-excel"></i> Xuất Excel</button>
         </div>
       </div>
 

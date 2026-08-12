@@ -15,4 +15,12 @@ public class UpdateUserRequest {
     private String role;
 
     private Long departmentId;
+
+    private String employeeCode;
+
+    private String jobTitle;
+
+    private Long managerId;
+
+    private Boolean isActive;
 }

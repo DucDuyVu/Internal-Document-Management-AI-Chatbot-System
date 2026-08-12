@@ -17,6 +17,11 @@ public class DashboardDataResponse {
     
     private LocalDateTime lastLoginTime;
     
+    // To-Do Metrics (Việc cần làm)
+    private long errorDocumentCount;
+    private long unassignedDocumentCount;
+    private long lockedUserCount;
+    
     // Chỉ số sử dụng (Usage Metrics)
     private long storageUsedBytes;
     private long storageQuotaBytes;

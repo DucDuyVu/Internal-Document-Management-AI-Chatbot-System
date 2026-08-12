@@ -1021,13 +1021,13 @@ function renderDocumentDetailModal(doc) {
                             </div>
                             <div>
                                 <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-                                    <span style="font-weight:800;color:#6b21a8;font-size:1rem;">IDMS AI OCR Engine (Gemini 2.5 Flash)</span>
+                                    <span style="font-weight:800;color:#6b21a8;font-size:1rem;">IDMS AI</span>
                                     ${aiStatusBadge}
                                 </div>
                                 <div style="font-size:0.85rem;color:#7e22ce;font-weight:500;">Tự động trích xuất cấu trúc văn bản, nhận diện từ khóa chính và rà soát độ chính xác 99.8%.</div>
                             </div>
                         </div>
-                        ${doc.status === 'FAILED' ? `<button onclick="retryOCR(${doc.id})" style="background:#9333ea;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Tải lại kết quả OCR</button>` : ''}
+                        ${(doc.status === 'FAILED' && doc.approvalStatus !== 'REJECTED') ? `<button onclick="retryOCR(${doc.id})" style="background:#9333ea;color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Tải lại kết quả OCR</button>` : ''}
                     </div>
 
                     <div style="display:flex;gap:24px;flex-wrap:wrap;">
@@ -1039,8 +1039,10 @@ function renderDocumentDetailModal(doc) {
                             
                             ${doc.status === 'FAILED' && doc.errorMessage ? `
                             <div style="background:#fee2e2; border-left:4px solid #ef4444; padding:16px; border-radius:8px; margin-bottom:20px; color:#991b1b; font-size:0.95rem;">
-                                <strong><i class="fa-solid fa-triangle-exclamation"></i> ${doc.approvalStatus === 'REJECTED' ? 'Lý do từ chối từ Quản lý:' : 'Chi tiết lỗi từ hệ thống AI:'}</strong><br/>
-                                <span style="font-family:monospace; margin-top:8px; display:inline-block; font-size:0.85rem;">${escapeHtml(doc.errorMessage)}</span>
+                                <strong><i class="fa-solid fa-triangle-exclamation"></i> ${doc.approvalStatus === 'REJECTED' ? 'Lý do từ chối từ Quản lý:' : 'Lỗi xử lý AI:'}</strong><br/>
+                                <span style="font-family:monospace; margin-top:8px; display:inline-block; font-size:0.85rem;">
+                                    ${doc.approvalStatus === 'REJECTED' ? escapeHtml(doc.errorMessage) : 'Hệ thống AI hiện đang quá tải hoặc gặp sự cố kết nối. Vui lòng bấm "Tải lại kết quả OCR" ở trên để thử lại sau.'}
+                                </span>
                             </div>
                             ` : ''}
 

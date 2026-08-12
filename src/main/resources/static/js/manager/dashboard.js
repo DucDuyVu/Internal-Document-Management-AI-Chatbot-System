@@ -213,11 +213,24 @@ async function viewRoleDetail(id) {
     alert('Tính năng đang phát triển');
 }
 
-async function deleteDocumentManager(docId, fileName) {
-    if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${fileName}"?\nHành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu AI liên quan.`)) {
-        return;
+function deleteDocumentManager(docId, fileName) {
+    if (typeof showConfirmDialog !== 'undefined') {
+        showConfirmDialog(
+            '🗑️ Xác nhận xoá tài liệu',
+            `Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${fileName}"? Hành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu AI liên quan.`,
+            async () => {
+                await executeDeleteDocumentManager(docId);
+            }
+        );
+    } else {
+        if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${fileName}"?\nHành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu AI liên quan.`)) {
+            return;
+        }
+        executeDeleteDocumentManager(docId);
     }
-    
+}
+
+async function executeDeleteDocumentManager(docId) {
     try {
         const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || '');
         const res = await fetch(`/api/manager/documents/${docId}`, {
@@ -1540,6 +1553,7 @@ async function loadManagerData() {
             const pendingCount = profile.pendingDocumentCount || 0;
             const totalDocs = profile.departmentDocumentsCount || 0;
             const sessions = profile.activeSessionsCount || 0;
+            const onlineUsers = profile.departmentOnlineUsersCount || 0;
 
             if (msDeptName) msDeptName.textContent = deptName;
             if (msDeptNameHeader) msDeptNameHeader.textContent = deptName;
@@ -1548,6 +1562,7 @@ async function loadManagerData() {
             if (pendingDocCount) pendingDocCount.textContent = pendingCount;
             if (btnPendingCount) btnPendingCount.textContent = pendingCount;
             if (msActiveSessions) msActiveSessions.textContent = sessions;
+            if (msOnlineUsers) msOnlineUsers.textContent = onlineUsers;
             if (msTotalDocs) {
                 msTotalDocs.textContent = totalDocs;
                 const trendEl = document.getElementById('msTotalDocsTrend');
@@ -2321,7 +2336,7 @@ async function loadPermissionTargets() {
         // Departments
         const optgroupDept = document.createElement('optgroup');
         optgroupDept.label = "Phòng ban";
-        optgroupDept.appendChild(new Option("Nội bộ công ty (Tất cả)", "public_0"));
+        optgroupDept.appendChild(new Option("Nội bộ công ty (Tất cả)", "dept_all"));
 
         if (Array.isArray(departments)) {
             departments.forEach(dept => {
@@ -2380,7 +2395,7 @@ async function loadDocumentPermissions(docId) {
                 name = perm.userName;
                 icon = "👤";
             } else {
-                name = perm.departmentName || "Tất cả phòng ban";
+                name = perm.departmentName || "Nội bộ công ty (Tất cả)";
                 icon = "🏢";
             }
 
@@ -2395,9 +2410,9 @@ async function loadDocumentPermissions(docId) {
                     </div>
                 </td>
                 <td>${dateStr}</td>
-                <td>${perm.sharedByName || 'Admin'}</td>
+                <td>${escapeHtml(perm.grantedByName || 'Admin')}</td>
                 <td style="text-align:center;">
-                    <button class="btn-cancel" onclick="revokeDocumentPermission(${perm.id})" style="font-size: 0.85rem; padding: 4px 8px; color: #ef4444; border-color: #fca5a5;">
+                    <button class="btn-cancel" onclick="revokeDocumentPermission(${perm.departmentId || 0})" style="font-size: 0.85rem; padding: 4px 8px; color: #ef4444; border-color: #fca5a5;">
                         Thu hồi
                     </button>
                 </td>
@@ -2434,7 +2449,10 @@ async function shareDocumentPermission() {
         isPublicLink: false
     };
 
-    if (target.startsWith('dept_')) {
+    if (target === 'dept_all') {
+        payload.departmentId = null;
+        payload.isPublicLink = false;
+    } else if (target.startsWith('dept_')) {
         payload.departmentId = parseInt(target.replace('dept_', ''));
     } else if (target.startsWith('public_')) {
         payload.isPublicLink = true;
@@ -2490,11 +2508,22 @@ async function createPublicLink() {
     }
 }
 
-async function revokeDocumentPermission(permissionId) {
-    if (!currentPermissionDocId || !confirm('Bạn có chắc chắn muốn thu hồi quyền truy cập này?')) return;
+async function revokeDocumentPermission(deptId) {
+    if (!currentPermissionDocId) return;
+    
+    if (typeof showConfirmDialog !== 'undefined') {
+        showConfirmDialog('Xác nhận thu hồi', 'Bạn có chắc chắn muốn thu hồi quyền truy cập này?', async () => {
+            await executeRevoke(deptId);
+        });
+    } else {
+        if (!confirm('Bạn có chắc chắn muốn thu hồi quyền truy cập này?')) return;
+        await executeRevoke(deptId);
+    }
+}
 
+async function executeRevoke(deptId) {
     try {
-        await apiRequest(`/api/documents/${currentPermissionDocId}/permissions/${permissionId}`, {
+        await apiRequest(`/api/documents/${currentPermissionDocId}/permissions/${deptId}`, {
             method: 'DELETE'
         });
 
@@ -2695,24 +2724,33 @@ async function editEmployee(id) {
             ? `<img src="${user.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` 
             : initial;
         
-        const statusSpan = document.getElementById('roStatus');
-        if (user.isActive) {
-            statusSpan.textContent = 'Hoạt động';
-            statusSpan.style.background = '#dcfce7';
-            statusSpan.style.color = '#166534';
-        } else {
-            statusSpan.textContent = 'Đã khóa';
-            statusSpan.style.background = '#fee2e2';
-            statusSpan.style.color = '#991b1b';
-        }
-
+        // Remove updating redundant badges
         document.getElementById('roEmail').textContent = user.email || 'Chưa có';
-        document.getElementById('roDepartment').textContent = user.departmentName || 'Chưa phân phòng ban';
-        document.getElementById('roRole').textContent = user.role === 'MANAGER' ? 'Quản lý / Trưởng phòng' : 'Nhân viên';
 
         document.getElementById('empFullName').value = user.fullName || '';
         document.getElementById('empEmail').value = user.email || '';
         document.getElementById('empPhone').value = user.phone || '';
+        document.getElementById('empEmployeeCode').value = user.employeeCode || ('NV' + user.id);
+        document.getElementById('empJobTitle').value = user.jobTitle || '';
+        document.getElementById('empIsActive').value = user.isActive !== false ? 'true' : 'false';
+
+        // Populate read-only badges
+        const roles = { ADMIN: 'Quản trị viên', MANAGER: 'Quản lý', USER: 'Nhân viên' };
+        document.getElementById('roRole').textContent = roles[user.role] || user.role || 'Nhân viên';
+        document.getElementById('roDepartment').textContent = user.departmentName || 'Chưa phân phòng ban';
+        
+        const roManager = document.getElementById('roManagerName');
+        if (user.managerName) {
+            roManager.textContent = user.managerName;
+            roManager.style.color = '#1e293b';
+            roManager.style.fontWeight = '700';
+            roManager.style.fontStyle = 'normal';
+        } else {
+            roManager.textContent = 'Chưa có';
+            roManager.style.color = '#94a3b8';
+            roManager.style.fontWeight = '500';
+            roManager.style.fontStyle = 'italic';
+        }
 
         // Disable editing username and password
         document.getElementById('groupEmpUsername').style.display = 'none';
@@ -2756,7 +2794,10 @@ async function saveEmployee() {
     const data = {
         fullName: document.getElementById('empFullName').value.trim(),
         email: document.getElementById('empEmail').value.trim(),
-        phone: document.getElementById('empPhone').value.trim()
+        phone: document.getElementById('empPhone').value.trim(),
+        employeeCode: document.getElementById('empEmployeeCode').value.trim(),
+        jobTitle: document.getElementById('empJobTitle').value.trim(),
+        isActive: document.getElementById('empIsActive').value === 'true'
     };
 
     try {

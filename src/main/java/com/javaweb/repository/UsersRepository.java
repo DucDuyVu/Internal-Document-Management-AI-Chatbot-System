@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.javaweb.enums.UserRole;
+
 public interface UsersRepository extends JpaRepository<UsersEntity, Long> {
 
 	Optional<UsersEntity> findByEmail(String email);
@@ -20,14 +21,24 @@ public interface UsersRepository extends JpaRepository<UsersEntity, Long> {
 
 	boolean existsByEmail(String email);
 
+	// Tìm Manager của một phòng ban
+	@Query("SELECT u FROM UsersEntity u WHERE u.department.id = :deptId AND u.role = 'MANAGER' AND u.deletedAt IS NULL AND u.isActive = true")
+	List<UsersEntity> findActiveManagersByDepartment(@Param("deptId") Long deptId);
+
+	// Đếm user bị khóa và chưa xóa mềm
+	long countByIsActiveFalseAndDeletedAtIsNull();
+
 	// Đếm user theo object phòng ban
 	long countByDepartment(DepartmentsEntity department);
 
 	// Đếm user theo id phòng ban
 	long countByDepartmentId(Long departmentId);
-	
+
 	// Đếm user đang hoạt động theo id phòng ban
 	long countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(Long departmentId);
+	
+	// Đếm user đang hoạt động theo id phòng ban và vai trò
+	long countByDepartmentIdAndDeletedAtIsNullAndIsActiveTrueAndRole(Long departmentId, UserRole role);
 
 	// Tìm xem còn users hoạt động thuộc phòng ban không
 	boolean existsByDepartmentIdAndDeletedAtIsNullAndIsActiveTrue(Long id);
@@ -43,7 +54,10 @@ public interface UsersRepository extends JpaRepository<UsersEntity, Long> {
 			@Param("departmentId") Long departmentId,
 			@Param("isActive") Boolean isActive,
 			Pageable pageable);
+
 	Optional<UsersEntity> findByUserName(String userName);
+
 	List<UsersEntity> findByRole(UserRole role);
+
 	List<UsersEntity> findByDepartmentId(Long departmentId);
 }

@@ -79,16 +79,43 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
        @Query("SELECT COUNT(d) FROM DocumentEntity d WHERE d.uploadedBy = :userId AND d.approvalStatus = 'APPROVED' AND d.deletedAt IS NULL")
        long countApprovedByUserId(@Param("userId") Long userId);
 
-
-
+       /**
+        * Tìm danh sách tài liệu thuộc một phòng ban cụ thể, có trạng thái phê duyệt 
+        * nằm trong danh sách cho trước và chưa bị xóa mềm. (Ví dụ: Tìm các tài liệu PENDING/APPROVED)
+        */
        List<DocumentEntity> findByDepartmentIdAndApprovalStatusInAndDeletedAtIsNull(Integer departmentId,
                      List<ApprovalStatus> approvalStatuses);
 
+       /**
+        * Đếm tổng số tài liệu do một user (nhân viên) cụ thể tải lên (chưa bị xoá mềm).
+        */
        long countByUploadedByAndDeletedAtIsNull(Long uploadedBy);
 
+       /**
+        * Đếm tổng số lượng tài liệu thuộc về một phòng ban cụ thể (chưa bị xoá mềm).
+        */
        long countByDepartmentIdAndDeletedAtIsNull(Integer departmentId);
 
+       /**
+        * Đếm số lượng tài liệu của một phòng ban theo trạng thái xử lý AI cụ thể (PENDING, COMPLETED, FAILED...).
+        */
        long countByDepartmentIdAndStatusAndDeletedAtIsNull(Integer departmentId, DocumentStatus status);
 
+       /**
+        * Đếm tổng số tài liệu trên toàn hệ thống theo một trạng thái xử lý AI cụ thể.
+        * (Được dùng trong Dashboard Admin để lấy số lượng "Tài liệu lỗi" - FAILED).
+        */
+       long countByStatusAndDeletedAtIsNull(DocumentStatus status);
+
+       /**
+        * Đếm tổng số tài liệu chưa được gán cho bất kỳ phòng ban nào (department_id IS NULL).
+        * (Được dùng trong Dashboard Admin để đếm "Tài liệu chưa phân quyền").
+        */
+       long countByDepartmentIdIsNullAndDeletedAtIsNull();
+
+       /**
+        * Lấy danh sách tài liệu do một user cụ thể tải lên (chưa xoá mềm),
+        * có phân trang và sắp xếp theo thời gian tạo mới nhất.
+        */
        List<DocumentEntity> findByUploadedByAndDeletedAtIsNullOrderByCreatedAtDesc(Long uploadedBy, Pageable pageable);
 }

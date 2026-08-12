@@ -77,9 +77,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initAdminDashboard();
-    loadOverviewStats();
-    loadRecentActivities();
-    loadDepartmentStats();
+    
+    // Khôi phục tab hiện tại từ URL hash hoặc mặc định load tabOverview
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+        AdminState.currentTab = hash;
+        loadTabData(hash);
+    } else {
+        loadOverviewStats();
+        loadRecentActivities();
+        loadDepartmentStats();
+    }
 });
 
 function initAdminDashboard() {
@@ -217,13 +225,17 @@ async function loadOverviewStats() {
             apiRequest('/api/admin/departments')
         ]);
 
+        const uploadToday = (dashboardStats && dashboardStats.uploadData && dashboardStats.uploadData.length > 0)
+            ? dashboardStats.uploadData[dashboardStats.uploadData.length - 1] 
+            : 0;
+
         const elements = {
             'statTotalUsers': usersRes ? (usersRes.totalElements || 0) : 0,
             'statTotalDocs': dashboardStats ? (dashboardStats.documentCount || 0) : 0,
-            'statUploadToday': Math.floor(Math.random() * 20) + 1, // Mock
+            'statUploadToday': uploadToday,
             'statTotalChats': dashboardStats ? (dashboardStats.chatSessionCount || 0) : 0,
-            'statFailedDocs': '0',
-            'statOnline': Math.floor(Math.random() * 10) + 5 // Mock
+            'statFailedDocs': dashboardStats ? (dashboardStats.errorDocumentCount || 0) : 0,
+            'statOnline': dashboardStats ? (dashboardStats.activeSessionsCount || 0) : 0
         };
 
         AdminState.overview = {
@@ -276,7 +288,16 @@ async function loadOverviewStats() {
         if (currentDayEl) currentDayEl.textContent = dayStr;
 
         const pendingDocEl = document.getElementById('pendingDocCount');
-        if (pendingDocEl) pendingDocEl.textContent = Math.floor(Math.random() * 5);
+        if (pendingDocEl) pendingDocEl.textContent = dashboardStats ? (dashboardStats.pendingDocumentCount || 0) : 0;
+
+        // Update To-Do list UI elements
+        const statErrorDocsEl = document.getElementById('statErrorDocs');
+        const statUnassignedDocsEl = document.getElementById('statUnassignedDocs');
+        const statLockedUsersEl = document.getElementById('statLockedUsers');
+        
+        if (statErrorDocsEl && dashboardStats) statErrorDocsEl.textContent = dashboardStats.errorDocumentCount || 0;
+        if (statUnassignedDocsEl && dashboardStats) statUnassignedDocsEl.textContent = dashboardStats.unassignedDocumentCount || 0;
+        if (statLockedUsersEl && dashboardStats) statLockedUsersEl.textContent = dashboardStats.lockedUserCount || 0;
 
         // Khởi tạo biểu đồ với dữ liệu thực
         if (typeof initCharts === 'function') {
@@ -735,7 +756,6 @@ function showConfirmDialog(title, message, callback) {
 
     if (actionBtn) {
         actionBtn.textContent = 'Xác nhận';
-        actionBtn.className = 'btn-danger-sm';
     }
 
     if (typeof openModal !== 'undefined') {
@@ -965,7 +985,7 @@ async function loadDepartmentsForFilter(selectId) {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const response = await apiRequest('/api/admin/departments');
+        const response = await apiRequest('/api/departments');
         const departments = response.content || response;
         const select = document.getElementById(selectId);
 
@@ -989,7 +1009,7 @@ async function loadDepartmentsForSelect(selectId) {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const response = await apiRequest('/api/admin/departments');
+        const response = await apiRequest('/api/departments');
         const departments = response.content || response;
         const select = document.getElementById(selectId);
 
@@ -1006,6 +1026,10 @@ async function loadDepartmentsForSelect(selectId) {
 
     } catch (error) {
         console.error('Error loading departments for select:', error);
+        const select = document.getElementById(selectId);
+        if (select) {
+            select.innerHTML = `<option value="">Lỗi: ${error.message}</option>`;
+        }
     }
 }
 
@@ -1081,7 +1105,7 @@ function renderDocumentTable() {
                     </div>
                 </div>
             </td>
-            <td><div style="font-size:0.9rem;color:#475569;font-weight:500;">${doc.departmentName || '—'}</div></td>
+            <td><div style="font-size:0.9rem;color:#475569;font-weight:500;">${doc.departmentName || 'Tất cả phòng ban'}</div></td>
             <td><div style="font-size:0.9rem;color:#475569;">${doc.fileSize ? (doc.fileSize / 1024 / 1024).toFixed(2) + ' MB' : '—'}</div></td>
             <td>
                 <div style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
@@ -1093,7 +1117,7 @@ function renderDocumentTable() {
                 <div style="display:flex; gap:8px; justify-content:flex-end;">
                     <button class="btn-icon" onclick="event.stopPropagation(); typeof viewDocumentInline === 'function' ? viewDocumentInline(${doc.id}) : null" title="Xem trực tiếp">👁️</button>
                     <button class="btn-icon" onclick="event.stopPropagation(); typeof downloadDocument === 'function' ? downloadDocument(${doc.id}, '${safeFileName}') : null" title="Tải xuống">⬇️</button>
-                    ${doc.status === 'FAILED' ? `
+                    ${(doc.status === 'FAILED' && doc.approvalStatus !== 'REJECTED') ? `
                     <button class="btn-icon" style="color:#f59e0b;" onclick="event.stopPropagation(); retryDocument(${doc.id})" title="Thử lại xử lý AI">🔄</button>` : ''}
                     ${(doc.status === 'PENDING' || doc.approvalStatus === 'PENDING') ? `
                     <button class="btn-icon" style="color:#10b981;" onclick="event.stopPropagation(); emergencyApproveDocument(${doc.id}, '${safeFileName}')" title="Duyệt khẩn cấp">✅</button>` : ''}
@@ -1121,17 +1145,17 @@ function filterAdminDocuments() {
             (doc.departmentName && doc.departmentName.toLowerCase().includes(searchTerm)) ||
             ('doc-' + String(doc.id).padStart(4, '0')).includes(searchTerm);
 
-        let matchesStatus = true;
-        if (typeFilter !== 'ALL') {
-            if (typeFilter === 'COMPLETED') {
-                matchesStatus = (doc.status === 'COMPLETED' || doc.status === 'SUCCESS');
-            } else if (typeFilter === 'PENDING') {
-                matchesStatus = (doc.status === 'PENDING' || doc.approvalStatus === 'PENDING');
-            } else if (typeFilter === 'PROCESSING') {
-                matchesStatus = (doc.status === 'PROCESSING');
-            } else if (typeFilter === 'FAILED') {
-                matchesStatus = (doc.status === 'FAILED' || doc.approvalStatus === 'REJECTED');
-            }
+        let matchesStatus = false;
+        if (typeFilter === 'ALL') {
+            matchesStatus = true;
+        } else if (typeFilter === 'COMPLETED') {
+            matchesStatus = (doc.status === 'COMPLETED' || doc.status === 'SUCCESS');
+        } else if (typeFilter === 'PENDING') {
+            matchesStatus = (doc.status === 'PENDING' || doc.approvalStatus === 'PENDING');
+        } else if (typeFilter === 'PROCESSING') {
+            matchesStatus = (doc.status === 'PROCESSING');
+        } else if (typeFilter === 'FAILED' || typeFilter === 'FAILED_OR_REJECTED') {
+            matchesStatus = (doc.status === 'FAILED' || doc.approvalStatus === 'REJECTED');
         }
 
         return matchesSearch && matchesStatus;
@@ -1285,7 +1309,7 @@ async function retryDocument(docId) {
         }
 
         await apiRequest(`/api/admin/documents/${docId}/retry`, {
-            method: 'POST'
+            method: 'PUT'
         });
 
         if (typeof showToast !== 'undefined') {

@@ -38,6 +38,12 @@ public class UsersEntity {
 	@Column(name = "username")
 	private String userName;
 
+	@Column(name = "employee_code")
+	private String employeeCode;
+
+	@Column(name = "manager_id")
+	private Long managerId;
+
 	@Column(name = "phone")
 	private String phone;
 
