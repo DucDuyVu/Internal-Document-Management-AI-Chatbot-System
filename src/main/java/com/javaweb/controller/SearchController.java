@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.javaweb.dto.response.search.AiSearchDto;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/search", "/api/user"})
@@ -35,12 +38,24 @@ public class SearchController {
 
     @PostMapping({"", "/search"})
     public ResponseEntity<GlobalSearchResponse> searchGlobalPost(
-            @RequestBody java.util.Map<String, String> request,
+            @RequestBody Map<String, String> request,
             Authentication authentication) {
         String query = request.get("query");
         if (query == null) {
             query = request.get("q");
         }
         return searchGlobal(query != null ? query : "", authentication);
+    }
+
+    @GetMapping("/ai")
+    public ResponseEntity<List<AiSearchDto>> searchAi(
+            @RequestParam("q") String query,
+            Authentication authentication) {
+            
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        UsersEntity currentUser = userDetails.getUser();
+
+        List<AiSearchDto> response = searchService.searchAi(query, currentUser);
+        return ResponseEntity.ok(response);
     }
 }

@@ -117,6 +117,7 @@ function setupUserSidebar() {
 
 function setupUserEventListeners() {
     if (typeof initCitationPopover === 'function') initCitationPopover();
+    if (typeof initSignaturePad === 'function') initSignaturePad();
     // Document search
     const docSearch = document.getElementById('docSearchInput');
     if (docSearch && typeof debounce !== 'undefined') {
@@ -137,10 +138,20 @@ function setupUserEventListeners() {
 
     // Chat input
     const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    
     if (chatInput) {
         chatInput.addEventListener('keydown', handleChatKeydown);
         chatInput.addEventListener('input', function () {
             autoResizeTextarea(this);
+        });
+    }
+    
+    if (chatSendBtn) {
+        chatSendBtn.addEventListener('click', function() {
+            if (chatInput.value.trim() !== '') {
+                sendMessage();
+            }
         });
     }
 
@@ -720,7 +731,7 @@ async function handleUploadDocument(event) {
     try {
         if (typeof showToast !== 'undefined') showToast('Đang tải lên...', 'info');
 
-        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || '');
         const url = `${typeof API_BASE !== 'undefined' ? API_BASE : ''}/api/documents/upload`;
 
         const response = await fetch(url, {
@@ -1485,12 +1496,23 @@ async function performSearch() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/search?q=${encodeURIComponent(query)}`);
+        const dropdown = document.getElementById('globalSearchDropdown');
+        const isGlobal = dropdown && dropdown.style.display !== 'none';
+        
+        const endpoint = isGlobal ? `/api/search?q=${encodeURIComponent(query)}` : `/api/search/ai?q=${encodeURIComponent(query)}`;
+        const response = await apiRequest(endpoint);
 
         // Kết hợp documents và users vào mảng results để render
         const results = [];
-        if (response.documents) {
-            response.documents.forEach(doc => results.push({ ...doc, type: 'document' }));
+        if (isGlobal) {
+            if (response.documents) {
+                response.documents.forEach(doc => results.push({ ...doc, type: 'document' }));
+            }
+        } else {
+            // For AI search, response is already an array of AiSearchDto
+            if (Array.isArray(response)) {
+                response.forEach(doc => results.push(doc));
+            }
         }
 
         UserState.search.results = results;
@@ -1781,26 +1803,50 @@ async function loadUserProfile() {
         const viewRole = document.getElementById('viewRole');
         const viewCreatedAt = document.getElementById('viewCreatedAt');
         const viewLastLogin = document.getElementById('viewLastLogin');
+        const viewJobTitle = document.getElementById('viewJobTitle');
+        const viewSignature = document.getElementById('viewSignature');
 
         if (viewFullName) viewFullName.textContent = profile.fullName || '—';
         if (viewUsername) viewUsername.textContent = profile.username || profile.userName || '—';
         if (viewEmail) viewEmail.textContent = profile.email || '—';
         if (viewPhone) viewPhone.textContent = profile.phone || '—';
         if (viewDept) viewDept.textContent = profile.departmentName || 'Toàn hệ thống';
+        if (viewJobTitle) viewJobTitle.textContent = profile.jobTitle || '—';
         if (viewRole) {
             const roles = { ADMIN: 'Quản trị viên', MANAGER: 'Quản lý', USER: 'Nhân viên' };
             viewRole.textContent = roles[profile.role] || profile.role || '—';
         }
         if (viewCreatedAt) viewCreatedAt.textContent = profile.createdAt ? (typeof formatDate !== 'undefined' ? formatDate(profile.createdAt) : profile.createdAt) : '—';
         if (viewLastLogin) viewLastLogin.textContent = profile.lastLogin ? (typeof formatDate !== 'undefined' ? formatDate(profile.lastLogin) : profile.lastLogin) : '—';
+        if (viewSignature) {
+            if (profile.signatureUrl) {
+                viewSignature.innerHTML = `<img src="${profile.signatureUrl}" alt="Chữ ký" style="max-height: 80px; max-width: 100%; object-fit: contain;">`;
+                viewSignature.style.padding = '0';
+                viewSignature.style.background = 'transparent';
+                viewSignature.style.border = 'none';
+            } else {
+                viewSignature.textContent = 'Chưa thiết lập chữ ký';
+                viewSignature.style.padding = '12px';
+                viewSignature.style.background = '#f8fafc';
+                viewSignature.style.border = '1px dashed var(--border-color)';
+            }
+        }
 
         // Update form
         const fullNameInput = document.getElementById('editFullName');
         const phoneInput = document.getElementById('editPhone');
         const avatarInput = document.getElementById('editAvatarUrl');
+        const usernameInput = document.getElementById('editUsername');
+        const emailInput = document.getElementById('editEmail');
+        const deptInput = document.getElementById('editDept');
+        const jobTitleInput = document.getElementById('editJobTitle');
 
         if (fullNameInput) fullNameInput.value = profile.fullName || '';
         if (phoneInput) phoneInput.value = profile.phone || '';
+        if (usernameInput) usernameInput.value = profile.userName || '';
+        if (emailInput) emailInput.value = profile.email || '';
+        if (deptInput) deptInput.value = profile.departmentName || '';
+        if (jobTitleInput) jobTitleInput.value = profile.jobTitle || '';
 
         // Load profile stats
         const docCount = document.getElementById('psDocCount');
@@ -1858,9 +1904,9 @@ async function updateProfile() {
     const phone = document.getElementById('editPhone')?.value?.trim();
     const userName = document.getElementById('editUsername')?.value?.trim();
     const avatarInput = document.getElementById('editAvatarUrl');
+    const signatureInput = document.getElementById('editSignatureUrl');
     let avatarUrl = null;
-
-
+    let signatureUrl = null;
 
     try {
         if (typeof apiRequest === 'undefined') {
@@ -1876,15 +1922,46 @@ async function updateProfile() {
                 method: 'POST',
                 body: formData,
                 headers: { 'Accept': 'application/json' }
-                // NOTE: Do not set Content-Type header for FormData, browser will set it automatically with boundary
-            }, true); // Use raw fetch wrapper if possible, or ensure apiRequest doesn't override Content-Type
+            }, true);
 
             avatarUrl = uploadRes.avatarUrl;
+        }
+
+        // Nếu có chọn ảnh chữ ký, hoặc vẽ chữ ký mới
+        if (signatureInput && signatureInput.files.length > 0) {
+            const formData = new FormData();
+            formData.append('file', signatureInput.files[0]);
+
+            const uploadRes = await apiRequest('/api/users/upload-signature', {
+                method: 'POST',
+                body: formData,
+                headers: { 'Accept': 'application/json' }
+            }, true);
+
+            signatureUrl = uploadRes.signatureUrl;
+        } else if (signatureCanvas) {
+            // Check if canvas is drawn
+            const blank = document.createElement('canvas');
+            blank.width = signatureCanvas.width;
+            blank.height = signatureCanvas.height;
+            if (signatureCanvas.toDataURL() !== blank.toDataURL()) {
+                const blob = await new Promise(resolve => signatureCanvas.toBlob(resolve, 'image/png'));
+                const formData = new FormData();
+                formData.append('file', blob, 'signature.png');
+                
+                const uploadRes = await apiRequest('/api/users/upload-signature', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                }, true);
+                signatureUrl = uploadRes.signatureUrl;
+            }
         }
 
         // Cập nhật profile
         const payload = { fullName, phone, userName };
         if (avatarUrl) payload.avatarUrl = avatarUrl;
+        if (signatureUrl) payload.signatureUrl = signatureUrl;
 
         await apiRequest('/api/users/profile', {
             method: 'PATCH',
@@ -1898,6 +1975,7 @@ async function updateProfile() {
                 user.fullName = fullName;
                 user.phone = phone;
                 if (avatarUrl) user.avatarUrl = avatarUrl;
+                if (signatureUrl) user.signatureUrl = signatureUrl;
                 saveUser(user);
             }
         }
@@ -2116,11 +2194,9 @@ window.filterUserDocuments = filterUserDocuments;
 // ===== DOWNLOAD FUNCTION =====
 async function downloadDocument(docId, fileName) {
     try {
-        if (typeof showToast !== 'undefined') {
-            showToast('Đang tải tài liệu...', 'info');
-        }
+        // removed info toast
 
-        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || '');
         const response = await fetch(`${API_BASE}/api/documents/${docId}/download`, {
             method: 'GET',
             headers: {
@@ -2210,20 +2286,7 @@ function changePage(page) {
     loadUserDocuments();
 }
 
-// ===== Initialize =====
-document.addEventListener('DOMContentLoaded', function () {
-    // Kiểm tra đăng nhập
-    if (typeof isLoggedIn === 'undefined' || !isLoggedIn()) {
-        window.location.href = '/login';
-        return;
-    }
 
-    const user = typeof getUser !== 'undefined' ? getUser() : null;
-    if (user && user.role !== 'ADMIN') {
-        initUserDashboard();
-        loadHomeData();
-    }
-});
 // ===== DOCUMENT PERMISSION MANAGEMENT =====
 let currentPermissionDocId = null;
 
@@ -2543,6 +2606,126 @@ function renderEmployees(users, total, currentPage = 1, size = 10) {
     updateEmployeePagination(currentPage, total, size);
 }
 
+// =============================================
+// SIGNATURE PAD
+// =============================================
+let signaturePadContext = null;
+let isDrawingSignature = false;
+let signatureCanvas = null;
+
+function initSignaturePad() {
+    signatureCanvas = document.getElementById('signaturePad');
+    if (!signatureCanvas) return;
+    
+    signaturePadContext = signatureCanvas.getContext('2d');
+    signaturePadContext.strokeStyle = '#0f172a';
+    signaturePadContext.lineWidth = 2;
+    signaturePadContext.lineCap = 'round';
+    signaturePadContext.lineJoin = 'round';
+
+    signatureCanvas.addEventListener('mousedown', startDrawing);
+    signatureCanvas.addEventListener('mousemove', drawSignature);
+    signatureCanvas.addEventListener('mouseup', stopDrawing);
+    signatureCanvas.addEventListener('mouseout', stopDrawing);
+    
+    // Touch support
+    signatureCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    signatureCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    signatureCanvas.addEventListener('touchend', stopDrawing);
+}
+
+function getPointerPos(e) {
+    const rect = signatureCanvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+    };
+}
+
+function startDrawing(e) {
+    if (!signaturePadContext) return;
+    
+    // Mutually exclusive: if user draws, remove any uploaded file preview
+    removeUploadedSignature(false);
+    
+    isDrawingSignature = true;
+    const pos = getPointerPos(e);
+    signaturePadContext.beginPath();
+    signaturePadContext.moveTo(pos.x, pos.y);
+}
+
+function drawSignature(e) {
+    if (!isDrawingSignature || !signaturePadContext) return;
+    e.preventDefault();
+    const pos = getPointerPos(e);
+    signaturePadContext.lineTo(pos.x, pos.y);
+    signaturePadContext.stroke();
+}
+
+function stopDrawing() {
+    isDrawingSignature = false;
+}
+
+function handleTouchStart(e) {
+    if (e.target === signatureCanvas) e.preventDefault();
+    startDrawing(e);
+}
+
+function handleTouchMove(e) {
+    if (e.target === signatureCanvas) e.preventDefault();
+    drawSignature(e);
+}
+
+function clearSignature() {
+    if (signaturePadContext && signatureCanvas) {
+        signaturePadContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    }
+}
+
+function previewSignature(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Mutually exclusive: if user uploads, clear the drawing canvas
+    clearSignature();
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const previewImg = document.getElementById('signaturePreviewImg');
+        const initials = document.getElementById('signaturePreviewInitials');
+        const removeBtn = document.getElementById('removeSignatureImgBtn');
+
+        if (previewImg) {
+            previewImg.src = event.target.result;
+            previewImg.style.display = 'block';
+        }
+        if (initials) initials.style.display = 'none';
+        if (removeBtn) removeBtn.style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeUploadedSignature(doClearCanvas = true) {
+    const fileInput = document.getElementById('editSignatureUrl');
+    const previewImg = document.getElementById('signaturePreviewImg');
+    const initials = document.getElementById('signaturePreviewInitials');
+    const removeBtn = document.getElementById('removeSignatureImgBtn');
+    
+    if (fileInput) fileInput.value = '';
+    if (previewImg) {
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+    }
+    if (initials) initials.style.display = 'block';
+    if (removeBtn) removeBtn.style.display = 'none';
+    
+    if (doClearCanvas) {
+        clearSignature();
+    }
+}
+
 function loadReports() {
     loadManagerReportStats();
 }
@@ -2665,32 +2848,7 @@ async function loadEmployees(page = 1, size = 10, search = '') {
     }
 }
 
-                        </div>
-                    </div>
-                </div>
-            </td>
-            <td style="color:#4b5563;">
-                <div>${u.email || 'Chưa có email'}</div>
-            </td>
-            <td>${statusBadge}</td>
-            <td style="text-align:right;">
-                <button class="btn-icon" onclick="editEmployee(${u.id})" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
-            </td>
-        </tr>`;
-    }).join('');
 
-    const pageInfo = document.getElementById('employeePageInfo');
-    if (pageInfo) {
-        if (total !== undefined) {
-            pageInfo.textContent = `Hiển thị ${users.length} / ${total} nhân viên`;
-        } else {
-            pageInfo.textContent = `Hiển thị ${users.length} nhân viên`;
-        }
-    }
-
-    // Update Pagination
-    updateEmployeePagination(currentPage, total, size);
-}
 
 function updateEmployeePagination(currentPage, total, size) {
     const container = document.getElementById('employeePagination');
@@ -2735,6 +2893,41 @@ async function editEmployee(id) {
         document.getElementById('employeeForm').reset();
         document.getElementById('empId').value = user.id;
         document.getElementById('employeeModalTitle').textContent = 'Chỉnh sửa nhân viên';
+
+        // Read-only header
+        const roEmail = document.getElementById('roEmail');
+        if (roEmail) roEmail.textContent = user.email || user.username || '-';
+        
+        const roRole = document.getElementById('roRole');
+        const roleMap = { 'ADMIN': 'Quản trị viên', 'MANAGER': 'Quản lý', 'USER': 'Nhân viên' };
+        if (roRole) roRole.textContent = roleMap[user.role] || user.role || '-';
+        
+        const roDepartment = document.getElementById('roDepartment');
+        if (roDepartment) roDepartment.textContent = user.departmentName || 'Không thuộc phòng ban';
+        
+        const roManagerName = document.getElementById('roManagerName');
+        if (roManagerName) roManagerName.textContent = user.managerName || 'Không có';
+        
+        const roAvatar = document.getElementById('roAvatar');
+        if (roAvatar) {
+            if (user.avatarUrl) {
+                roAvatar.innerHTML = `<img src="${user.avatarUrl}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            } else if (typeof generateDefaultAvatar !== 'undefined') {
+                roAvatar.innerHTML = `<img src="${generateDefaultAvatar(user.fullName)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+            } else {
+                roAvatar.textContent = user.fullName ? user.fullName.charAt(0).toUpperCase() : '?';
+            }
+        }
+
+        // Form fields
+        const empEmployeeCode = document.getElementById('empEmployeeCode');
+        if (empEmployeeCode) empEmployeeCode.value = user.employeeCode || '';
+        
+        const empJobTitle = document.getElementById('empJobTitle');
+        if (empJobTitle) empJobTitle.value = user.jobTitle || '';
+        
+        const empIsActive = document.getElementById('empIsActive');
+        if (empIsActive) empIsActive.value = user.isActive !== false ? "true" : "false";
 
         document.getElementById('empFullName').value = user.fullName || '';
         document.getElementById('empEmail').value = user.email || '';
@@ -2837,3 +3030,74 @@ document.addEventListener('tabSwitched', function(e) {
     loadUserTabData(e.detail.tabId);
 });
 
+// ===== AI REPORT FUNCTIONS =====
+async function generateAiReport() {
+    if (typeof showModal !== 'undefined') showModal('aiReportModal');
+    
+    const loadingEl = document.getElementById('aiReportLoading');
+    const contentWrapper = document.getElementById('aiReportContentWrapper');
+    const contentEl = document.getElementById('aiReportContent');
+    const btnAiReport = document.getElementById('btnAiReport');
+    
+    if (loadingEl) loadingEl.style.display = 'flex';
+    if (contentWrapper) contentWrapper.style.display = 'none';
+    if (contentEl) contentEl.innerHTML = '';
+    
+    if (btnAiReport) {
+        btnAiReport.disabled = true;
+        btnAiReport.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích...';
+    }
+    
+    try {
+        if (typeof apiRequest === 'undefined') throw new Error('apiRequest is not defined');
+        
+        const response = await apiRequest('/api/manager/reports/ai-analysis', {
+            method: 'GET'
+        });
+        
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (contentWrapper) contentWrapper.style.display = 'block';
+        
+        if (contentEl && response && response.content) {
+            // Render markdown using marked
+            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+                contentEl.innerHTML = marked.parse(response.content);
+            } else {
+                contentEl.innerHTML = `<pre style="white-space: pre-wrap; font-family: inherit;">${response.content}</pre>`;
+            }
+        }
+    } catch (error) {
+        console.error('Error generating AI report:', error);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (contentWrapper) contentWrapper.style.display = 'block';
+        if (contentEl) {
+            contentEl.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 20px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; margin-bottom: 12px;"></i><br>
+                Có lỗi xảy ra khi tạo báo cáo AI:<br>${error.message || 'Lỗi không xác định'}
+            </div>`;
+        }
+    } finally {
+        if (btnAiReport) {
+            btnAiReport.disabled = false;
+            btnAiReport.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI Phân Tích Báo Cáo';
+        }
+    }
+}
+
+function copyAiReport() {
+    const contentEl = document.getElementById('aiReportContent');
+    if (!contentEl) return;
+    
+    const text = contentEl.innerText;
+    
+    navigator.clipboard.writeText(text).then(() => {
+        if (typeof showToast !== 'undefined') {
+            showToast('Đã sao chép báo cáo vào khay nhớ tạm', 'success');
+        } else {
+            alert('Đã sao chép báo cáo!');
+        }
+    }).catch(err => {
+        console.error('Error copying text:', err);
+        if (typeof showToast !== 'undefined') showToast('Không thể sao chép văn bản', 'error');
+    });
+}

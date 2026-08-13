@@ -1252,11 +1252,9 @@ async function viewDocument(docId) {
 
 async function downloadDocument(docId, fileName) {
     try {
-        if (typeof showToast !== 'undefined') {
-            showToast('Đang tải tài liệu...', 'info');
-        }
+        // removed info toast
 
-        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || '');
         const response = await fetch(`${API_BASE}/api/documents/${docId}/download`, {
             method: 'GET',
             headers: {

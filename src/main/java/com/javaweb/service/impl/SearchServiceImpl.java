@@ -18,6 +18,13 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.javaweb.rag.embedding.EmbeddingService;
+import com.javaweb.repository.DocumentChunkRepository;
+import com.javaweb.rag.retrieval.SearchResult;
+import com.javaweb.entity.DocumentChunkEntity;
+import com.javaweb.dto.response.search.AiSearchDto;
+import com.javaweb.utils.VectorUtils;
+
 @Service
 public class SearchServiceImpl implements SearchService {
 
@@ -27,8 +34,24 @@ public class SearchServiceImpl implements SearchService {
     @Autowired
     private UsersRepository usersRepository;
 
+    @Autowired
+    private EmbeddingService embeddingService;
+
+    @Autowired
+    private DocumentChunkRepository documentChunkRepository;
+
+    @Autowired
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @Override
     public GlobalSearchResponse searchGlobal(String query, UsersEntity currentUser) {
+        if (currentUser != null) {
+            java.util.Map<String, Object> meta = new java.util.HashMap<>();
+            meta.put("query", query);
+            meta.put("searchType", "GLOBAL");
+            eventPublisher.publishEvent(new com.event.AuditEven(currentUser.getId(), com.javaweb.entity.enums.ActionType.SEARCH, "GLOBAL_SEARCH", 0L, meta));
+        }
+
         Pageable top5 = PageRequest.of(0, 5); // Limit to top 5 results
 
         // 1. Search Documents
@@ -133,5 +156,63 @@ public class SearchServiceImpl implements SearchService {
             case "zip", "rar", "7z" -> "#e0e7ff";
             default -> "#f1f5f9";
         };
+    }
+
+    @Override
+    public List<AiSearchDto> searchAi(String query, UsersEntity currentUser) {
+        if (currentUser != null) {
+            java.util.Map<String, Object> meta = new java.util.HashMap<>();
+            meta.put("query", query);
+            meta.put("searchType", "AI");
+            eventPublisher.publishEvent(new com.event.AuditEven(currentUser.getId(), com.javaweb.entity.enums.ActionType.SEARCH, "AI_SEARCH", 0L, meta));
+        }
+
+        Integer deptId = null;
+        if (currentUser.getRole() != UserRole.ADMIN && currentUser.getDepartment() != null) {
+            deptId = currentUser.getDepartment().getId().intValue();
+        }
+
+        // 1. Chuyển đổi câu hỏi thành Vector (Embedding)
+        float[] queryEmbedding = embeddingService.embedQuery(query);
+        String embeddingText = VectorUtils.toPgVectorString(queryEmbedding);
+
+        // 2. Tìm kiếm Vector bằng pgvector
+        int topK = 10;
+        List<SearchResult> results = documentChunkRepository.searchSimilarChunks(embeddingText, deptId, topK);
+        
+        // 3. Lọc bỏ các kết quả có khoảng cách (distance) lớn hơn ngưỡng (ví dụ: 0.5)
+        double threshold = 0.5;
+        results.removeIf(r -> r.distance() > threshold);
+
+        // 4. Ánh xạ kết quả sang DTO trả về cho Frontend
+        return results.stream().map(r -> {
+            DocumentChunkEntity chunk = r.chunk();
+            DocumentEntity doc = documentRepository.findById(chunk.getDocumentId()).orElse(null);
+            
+            String fileType = "unknown";
+            String departmentName = "Phòng ban";
+            String createdAt = "";
+            
+            if (doc != null) {
+                fileType = doc.getFileType() != null ? doc.getFileType() : "pdf";
+                if (doc.getDepartmentId() != null) {
+                    departmentName = "Phòng ban";
+                } else {
+                    departmentName = "Chung";
+                }
+                createdAt = doc.getCreatedAt() != null ? doc.getCreatedAt().toString() : "";
+            }
+            
+            return AiSearchDto.builder()
+                .documentId(chunk.getDocumentId())
+                .fileName(r.fileName())
+                .fileType(fileType)
+                .departmentName(departmentName)
+                .createdAt(createdAt)
+                .excerpt(chunk.getContent() != null ? chunk.getContent().substring(0, Math.min(chunk.getContent().length(), 250)) + "..." : "")
+                .score(1.0 - r.distance()) // Chuyển đổi distance thành điểm số (score) tương đồng
+                .pageNumber(chunk.getPageNumber() != null ? chunk.getPageNumber() : 1)
+                .build();
+        }).collect(Collectors.toList());
     }
 }

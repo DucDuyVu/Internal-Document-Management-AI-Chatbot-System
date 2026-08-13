@@ -44,15 +44,15 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
                      @Param("isManager") boolean isManager,
                      Pageable pageable);
 
-       // Tìm kiếm tài liệu mà 1 user được phép xem + tài liệu do user upload
+       // Tìm kiếm tài liệu mà 1 user được phép xem + tài liệu do user upload (chỉ lấy tài liệu đã COMPLETED)
        @Query("SELECT DISTINCT d FROM DocumentEntity d " +
                      "LEFT JOIN DocumentPermissionsEntity p ON p.permissionsDocumentId = d AND p.revokedAt IS NULL " +
                      "WHERE d.deletedAt IS NULL " +
+                     "AND d.status = 'COMPLETED' " +
                      "AND (d.departmentId = :departmentId OR d.departmentId IS NULL " +
                      "     OR (p IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
                      "     OR (p IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
-                     "AND (d.approvalStatus = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId))"
-                     +
+                     "AND (d.approvalStatus = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId)) " +
                      "AND LOWER(d.fileName) LIKE LOWER(CONCAT('%', :search, '%')) " +
                      "ORDER BY d.createdAt DESC")
        Page<DocumentEntity> searchVisibleToDepartmentWithPermissions(
@@ -65,6 +65,7 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
 
        @Query("SELECT d FROM DocumentEntity d " +
                      "WHERE d.deletedAt IS NULL " +
+                     "AND d.status = 'COMPLETED' " +
                      "AND LOWER(d.fileName) LIKE LOWER(CONCAT('%', :search, '%')) " +
                      "ORDER BY d.createdAt DESC")
        Page<DocumentEntity> searchAll(@Param("search") String search, Pageable pageable);

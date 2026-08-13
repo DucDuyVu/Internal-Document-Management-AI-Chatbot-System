@@ -32,7 +32,7 @@
       <!-- ==================== SIDEBAR ==================== -->
       <aside class="sidebar" id="sidebar">
         <a href="/" class="sidebar-logo">
-          <img src="/images/logo.png" alt="DocuMind Logo" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex-shrink: 0;">
+          <div class="sidebar-logo-icon"><i class="fa-solid fa-folder-tree"></i></div>
           <span class="sidebar-logo-name">DocuMind <em>AI</em></span>
         </a>
 
@@ -351,37 +351,28 @@
     </div>
 
     <!-- MODAL: Notification -->
-    <div class="modal-overlay" id="notificationModal">
-      <div class="modal" style="max-width: 400px">
-        <div class="modal-header">
-          <h3 id="notificationTitle">Thông báo</h3>
-          <button class="modal-close" onclick="closeModal('notificationModal')">
-            ✕
-          </button>
+  <div class="modal-overlay" id="notificationModal">
+    <div class="modal" style="max-width:420px; border-radius: 24px; overflow: hidden; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); padding: 0;">
+      <!-- Fancy Header Background -->
+      <div style="background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%); padding: 32px 24px 24px; text-align: center; position: relative;">
+        <!-- Decorative Icon -->
+        <div style="width: 72px; height: 72px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; color: #4f46e5; margin: 0 auto 16px; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.15);">
+          <i class="fa-solid fa-bell"></i>
         </div>
-        <div
-          id="notificationContent"
-          style="
-            font-size: 0.875rem;
-            color: #333;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            padding: 16px 0;
-          "
-        ></div>
-        <div class="modal-actions">
-          <button
-            id="notificationOkBtn"
-            class="btn-primary"
-            onclick="closeModal('notificationModal')"
-          >
-            Đã hiểu
-          </button>
-        </div>
+        <h3 id="notificationTitle" style="margin: 0; font-size: 1.35rem; font-weight: 800; color: #1e293b;">Thông báo</h3>
+        <button class="modal-close" onclick="closeModal('notificationModal')" style="position: absolute; top: 16px; right: 16px; background: white; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 16px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: all 0.2s ease;" onmouseover="this.style.color='#ef4444'; this.style.transform='scale(1.1) rotate(90deg)';" onmouseout="this.style.color='#64748b'; this.style.transform='scale(1) rotate(0deg)';">✕</button>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding: 24px; text-align: center; background: white;">
+        <div id="notificationContent"
+          style="font-size:1rem;color:#475569;line-height:1.6;white-space:pre-wrap; margin-bottom: 28px;"></div>
+        
+        <!-- Action Button -->
+        <button id="notificationOkBtn" onclick="closeModal('notificationModal')" style="width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: white; border: none; border-radius: 14px; font-weight: 600; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 20px rgba(79, 70, 229, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(79, 70, 229, 0.4)';">Đã hiểu</button>
       </div>
     </div>
   </div>
-</div>
 
 <script src="/js/lib/marked.min.js"></script>
   <script src="/js/lib/purify.min.js"></script>

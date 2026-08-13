@@ -8,9 +8,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.event.AuditEven;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,9 +33,8 @@ public class AuditLogServiceImpl implements AuditLogService {
     private ObjectMapper objectMapper;
 
     @Override
-    @TransactionalEventListener // Chờ khi nào Upload/Login thành công ở luồng chính thì thả Event cho Thread
-                                // ngầm đi ghi Log
-    @Async // để ghi log chạy ngầm, không block luồng xử lý chính
+    @EventListener // Lắng nghe mọi event dù có hay không có transaction
+    @Async // Ghi log ngầm, không block luồng chính
 
     // Chuyển đổi đối tượng (Event) sang dạng bảng Entity (để lưu DB)
     public void handleAuditEvent(AuditEven event) {

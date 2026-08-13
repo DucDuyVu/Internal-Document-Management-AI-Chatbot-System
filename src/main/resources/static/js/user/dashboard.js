@@ -147,10 +147,20 @@ function setupUserEventListeners() {
 
     // Chat input
     const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    
     if (chatInput) {
         chatInput.addEventListener('keydown', handleChatKeydown);
         chatInput.addEventListener('input', function () {
             autoResizeTextarea(this);
+        });
+    }
+    
+    if (chatSendBtn) {
+        chatSendBtn.addEventListener('click', function() {
+            if (chatInput.value.trim() !== '') {
+                sendMessage();
+            }
         });
     }
 
@@ -1285,18 +1295,13 @@ function removeAccents(str) {
 }
 
 async function performSearch() {
+    const query = document.getElementById('globalSearchInput')?.value?.trim()
+        || document.getElementById('tabSearchInput')?.value?.trim()
+        || document.getElementById('searchInput')?.value?.trim();
+        
     const dropdown = document.getElementById('globalSearchDropdown');
     const isGlobal = dropdown && dropdown.style.display !== 'none';
-    
-    let query = '';
-    if (isGlobal) {
-        query = document.getElementById('globalSearchInput')?.value?.trim();
-    } else {
-        query = document.getElementById('tabSearchInput')?.value?.trim();
-    }
-
-    const searchTabContainer = document.getElementById('searchResults');
-    const container = isGlobal ? document.getElementById('globalSearchResults') : searchTabContainer;
+    const container = isGlobal ? document.getElementById('globalSearchResults') : document.getElementById('searchResults');
 
     if (!query || query.length < 2) {
         if (container) {
@@ -1310,56 +1315,29 @@ async function performSearch() {
         return;
     }
 
-    const deptFilter = document.getElementById('searchDeptFilter')?.value || '';
-    const typeFilter = document.getElementById('searchTypeFilter')?.value || '';
-
     UserState.search.loading = true;
 
     try {
-        if (!UserState.documents.data || !Array.isArray(UserState.documents.data) || UserState.documents.data.length === 0) {
-            if (typeof apiRequest !== 'undefined') {
-                const response = await apiRequest(`/api/documents?page=0&size=5000`);
-                UserState.documents.data = Array.isArray(response) ? response : (response.content || []);
+        if (typeof apiRequest === 'undefined') {
+            throw new Error('apiRequest() không tồn tại');
+        }
+
+        const endpoint = isGlobal ? `/api/search?q=${encodeURIComponent(query)}` : `/api/search/ai?q=${encodeURIComponent(query)}`;
+        const response = await apiRequest(endpoint);
+
+        const results = [];
+        if (isGlobal) {
+            if (response.documents) {
+                response.documents.forEach(doc => results.push({ ...doc, type: 'document' }));
+            }
+        } else {
+            // For AI search, response is already an array of AiSearchDto
+            if (Array.isArray(response)) {
+                response.forEach(doc => results.push(doc));
             }
         }
 
-        const dataArray = Array.isArray(UserState.documents.data) ? UserState.documents.data : [];
-        const normQuery = query ? removeAccents(query) : '';
-
-        const filtered = dataArray.filter(doc => {
-            if (!doc) return false;
-            const name = removeAccents(String(doc.fileName || doc.title || ''));
-            const content = removeAccents(String(doc.content || doc.aiSummary || ''));
-            
-            let matchesQ = true;
-            if (normQuery.length > 0) {
-                matchesQ = name.includes(normQuery) || content.includes(normQuery);
-            }
-            
-            let matchesD = true;
-            if (deptFilter) {
-                matchesD = String(doc.departmentId) === String(deptFilter);
-            }
-            
-            let matchesT = true;
-            if (typeFilter) {
-                matchesT = String(doc.fileType).toLowerCase().includes(typeFilter.toLowerCase());
-            }
-            
-            return matchesQ && matchesD && matchesT;
-        });
-
-        UserState.search.results = filtered.map(doc => ({
-            documentId: doc.id || Math.random(),
-            fileName: doc.fileName || doc.title || 'Tài liệu không tên',
-            fileType: doc.fileType || 'unknown',
-            departmentName: doc.departmentName || 'Chung',
-            createdAt: doc.createdAt || new Date().toISOString(),
-            excerpt: doc.aiSummary ? String(doc.aiSummary).substring(0, 200) + '...' : 'Không có nội dung trích xuất',
-            score: 1.0,
-            pageNumber: 1
-        }));
-
+        UserState.search.results = results;
         renderSearchResults();
 
     } catch (error) {
@@ -1871,11 +1849,9 @@ window.filterUserDocuments = filterUserDocuments;
 // ===== DOWNLOAD FUNCTION =====
 async function downloadDocument(docId, fileName) {
     try {
-        if (typeof showToast !== 'undefined') {
-            showToast('Đang tải tài liệu...', 'info');
-        }
+        // removed info toast
 
-        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+        const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || '');
         const response = await fetch(`${API_BASE}/api/documents/${docId}/download`, {
             method: 'GET',
             headers: {

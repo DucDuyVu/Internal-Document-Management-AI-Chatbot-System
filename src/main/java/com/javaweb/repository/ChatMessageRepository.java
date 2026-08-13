@@ -20,6 +20,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
      *        hội thoại nên phải đọc từ câu đầu tới câu cuối.
      */
     List<ChatMessageEntity> findBySessionId_IdOrderByCreatedAtAsc(Long sessionId);
-    
+    // Lấy danh sách tin nhắn của 1 user
     List<ChatMessageEntity> findBySessionId_UserChatId_Id(Long userId);
 }

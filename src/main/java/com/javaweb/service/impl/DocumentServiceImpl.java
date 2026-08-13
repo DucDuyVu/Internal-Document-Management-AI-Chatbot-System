@@ -182,6 +182,13 @@ public class DocumentServiceImpl implements DocumentService {
             throw new ForbiddenException("Bạn không có quyền " + requiredRole + " tài liệu này!");
         }
 
+        com.javaweb.entity.enums.ActionType actionType = "VIEW".equals(requiredRole) ? com.javaweb.entity.enums.ActionType.VIEW_DOCUMENT : com.javaweb.entity.enums.ActionType.DOWNLOAD_DOCUMENT;
+        if (user != null) {
+            java.util.Map<String, Object> meta = new java.util.HashMap<>();
+            meta.put("fileName", document.getFileName());
+            eventPublisher.publishEvent(new com.event.AuditEven(user.getId(), actionType, "DOCUMENT", document.getId(), meta));
+        }
+
         return storageService.downloadFile(document.getFilePath());
     }
 
@@ -192,6 +199,11 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Tài liệu dùng chung (departmentId IS NULL) thì ai cũng có quyền
         if (document.getDepartmentId() == null) {
+            return true;
+        }
+
+        // Người upload tài liệu thì luôn có quyền
+        if (document.getUploadedBy() != null && document.getUploadedBy().equals(user.getId())) {
             return true;
         }
 
