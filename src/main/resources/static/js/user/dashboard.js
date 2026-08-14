@@ -992,8 +992,7 @@ function formatMessageContent(content, sources) {
                         const docId = source.documentId || '';
                         const p = source.pageNumber || '';
                         return '<span class="citation-badge" data-index="' + num + '" ' +
-                            'onmouseenter="showCitationPopover(this, \'' + t + '\', \'' + e + '\', \'' + docId + '\', \'' + p + '\')" ' +
-                            'onmouseleave="hideCitationPopover()">' + (num + 1) + '</span>';
+                            'onclick="showCitationPopover(this, \'' + t + '\', \'' + e + '\', \'' + docId + '\', \'' + p + '\'); event.stopPropagation();">' + (num + 1) + '</span>';
                     }
                     return m;
                 });
@@ -2122,13 +2121,6 @@ function initCitationPopover() {
     popover.id = 'citation-popover';
     popover.className = 'citation-popover';
     
-    popover.onmouseenter = function() {
-        this.classList.add('visible');
-    };
-    popover.onmouseleave = function() {
-        hideCitationPopover();
-    };
-
     popover.innerHTML = `
         <div class='citation-popover-title'><i class='fa-solid fa-file-lines'></i> <span id='citation-popover-title-text'></span></div>
         <div id='citation-popover-excerpt' class='citation-popover-excerpt'></div>
@@ -2137,6 +2129,12 @@ function initCitationPopover() {
         </div>
     `;
     document.body.appendChild(popover);
+    
+    document.addEventListener('click', function(e) {
+        if (popover.classList.contains('visible') && !popover.contains(e.target) && !e.target.closest('.citation-badge')) {
+            hideCitationPopover();
+        }
+    });
 }
 
 window.showCitationPopover = function(element, title, excerpt, docId, pageNumber) {

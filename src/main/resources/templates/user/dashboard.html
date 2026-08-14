@@ -193,7 +193,8 @@
           </div>
         </div>
         <div>
-          <button class="btn-primary" onclick="openUploadModal()"
+          <input type="file" id="uploadDocInput" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+          <button class="btn-primary" onclick="document.getElementById('uploadDocInput').click()" id="uploadDocBtn"
             style="background:#4f46e5;border-radius:8px;padding:10px 20px;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:8px;border:none;color:white;cursor:pointer;transition:all 0.2s;box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);"
             onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
             <i class="fa-solid fa-cloud-arrow-up"></i> Tải lên tài liệu

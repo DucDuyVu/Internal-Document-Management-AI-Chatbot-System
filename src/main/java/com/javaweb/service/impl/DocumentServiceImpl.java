@@ -140,7 +140,14 @@ public class DocumentServiceImpl implements DocumentService {
 
         // Gọi pipeline xử lý AI nếu là ADMIN hoặc MANAGER up, còn User thì chờ Manager duyệt
         if (isAdmin || isManager) {
-            documentProcessingService.process(saved.getId());
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        documentProcessingService.process(saved.getId());
+                    }
+                }
+            );
         }
 
         return toResponse(saved, 0);

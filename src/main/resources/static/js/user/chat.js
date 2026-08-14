@@ -300,15 +300,43 @@ function initCitationPopover() {
     popover.innerHTML = `
         <div class='citation-popover-title'><i class='fa-solid fa-file-lines'></i> <span id='citation-popover-title-text'></span></div>
         <div id='citation-popover-excerpt' class='citation-popover-excerpt'></div>
+        <div style="margin-top: 10px; text-align: right;">
+            <button id="citation-popover-link" class="btn-primary-sm" style="font-size: 0.75rem; padding: 4px 8px; display: none;"><i class="fa-solid fa-book-open"></i> Xem tài liệu gốc</button>
+        </div>
     `;
     document.body.appendChild(popover);
+    
+    document.addEventListener('click', function(e) {
+        if (popover.classList.contains('visible') && !popover.contains(e.target) && !e.target.closest('.citation-badge')) {
+            if (window.hideCitationPopover) window.hideCitationPopover();
+        }
+    });
 }
 
-window.showCitationPopover = function(element, title, excerpt) {
+window.showCitationPopover = function(element, title, excerpt, docId, pageNumber) {
     const popover = document.getElementById('citation-popover');
     if (!popover) return;
-    document.getElementById('citation-popover-title-text').textContent = title;
+    
+    let displayTitle = title;
+    if (pageNumber && pageNumber !== 'null' && pageNumber !== '') {
+        displayTitle += ` (Trang ${pageNumber})`;
+    }
+    
+    document.getElementById('citation-popover-title-text').textContent = displayTitle;
     document.getElementById('citation-popover-excerpt').textContent = '"' + excerpt + '"';
+    
+    const linkBtn = document.getElementById('citation-popover-link');
+    if (linkBtn) {
+        if (docId) {
+            linkBtn.style.display = 'inline-block';
+            linkBtn.onclick = function() {
+                const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : localStorage.getItem('accessToken');
+                window.open('/api/documents/' + docId + '/view?token=' + token, '_blank');
+            };
+        } else {
+            linkBtn.style.display = 'none';
+        }
+    }
     
     const rect = element.getBoundingClientRect();
     popover.style.display = 'block';
@@ -365,11 +393,12 @@ function formatMessageContent(content, sources) {
                         const source = sources[num];
                         const title = source.fileName || "Tài liệu";
                         const excerpt = source.excerpt || "";
+                        const docId = source.documentId || '';
+                        const p = source.pageNumber || '';
                         const t = title.replace(/'/g, "\\\'").replace(/"/g, '&quot;');
                         const e = excerpt.replace(/'/g, "\\\'").replace(/"/g, '&quot;');
                         return '<span class="citation-badge" data-index="' + num + '" ' +
-                            'onmouseenter="if(window.showCitationPopover) window.showCitationPopover(this, \'' + t + '\', \'' + e + '\')" ' +
-                            'onmouseleave="if(window.hideCitationPopover) window.hideCitationPopover()">' + (num + 1) + '</span>';
+                            'onclick="if(window.showCitationPopover) window.showCitationPopover(this, \'' + t + '\', \'' + e + '\', \'' + docId + '\', \'' + p + '\'); event.stopPropagation();">' + (num + 1) + '</span>';
                     }
                     return m;
                 });

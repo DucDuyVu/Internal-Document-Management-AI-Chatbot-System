@@ -136,13 +136,13 @@ public class DocumentController {
                 contentType = "application/pdf";
             }
 
-            String encodedFileName = java.net.URLEncoder
-                    .encode(fileName, java.nio.charset.StandardCharsets.UTF_8.toString()).replaceAll("\\+", "%20");
+            org.springframework.http.ContentDisposition contentDisposition = org.springframework.http.ContentDisposition.builder("attachment")
+                    .filename(fileName, java.nio.charset.StandardCharsets.UTF_8)
+                    .build();
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                     .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
                     .body(new InputStreamResource(inputStream));
         } catch (Exception e) {
@@ -176,13 +176,13 @@ public class DocumentController {
                 contentType = "application/pdf";
             }
 
-            String encodedFileName = java.net.URLEncoder
-                    .encode(fileName, java.nio.charset.StandardCharsets.UTF_8.toString()).replaceAll("\\+", "%20");
+            org.springframework.http.ContentDisposition contentDisposition = org.springframework.http.ContentDisposition.builder("inline")
+                    .filename(fileName, java.nio.charset.StandardCharsets.UTF_8)
+                    .build();
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, 
-                            "inline; filename=\"" + fileName + "\"; filename*=UTF-8''" + encodedFileName)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                     .body(new InputStreamResource(inputStream));
         } catch (Exception e) {
             e.printStackTrace();
