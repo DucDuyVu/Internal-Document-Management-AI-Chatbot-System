@@ -2111,7 +2111,7 @@ async function loadProfileActivities() {
     try {
         if (typeof apiRequest === 'undefined') return;
 
-        const activities = await apiRequest('/api/admin/audit-logs?page=0&size=20');
+        const activities = await apiRequest('/api/activity-logs/my-activities?limit=20');
         const logs = activities.content || activities;
         const list = document.getElementById('profileActivityList');
 

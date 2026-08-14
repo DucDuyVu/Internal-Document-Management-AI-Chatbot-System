@@ -39,4 +39,15 @@ public class ActivityLogController {
 
         return ResponseEntity.ok(activities);
     }
+
+    @GetMapping("/my-activities")
+    public ResponseEntity<List<ActivityLogResponse>> getMyActivities(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(defaultValue = "10") int limit) {
+        
+        UsersEntity currentUser = userDetails.getUser();
+        List<ActivityLogResponse> activities = auditLogService.getRecentActivities(currentUser.getId(), limit);
+        
+        return ResponseEntity.ok(activities);
+    }
 }
