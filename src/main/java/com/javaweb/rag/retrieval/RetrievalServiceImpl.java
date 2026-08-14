@@ -83,10 +83,36 @@ public class RetrievalServiceImpl implements RetrievalService {
      * toàn với trực giác "similarity cao = tốt".
      */
     @Override
-    public ChatAnswerResponse ask(String question, Integer departmentId) {
+    public ChatAnswerResponse ask(String question, Integer departmentId, java.util.List<com.javaweb.dto.chat.ChatHistoryItem> history) {
+
+        // ===== Phase 0: Xử lý query context =====
+        // RAG Problem: "Với nữ nhân viên thì sao" sẽ bị mất ngữ cảnh nếu chỉ search đúng câu này.
+        // Solution: Ghép câu hỏi USER ngay trước đó (nếu có) để embedding bắt được topic.
+        String searchContext = question;
+        System.out.println("====== DIAGNOSE HISTORY ======");
+        System.out.println("History is null? " + (history == null));
+        if (history != null) {
+            System.out.println("History size: " + history.size());
+            for (com.javaweb.dto.chat.ChatHistoryItem item : history) {
+                System.out.println("Role: [" + item.getRole() + "] - Content: [" + item.getContent() + "]");
+            }
+        }
+        System.out.println("==============================");
+
+        if (history != null && !history.isEmpty()) {
+            for (int i = history.size() - 1; i >= 0; i--) {
+                if ("USER".equalsIgnoreCase(history.get(i).getRole())) {
+                    searchContext = history.get(i).getContent() + ". " + question;
+                    break;
+                }
+            }
+        }
+        System.out.println("====== SEARCH CONTEXT ======");
+        System.out.println(searchContext);
+        System.out.println("============================");
 
         // ===== Phase 1: Embed câu hỏi + Vector Search =====
-        float[] queryEmbedding = embeddingService.embedQuery(question);
+        float[] queryEmbedding = embeddingService.embedQuery(searchContext);
         String embeddingText = VectorUtils.toPgVectorString(queryEmbedding);
         List<SearchResult> results = chunkRepository.searchSimilarChunks(embeddingText, departmentId, topK);
 
@@ -104,8 +130,8 @@ public class RetrievalServiceImpl implements RetrievalService {
             return new ChatAnswerResponse(NO_RELEVANT_INFO_MESSAGE, List.of(), 0.0);
         }
 
-        // ===== Phase 3: Ghép prompt =====
-        String prompt = promptBuilder.build(question, results);
+        // ===== Phase 3: Ghép prompt (kèm lịch sử hội thoại nếu có) =====
+        String prompt = promptBuilder.build(question, results, history);
 
         // ===== Phase 4: Gọi Gemini sinh câu trả lời =====
         String answer = chatService.generateAnswer(prompt);

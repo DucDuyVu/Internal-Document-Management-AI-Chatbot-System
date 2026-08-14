@@ -96,7 +96,7 @@
     </div>
 
     <th:block layout:fragment="custom-js">
-      <script th:src="@{/js/user/chat.js(v=5)}"></script>
+      <script th:src="@{/js/user/chat.js(v=${#dates.createNow().time})}"></script>
     </th:block>
   </body>
 </html>

@@ -103,7 +103,7 @@ public class ChatController {
                 ? Math.toIntExact(currentUser.getDepartment().getId())
                 : null;
 
-        ChatAnswerResponse answerResponse = retrievalService.ask(request.getQuestion(), departmentId);
+        ChatAnswerResponse answerResponse = retrievalService.ask(request.getQuestion(), departmentId, request.getHistory());
 
         // Lưu ASSISTANT message + message_file_refs SAU KHI Retrieval
         // thành công. Dùng lại session từ userMessage (đã xác thực

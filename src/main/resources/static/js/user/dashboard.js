@@ -1047,12 +1047,19 @@ async function sendChatMessage() {
             await loadChatSessions();
         }
 
+        // Prepare history for AI context
+        const historyToSend = UserState.chat.messages
+            .slice(0, -1) // Bỏ qua câu hỏi USER hiện tại vừa push
+            .slice(-10)   // Lấy tối đa 5 cặp Q&A gần nhất
+            .map(msg => ({ role: msg.role, content: msg.content }));
+
         // Send message
         const response = await apiRequest(`/api/chat/ask`, {
             method: 'POST',
             body: JSON.stringify({
                 sessionId: UserState.chat.currentSessionId,
-                question: message
+                question: message,
+                history: historyToSend
             })
         });
 

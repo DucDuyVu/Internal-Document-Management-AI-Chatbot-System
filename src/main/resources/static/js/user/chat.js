@@ -131,11 +131,18 @@
    */
   async function loadMessages(sessionId) {
     messageListEl.innerHTML = "";
+    currentHistory = []; // Reset history khi đổi session
     try {
       const messages = await apiRequest(
         "/api/chat/sessions/" + sessionId + "/messages",
       );
       (messages || []).forEach(function (msg) {
+        // Nạp lại lịch sử vào mảng để dùng cho lần gửi tiếp theo
+        currentHistory.push({
+          role: msg.role,
+          content: msg.content
+        });
+        
         appendMessageBubble(msg.role, msg.content, msg.createdAt, msg.sources || msg.fileRefs);
       });
       messageListEl.scrollTop = messageListEl.scrollHeight;
@@ -208,11 +215,17 @@
   btnNewSession.addEventListener("click", createNewSession);
 
   /**
+   * Lịch sử hội thoại của phiên hiện tại (lưu ở Frontend, tối đa 5 cặp Q&A).
+   * Reset mỗi khi đổi sang session khác.
+   * Mỗi phần tử: { role: "USER"|"ASSISTANT", content: "..." }
+   */
+  let currentHistory = [];
+  const MAX_HISTORY = 5; // Số cặp Q&A tối đa gửi lên Backend
+
+  /**
    * Gửi câu hỏi tới session đang chọn.
-   * Request thật (ChatQuestionRequest): { sessionId, question }.
-   * Response thật (ChatAnswerResponse): { answer, sources, distance } —
-   * KHÔNG có messageId/sessionId trả về, nên tự vẽ bong bóng chat ngay
-   * tại client thay vì gọi lại GET /messages.
+   * Request thật (ChatQuestionRequest): { sessionId, question, history }.
+   * Response thật (ChatAnswerResponse): { answer, sources, distance }.
    */
   async function askQuestion(question) {
     appendMessageBubble("USER", question, new Date().toISOString());
@@ -221,14 +234,23 @@
     updateSendButtonState();
     messageListEl.scrollTop = messageListEl.scrollHeight;
 
+    // Lấy tối đa MAX_HISTORY cặp Q&A gần nhất để gửi lên
+    const historyToSend = currentHistory.slice(-MAX_HISTORY * 2);
+
     try {
       const data = await apiRequest("/api/chat/ask", {
         method: "POST",
         body: {
           sessionId: currentSessionId,
           question: question,
+          history: historyToSend,
         },
       });
+
+      // Lưu câu hỏi và câu trả lời vào lịch sử local
+      currentHistory.push({ role: "USER", content: question });
+      currentHistory.push({ role: "ASSISTANT", content: data.answer });
+
       appendMessageBubble("ASSISTANT", data.answer, new Date().toISOString(), data.sources);
     } catch (err) {
       appendMessageBubble(

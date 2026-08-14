@@ -378,7 +378,7 @@
   <script src="/js/lib/purify.min.js"></script>
   <script src="/js/common.js?v=5"></script>
 <script src="/js/auth.js?v=4"></script>
-<script src="/js/user/dashboard.js?v=7"></script>
+<script th:src="@{/js/user/dashboard.js(v=${#dates.createNow().time})}"></script>
 
 <!-- JS riêng của từng trang -->
 <th:block layout:fragment="custom-js"></th:block>

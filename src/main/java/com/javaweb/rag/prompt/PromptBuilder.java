@@ -50,7 +50,7 @@ public class PromptBuilder {
      * rõ ranh giới giữa các đoạn tài liệu khác nhau, tránh nhầm 2 đoạn
      * không liên quan thành 1 đoạn văn liền mạch.
      */
-    public String build(String question, List<SearchResult> results) {
+    public String build(String question, List<SearchResult> results, java.util.List<com.javaweb.dto.chat.ChatHistoryItem> history) {
         StringBuilder contextBuilder = new StringBuilder();
         for (int i = 0; i < results.size(); i++) {
             SearchResult r = results.get(i);
@@ -66,6 +66,17 @@ public class PromptBuilder {
                           .append("\n---\n");
         }
 
+        // Ghép lịch sử hội thoại (nếu có) để AI nhớ ngữ cảnh câu trước
+        StringBuilder historyBuilder = new StringBuilder();
+        if (history != null && !history.isEmpty()) {
+            historyBuilder.append("\nLịch sử hội thoại gần nhất:\n");
+            for (com.javaweb.dto.chat.ChatHistoryItem item : history) {
+                String roleLabel = "USER".equalsIgnoreCase(item.getRole()) ? "Người dùng" : "Trợ lý AI";
+                historyBuilder.append(roleLabel).append(": ").append(item.getContent()).append("\n");
+            }
+            historyBuilder.append("---\n");
+        }
+
         return "Bạn là một trợ lý AI tận tâm. Hãy trả lời câu hỏi dựa trên các ngữ cảnh được cung cấp bên dưới.\n" +
                 "YÊU CẦU QUAN TRỌNG:\n" +
                 "1. FORMAT: Trình bày câu trả lời đẹp mắt bằng Markdown (in đậm, danh sách).\n" +
@@ -73,8 +84,10 @@ public class PromptBuilder {
                 "3. DENSE CITATION: BẮT BUỘC gắn thẻ trích dẫn nằm trong DẤU NGOẶC VUÔNG, ví dụ [0], [1] ngay sau MỖI CÂU hoặc MỖI SỐ LIỆU cụ thể. Tuyệt đối KHÔNG viết số trơn (như 0, 1) mà không có ngoặc vuông.\n" +
                 "4. MAPPING CHÍNH XÁC: Phải sử dụng đúng số ID của [Nguồn X] đã cho (từ 0 đến " + (results.size() - 1) + "), tuyệt đối không tự bịa số trích dẫn.\n" +
                 "5. KHÔNG tạo mục \"Nguồn tham khảo\" ở cuối câu trả lời.\n" +
-                "6. GIỚI HẠN: Trả lời đúng trọng tâm, súc tích trong khoảng 5-10 câu.\n\n" +
-                "Ngữ cảnh:\n" + contextBuilder.toString() +
+                "6. GIỚI HẠN: Trả lời đúng trọng tâm, súc tích trong khoảng 5-10 câu.\n" +
+                "7. NGỮ CẢNH HỘI THOẠI: Hãy đọc lịch sử chat để biết chủ đề hiện tại là gì. NẾU tài liệu cung cấp bên dưới có chứa những thông tin LẠC ĐỀ so với lịch sử chat, HÃY BỎ QUA CHÚNG. Đồng thời, hãy khéo léo thể hiện trong câu mở đầu rằng bạn vẫn nhớ chủ đề đang nói (Ví dụ: 'Tiếp tục với chủ đề...').\n\n" +
+                historyBuilder.toString() +
+                "Ngữ cảnh tài liệu:\n" + contextBuilder.toString() +
                 "\n\nCâu hỏi: " + question;
     }
 }
