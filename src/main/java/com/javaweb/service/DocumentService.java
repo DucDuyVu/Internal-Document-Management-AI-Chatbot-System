@@ -41,8 +41,14 @@ public interface DocumentService {
      */
     DocumentResponse getDocumentStatus(Long id);
 
-    // Lấy danh sách các tài liệu (Admin)
+    // Lấy danh sách các tài liệu (Admin) - cũ
     Page<DocumentResponse> getAllDocuments(Pageable pageable);
+
+    // Lấy danh sách tài liệu Admin có filter
+    Page<DocumentResponse> searchAdminDocuments(String search, String filter, Pageable pageable);
+
+    // Lấy danh sách tài liệu có thể chia sẻ (Đã duyệt + Hoàn tất)
+    List<DocumentResponse> getShareableDocuments();
 
     // Lấy danh sách tài liệu chờ duyệt (Manager)
     List<DocumentResponse> getPendingApprovals(Integer departmentId);

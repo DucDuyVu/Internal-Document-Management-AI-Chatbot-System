@@ -2,6 +2,7 @@ package com.javaweb.controller;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,9 @@ import com.javaweb.repository.DocumentRepository;
 import com.javaweb.rag.DocumentProcessingService;
 import com.javaweb.security.CustomUserDetails;
 import com.javaweb.service.DocumentService;
+import com.javaweb.service.NotificationService;
+import com.javaweb.repository.UsersRepository;
+import com.javaweb.entity.UsersEntity;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,14 +49,29 @@ public class AdminDocumentController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<DocumentResponse>> getAllDocumentsForAdmin(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String filter,
+            @RequestParam(required = false) String search) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<DocumentResponse> result = documentService.getAllDocuments(pageable);
+        Page<DocumentResponse> result = documentService.searchAdminDocuments(search, filter, pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/shareable")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<DocumentResponse>> getShareableDocuments() {
+        List<DocumentResponse> result = documentService.getShareableDocuments();
         return ResponseEntity.ok(result);
     }
 
     @Autowired
     private DocumentRepository documentRepository;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private UsersRepository usersRepository;
 
     @Autowired
     private DocumentProcessingService documentProcessingService;
@@ -99,6 +118,22 @@ public class AdminDocumentController {
 
         // CHÍNH THỨC GỌI AI XỬ LÝ (CHẠY NỀN)
         documentProcessingService.process(id);
+
+        // Gửi thông báo cho User upload
+        if (document.getUploadedBy() != null) {
+            usersRepository.findById(document.getUploadedBy()).ifPresent(user -> {
+                notificationService.createNotification(user, 
+                    "Tài liệu được duyệt khẩn cấp", 
+                    "Tài liệu '" + document.getFileName() + "' của bạn đã được Admin duyệt khẩn cấp với lý do: " + reason);
+            });
+        }
+
+        // Gửi thông báo cho Manager phòng ban
+        if (document.getDepartmentId() != null) {
+            notificationService.notifyManagers(Long.valueOf(document.getDepartmentId()), 
+                "Tài liệu phòng ban được duyệt khẩn cấp", 
+                "Tài liệu '" + document.getFileName() + "' thuộc phòng ban của bạn đã được Admin duyệt khẩn cấp.");
+        }
 
         return ResponseEntity.ok("Đã duyệt khẩn cấp tài liệu và đưa vào xử lý AI thành công.");
     }

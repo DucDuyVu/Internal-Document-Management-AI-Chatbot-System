@@ -137,7 +137,8 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
 
         @Override
         @Transactional
-        public DocumentPermissionResponse share(Long documentId, com.javaweb.dto.request.ShareDocumentRequest request, UsersEntity grantedBy) {
+        public DocumentPermissionResponse share(Long documentId, com.javaweb.dto.request.ShareDocumentRequest request,
+                        UsersEntity grantedBy) {
                 try {
                         Long departmentId = request.getDepartmentId();
                         String role = request.getRole() != null ? request.getRole() : "VIEW";
@@ -146,6 +147,12 @@ public class DocumentPermissionServiceImpl implements DocumentPermissionService 
                         // Kiểm tra tài liệu tồn tại
                         DocumentEntity document = documentRepository.findById(documentId)
                                         .orElseThrow(() -> new NotFoundException("Tài liệu không tồn tại !"));
+
+                        if (document.getApprovalStatus() != com.javaweb.entity.enums.ApprovalStatus.APPROVED
+                                        || document.getStatus() != com.javaweb.entity.enums.DocumentStatus.COMPLETED) {
+                                throw new BadRequestException(
+                                                "Chỉ có thể chia sẻ tài liệu đã được phê duyệt và hoàn tất xử lý!");
+                        }
 
                         if (departmentId != null && departmentId.equals(0L)) {
                                 departmentId = null;

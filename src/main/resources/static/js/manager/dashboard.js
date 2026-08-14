@@ -139,16 +139,16 @@ function setupUserEventListeners() {
     // Chat input
     const chatInput = document.getElementById('chatInput');
     const chatSendBtn = document.getElementById('chatSendBtn');
-    
+
     if (chatInput) {
         chatInput.addEventListener('keydown', handleChatKeydown);
         chatInput.addEventListener('input', function () {
             autoResizeTextarea(this);
         });
     }
-    
+
     if (chatSendBtn) {
-        chatSendBtn.addEventListener('click', function() {
+        chatSendBtn.addEventListener('click', function () {
             if (chatInput.value.trim() !== '') {
                 sendMessage();
             }
@@ -169,7 +169,7 @@ function setupUserEventListeners() {
                 if (res) res.innerHTML = '';
             }
         }, 500));
-        
+
         // Hide dropdown when click outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.topbar-search')) {
@@ -211,31 +211,31 @@ function initCitationPopover() {
     document.body.appendChild(popover);
 }
 
-window.showCitationPopover = function(element, title, excerpt) {
+window.showCitationPopover = function (element, title, excerpt) {
     const popover = document.getElementById('citation-popover');
     if (!popover) return;
     document.getElementById('citation-popover-title-text').textContent = title;
     document.getElementById('citation-popover-excerpt').textContent = '"' + excerpt + '"';
-    
+
     // Position it
     const rect = element.getBoundingClientRect();
     popover.style.display = 'block';
     const popoverHeight = popover.offsetHeight;
-    
+
     popover.style.left = Math.max(10, rect.left - 130) + 'px';
     popover.style.top = (rect.top - popoverHeight - 10) + 'px';
-    
+
     // If it goes off top, show below
     if (rect.top - popoverHeight - 10 < 0) {
         popover.style.top = (rect.bottom + 10) + 'px';
     }
-    
+
     requestAnimationFrame(() => {
         popover.classList.add('visible');
     });
 };
 
-window.hideCitationPopover = function() {
+window.hideCitationPopover = function () {
     const popover = document.getElementById('citation-popover');
     if (popover) {
         popover.classList.remove('visible');
@@ -290,7 +290,7 @@ async function deleteDocumentManager(docId, fileName) {
     if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${fileName}"?\nHành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu AI liên quan.`)) {
         return;
     }
-    
+
     try {
         const token = typeof getAccessToken !== 'undefined' ? getAccessToken() : (localStorage.getItem('accessToken') || '');
         const res = await fetch(`/api/manager/documents/${docId}`, {
@@ -299,19 +299,19 @@ async function deleteDocumentManager(docId, fileName) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         const msg = await res.text();
         if (res.ok) {
             if (typeof showToast !== 'undefined') showToast("Đã xóa tài liệu thành công!", "success");
             else alert("Đã xóa tài liệu thành công!");
-            
+
             if (typeof fetchDocuments === 'function') fetchDocuments();
             else loadUserDocuments();
         } else {
             if (typeof showToast !== 'undefined') showToast(msg || "Lỗi khi xóa tài liệu", "error");
             else alert("Lỗi: " + msg);
         }
-    } catch(e) {
+    } catch (e) {
         console.error(e);
         if (typeof showToast !== 'undefined') showToast(e.message, "error");
         else alert(e.message);
@@ -331,7 +331,7 @@ async function loadHomeData() {
         document.querySelectorAll('.stat-value, .kpi-value').forEach(el => el.classList.remove('skeleton-loader'));
 
         const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        
+
         // Cập nhật các ID của Admin (nếu có)
         setEl('statDocCount', data.documentCount || 0);
         setEl('statChatCount', data.chatSessionCount || 0);
@@ -482,8 +482,12 @@ function renderUserDocuments() {
 
     const canManagePerms = (doc) => {
         if (!currentUser) return false;
-        // ADMIN can manage all. MANAGER can manage if doc belongs to their department
-        return currentUser.role === 'ADMIN' || (currentUser.role === 'MANAGER' && doc.departmentId && currentUser.departmentId && Number(doc.departmentId) === Number(currentUser.departmentId));
+        if (currentUser.role === 'ADMIN' || (currentUser.roles && currentUser.roles.includes('ROLE_ADMIN'))) return true;
+        
+        if (currentUser.role === 'MANAGER' || (currentUser.roles && currentUser.roles.includes('ROLE_MANAGER'))) {
+            return doc.uploadedByName !== 'Admin';
+        }
+        return false;
     };
 
     // Update Summary Bar
@@ -537,7 +541,7 @@ function renderUserDocuments() {
                     }
                 }
 
-
+                const cannotShare = doc.status !== 'COMPLETED' || doc.approvalStatus !== 'APPROVED' || !canManagePerms(doc);
 
                 let actionBtnHtml = '';
                 if (combinedStatusClass === 'status-processing') {
@@ -581,6 +585,7 @@ function renderUserDocuments() {
                         <span style="font-size:0.85rem;color:#94a3b8;font-weight:600;">${typeof formatFileSize !== 'undefined' ? formatFileSize(doc.fileSize) : doc.fileSize}</span>
                         <div style="display:flex; gap:8px;">
                             <button style="background:transparent;border:none;color:#ef4444;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); deleteDocumentManager(${doc.id}, '${doc.fileName ? doc.fileName.replace(/'/g, "\\'") : ''}')" title="Xóa tài liệu"><i class="fa-solid fa-trash-can"></i> Xóa</button>
+                            <button style="background:transparent;border:none;color:${cannotShare ? '#cbd5e1' : '#3b82f6'};font-weight:700;font-size:0.95rem;cursor:${cannotShare ? 'not-allowed' : 'pointer'};display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='${cannotShare ? 'transparent' : '#eff6ff'}'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); if(${cannotShare}) { showToast('Chỉ có thể chia sẻ tài liệu đã phê duyệt và hoàn tất AI', 'warning'); } else { openPermissionModal(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}') }" title="${cannotShare ? 'Chưa đủ điều kiện chia sẻ' : 'Chia sẻ'}"><i class="fa-solid fa-share-nodes"></i> Chia sẻ</button>
                             ${actionBtnHtml}
                         </div>
                     </div>
@@ -604,11 +609,12 @@ function renderUserDocuments() {
                     if (userStr) {
                         const u = JSON.parse(userStr);
                         const isSystemAdmin = u.role === 'ADMIN' || (u.roles && u.roles.includes('ROLE_ADMIN'));
-                        const isOwnerManager = (u.role === 'MANAGER' || (u.roles && u.roles.includes('ROLE_MANAGER'))) && doc.departmentId && u.departmentId === doc.departmentId;
+                        const isManager = u.role === 'MANAGER' || (u.roles && u.roles.includes('ROLE_MANAGER'));
+                        const isOwnerManager = isManager && doc.uploadedByName !== 'Admin';
                         canManagePerms = isSystemAdmin || isOwnerManager;
                     }
-                } catch(e) {}
-                const cannotShare = doc.status === 'FAILED' || doc.status === 'PENDING' || doc.approvalStatus !== 'APPROVED' || !canManagePerms;
+                } catch (e) { }
+                const cannotShare = doc.status !== 'COMPLETED' || doc.approvalStatus !== 'APPROVED' || !canManagePerms;
                 return `
                 <tr style="cursor:pointer; ${isFailed ? 'background-color: #fef2f2;' : ''}" onmouseover="this.style.background='${isFailed ? '#fee2e2' : '#f9fafb'}'" onmouseout="this.style.background='${isFailed ? '#fef2f2' : ''}'">
                     <td onclick="openDocumentDetail(${doc.id})" title="Click để xem chi tiết">
@@ -628,6 +634,7 @@ function renderUserDocuments() {
                         <button class="btn-icon" onclick="event.stopPropagation(); ${isManagerPending ? `approveDocument(${doc.id})` : 'return false;'}" title="${isManagerPending ? 'Duyệt tài liệu' : 'Đã xử lý'}" style="color:${isManagerPending ? '#10b981' : '#cbd5e1'}; ${isManagerPending ? '' : 'cursor:not-allowed;'}">✅</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); ${isManagerPending ? `rejectDocument(${doc.id})` : 'return false;'}" title="${isManagerPending ? 'Từ chối' : 'Đã xử lý'}" style="color:${isManagerPending ? '#ef4444' : '#cbd5e1'}; ${isManagerPending ? '' : 'cursor:not-allowed;'}">❌</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); viewDocumentInline(${doc.id})" title="Xem chi tiết">👁️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); if(${cannotShare}) { showToast('Chỉ có thể chia sẻ tài liệu đã phê duyệt và hoàn tất AI', 'warning'); } else { openPermissionModal(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}') }" title="${cannotShare ? 'Chưa đủ điều kiện chia sẻ' : 'Chia sẻ'}" style="color:${cannotShare ? '#cbd5e1' : '#3b82f6'}; ${cannotShare ? 'cursor:not-allowed;' : ''}">🔗</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Tải xuống">⬇️</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); deleteDocumentManager(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Xóa tài liệu" style="color:#ef4444;">🗑️</button>
                     </td>
@@ -648,11 +655,11 @@ function filterUserDocuments() {
     const sortFilter = document.getElementById('docSortFilter')?.value || 'newest';
 
     UserState.documents.filtered = UserState.documents.data.filter(doc => {
-        const matchesSearch = !searchTerm || 
-            doc.fileName?.toLowerCase().includes(searchTerm) || 
-            ('doc-' + String(doc.id).padStart(4, '0')).includes(searchTerm) || 
+        const matchesSearch = !searchTerm ||
+            doc.fileName?.toLowerCase().includes(searchTerm) ||
+            ('doc-' + String(doc.id).padStart(4, '0')).includes(searchTerm) ||
             (doc.uploadedByName || '').toLowerCase().includes(searchTerm);
-            
+
         let matchesType = true;
         if (typeFilter) {
             let combinedStatus = '';
@@ -688,7 +695,7 @@ function filterUserDocuments() {
     renderUserDocuments();
 }
 
-window.setDocFilter = function(btn) {
+window.setDocFilter = function (btn) {
     const pills = document.querySelectorAll('#docTypePillFilter .pill-btn');
     if (pills) {
         pills.forEach(el => el.classList.remove('active'));
@@ -1171,12 +1178,12 @@ function formatMessageContent(content, sources) {
             .replace(/`(.*?)`/g, '<code>$1</code>')
             .replace(/\n/g, '<br>');
     }
-    
+
     let rawHtml = marked.parse(content);
     let cleanHtml = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['data-index'] });
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = cleanHtml;
-    
+
     function processTextNodes(node) {
         if (node.nodeType === 1) { // Element
             const tag = node.tagName.toLowerCase();
@@ -1185,9 +1192,9 @@ function formatMessageContent(content, sources) {
         } else if (node.nodeType === 3) { // Text
             if (/\[(\d+)\]/.test(node.nodeValue)) {
                 const spanWrapper = document.createElement('span');
-                const escapedText = node.nodeValue; 
-                
-                spanWrapper.innerHTML = escapedText.replace(/\[(\d+)\]/g, function(m, numStr) {
+                const escapedText = node.nodeValue;
+
+                spanWrapper.innerHTML = escapedText.replace(/\[(\d+)\]/g, function (m, numStr) {
                     const num = parseInt(numStr, 10);
                     if (sources && sources[num]) {
                         const source = sources[num];
@@ -1498,7 +1505,7 @@ async function performSearch() {
 
         const dropdown = document.getElementById('globalSearchDropdown');
         const isGlobal = dropdown && dropdown.style.display !== 'none';
-        
+
         const endpoint = isGlobal ? `/api/search?q=${encodeURIComponent(query)}` : `/api/search/ai?q=${encodeURIComponent(query)}`;
         const response = await apiRequest(endpoint);
 
@@ -1948,7 +1955,7 @@ async function updateProfile() {
                 const blob = await new Promise(resolve => signatureCanvas.toBlob(resolve, 'image/png'));
                 const formData = new FormData();
                 formData.append('file', blob, 'signature.png');
-                
+
                 const uploadRes = await apiRequest('/api/users/upload-signature', {
                     method: 'POST',
                     body: formData,
@@ -2616,7 +2623,7 @@ let signatureCanvas = null;
 function initSignaturePad() {
     signatureCanvas = document.getElementById('signaturePad');
     if (!signatureCanvas) return;
-    
+
     signaturePadContext = signatureCanvas.getContext('2d');
     signaturePadContext.strokeStyle = '#0f172a';
     signaturePadContext.lineWidth = 2;
@@ -2627,7 +2634,7 @@ function initSignaturePad() {
     signatureCanvas.addEventListener('mousemove', drawSignature);
     signatureCanvas.addEventListener('mouseup', stopDrawing);
     signatureCanvas.addEventListener('mouseout', stopDrawing);
-    
+
     // Touch support
     signatureCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     signatureCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -2646,10 +2653,10 @@ function getPointerPos(e) {
 
 function startDrawing(e) {
     if (!signaturePadContext) return;
-    
+
     // Mutually exclusive: if user draws, remove any uploaded file preview
     removeUploadedSignature(false);
-    
+
     isDrawingSignature = true;
     const pos = getPointerPos(e);
     signaturePadContext.beginPath();
@@ -2692,7 +2699,7 @@ function previewSignature(e) {
     clearSignature();
 
     const reader = new FileReader();
-    reader.onload = function(event) {
+    reader.onload = function (event) {
         const previewImg = document.getElementById('signaturePreviewImg');
         const initials = document.getElementById('signaturePreviewInitials');
         const removeBtn = document.getElementById('removeSignatureImgBtn');
@@ -2712,7 +2719,7 @@ function removeUploadedSignature(doClearCanvas = true) {
     const previewImg = document.getElementById('signaturePreviewImg');
     const initials = document.getElementById('signaturePreviewInitials');
     const removeBtn = document.getElementById('removeSignatureImgBtn');
-    
+
     if (fileInput) fileInput.value = '';
     if (previewImg) {
         previewImg.src = '';
@@ -2720,7 +2727,7 @@ function removeUploadedSignature(doClearCanvas = true) {
     }
     if (initials) initials.style.display = 'block';
     if (removeBtn) removeBtn.style.display = 'none';
-    
+
     if (doClearCanvas) {
         clearSignature();
     }
@@ -2897,17 +2904,17 @@ async function editEmployee(id) {
         // Read-only header
         const roEmail = document.getElementById('roEmail');
         if (roEmail) roEmail.textContent = user.email || user.username || '-';
-        
+
         const roRole = document.getElementById('roRole');
         const roleMap = { 'ADMIN': 'Quản trị viên', 'MANAGER': 'Quản lý', 'USER': 'Nhân viên' };
         if (roRole) roRole.textContent = roleMap[user.role] || user.role || '-';
-        
+
         const roDepartment = document.getElementById('roDepartment');
         if (roDepartment) roDepartment.textContent = user.departmentName || 'Không thuộc phòng ban';
-        
+
         const roManagerName = document.getElementById('roManagerName');
         if (roManagerName) roManagerName.textContent = user.managerName || 'Không có';
-        
+
         const roAvatar = document.getElementById('roAvatar');
         if (roAvatar) {
             if (user.avatarUrl) {
@@ -2922,10 +2929,10 @@ async function editEmployee(id) {
         // Form fields
         const empEmployeeCode = document.getElementById('empEmployeeCode');
         if (empEmployeeCode) empEmployeeCode.value = user.employeeCode || '';
-        
+
         const empJobTitle = document.getElementById('empJobTitle');
         if (empJobTitle) empJobTitle.value = user.jobTitle || '';
-        
+
         const empIsActive = document.getElementById('empIsActive');
         if (empIsActive) empIsActive.value = user.isActive !== false ? "true" : "false";
 
@@ -3026,38 +3033,38 @@ async function deleteEmployee(id) {
 }
 
 // Listen to tabSwitched event from common.js switchTab
-document.addEventListener('tabSwitched', function(e) {
+document.addEventListener('tabSwitched', function (e) {
     loadUserTabData(e.detail.tabId);
 });
 
 // ===== AI REPORT FUNCTIONS =====
 async function generateAiReport() {
     if (typeof showModal !== 'undefined') showModal('aiReportModal');
-    
+
     const loadingEl = document.getElementById('aiReportLoading');
     const contentWrapper = document.getElementById('aiReportContentWrapper');
     const contentEl = document.getElementById('aiReportContent');
     const btnAiReport = document.getElementById('btnAiReport');
-    
+
     if (loadingEl) loadingEl.style.display = 'flex';
     if (contentWrapper) contentWrapper.style.display = 'none';
     if (contentEl) contentEl.innerHTML = '';
-    
+
     if (btnAiReport) {
         btnAiReport.disabled = true;
         btnAiReport.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích...';
     }
-    
+
     try {
         if (typeof apiRequest === 'undefined') throw new Error('apiRequest is not defined');
-        
+
         const response = await apiRequest('/api/manager/reports/ai-analysis', {
             method: 'GET'
         });
-        
+
         if (loadingEl) loadingEl.style.display = 'none';
         if (contentWrapper) contentWrapper.style.display = 'block';
-        
+
         if (contentEl && response && response.content) {
             // Render markdown using marked
             if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
@@ -3087,9 +3094,9 @@ async function generateAiReport() {
 function copyAiReport() {
     const contentEl = document.getElementById('aiReportContent');
     if (!contentEl) return;
-    
+
     const text = contentEl.innerText;
-    
+
     navigator.clipboard.writeText(text).then(() => {
         if (typeof showToast !== 'undefined') {
             showToast('Đã sao chép báo cáo vào khay nhớ tạm', 'success');

@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,8 +96,8 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         // 2. Nếu User muốn up vào phòng ban khác phòng của mình, bắt buộc phải là ADMIN
-        boolean isSameDepartment = currentUser.getDepartment() != null
-                && currentUser.getDepartment().getId().intValue() == targetDeptId;
+        Integer userDeptId = currentUser.getDepartment() != null ? currentUser.getDepartment().getId().intValue() : null;
+        boolean isSameDepartment = (userDeptId == null && targetDeptId == null) || (userDeptId != null && userDeptId.equals(targetDeptId));
         boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
         boolean isManager = currentUser.getRole().name().equals("MANAGER");
 
@@ -285,10 +286,32 @@ public class DocumentServiceImpl implements DocumentService {
     }
 
     @Override
+    public Page<DocumentResponse> searchAdminDocuments(String search, String filter, Pageable pageable) {
+        if (filter == null || filter.isEmpty()) {
+            filter = "ALL";
+        }
+        Page<DocumentEntity> documPage = documentRepository.searchAdminDocuments(search, filter, pageable);
+
+        return documPage.map(doc -> {
+            Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
+            return toResponse(doc, chunkCount);
+        });
+    }
+
+    @Override
+    public List<DocumentResponse> getShareableDocuments() {
+        List<DocumentEntity> docs = documentRepository.findShareableDocuments();
+        return docs.stream().map(doc -> {
+            Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());
+            return toResponse(doc, chunkCount);
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public List<DocumentResponse> getPendingApprovals(Integer departmentId) {
         List<DocumentEntity> pendingDocs = documentRepository.findByDepartmentIdAndApprovalStatusInAndDeletedAtIsNull(
                 departmentId,
-                java.util.Collections.singletonList(ApprovalStatus.PENDING));
+                Collections.singletonList(ApprovalStatus.PENDING));
         return pendingDocs.stream()
                 .map(doc -> {
                     Integer chunkCount = documentChunkRepository.countByDocumentId(doc.getId());

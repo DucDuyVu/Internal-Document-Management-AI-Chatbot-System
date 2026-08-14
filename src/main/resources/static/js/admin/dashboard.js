@@ -1046,7 +1046,15 @@ async function loadDocuments() {
             throw new Error('apiRequest() không tồn tại');
         }
 
-        const response = await apiRequest(`/api/admin/documents?page=${AdminState.documents.page - 1}&size=${AdminState.documents.pageSize}`);
+        const searchTerm = document.getElementById('docSearchInput')?.value?.trim() || '';
+        const activePill = document.querySelector('#docTypePillFilter .pill-btn.active');
+        const typeFilter = activePill ? activePill.getAttribute('data-filter') : 'ALL';
+
+        let url = `/api/admin/documents?page=${AdminState.documents.page - 1}&size=${AdminState.documents.pageSize}`;
+        if (typeFilter && typeFilter !== 'ALL') url += `&filter=${typeFilter}`;
+        if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+
+        const response = await apiRequest(url);
 
         AdminState.documents.data = response.content || response;
         AdminState.documents.total = response.totalElements || response.length;
@@ -1056,8 +1064,17 @@ async function loadDocuments() {
 
     } catch (error) {
         console.error('Error loading documents:', error);
+        // Hiển thị lỗi trong bảng thay vì để mãi "Đang tải tài liệu..."
+        const tbody = document.getElementById('docTableBody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#ef4444;">
+                <span>⚠️</span> Không thể tải danh sách tài liệu. Vui lòng thử lại sau hoặc liên hệ quản trị viên.<br>
+                <small style="color:#94a3b8; margin-top:8px; display:block;">Chi tiết lỗi: ${error.message || error}</small>
+                <button onclick="loadDocuments()" style="margin-top:12px; padding:8px 16px; background:#4f46e5; color:white; border:none; border-radius:6px; cursor:pointer;">🔄 Thử lại</button>
+            </td></tr>`;
+        }
         if (typeof showToast !== 'undefined') {
-            showToast('Không thể tải danh sách tài liệu', 'error');
+            showToast('Không thể tải danh sách tài liệu: ' + (error.message || 'Lỗi không xác định'), 'error');
         }
     }
 }
@@ -1138,33 +1155,8 @@ function setAdminDocFilter(btnElement) {
 }
 
 function filterAdminDocuments() {
-    const searchTerm = document.getElementById('docSearchInput')?.value?.toLowerCase() || '';
-    const activePill = document.querySelector('#docTypePillFilter .pill-btn.active');
-    const typeFilter = activePill ? activePill.getAttribute('data-filter') : 'ALL';
-
-    AdminState.documents.filtered = AdminState.documents.data.filter(doc => {
-        const matchesSearch = !searchTerm ||
-            (doc.fileName && doc.fileName.toLowerCase().includes(searchTerm)) ||
-            (doc.departmentName && doc.departmentName.toLowerCase().includes(searchTerm)) ||
-            ('doc-' + String(doc.id).padStart(4, '0')).includes(searchTerm);
-
-        let matchesStatus = false;
-        if (typeFilter === 'ALL') {
-            matchesStatus = true;
-        } else if (typeFilter === 'COMPLETED') {
-            matchesStatus = (doc.status === 'COMPLETED' || doc.status === 'SUCCESS');
-        } else if (typeFilter === 'PENDING') {
-            matchesStatus = (doc.status === 'PENDING' || doc.approvalStatus === 'PENDING');
-        } else if (typeFilter === 'PROCESSING') {
-            matchesStatus = (doc.status === 'PROCESSING');
-        } else if (typeFilter === 'FAILED' || typeFilter === 'FAILED_OR_REJECTED') {
-            matchesStatus = (doc.status === 'FAILED' || doc.approvalStatus === 'REJECTED');
-        }
-
-        return matchesSearch && matchesStatus;
-    });
-
-    renderDocumentTable();
+    AdminState.documents.page = 1; // Reset to page 1 on filter
+    loadDocuments();
 }
 
 // Function old filterDocs removed, replaced by filterAdminDocuments
@@ -1673,8 +1665,8 @@ async function revokePermission(docId, deptId) {
 async function openShareDocumentModal() {
     try {
         // Lấy danh sách tài liệu
-        const docsResponse = await apiRequest('/api/admin/documents?size=100');
-        const docs = docsResponse.content || docsResponse || [];
+        const docsResponse = await apiRequest('/api/admin/documents/shareable');
+        let docs = docsResponse.content || docsResponse || [];
         const docSelect = document.getElementById('shareDocId');
         if (docSelect) {
             docSelect.innerHTML = '<option value="">-- Chọn tài liệu --</option>' +

@@ -85,7 +85,7 @@ public class DocumentController {
      * liệu public.
      */
     @GetMapping
-    public ResponseEntity<Page<DocumentResponse>> getMyDocuments(
+    public ResponseEntity<?> getMyDocuments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -94,9 +94,17 @@ public class DocumentController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<DocumentResponse> result = documentService.getMyDocuments(userDetails.getUser(), pageable);
-        return ResponseEntity.ok(result);
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<DocumentResponse> result = documentService.getMyDocuments(userDetails.getUser(), pageable);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            String stackTrace = java.util.Arrays.stream(e.getStackTrace())
+                .map(StackTraceElement::toString)
+                .collect(java.util.stream.Collectors.joining("\n"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(e.getClass().getName() + ": " + e.getMessage() + "\n" + stackTrace);
+        }
     }
 
     /**

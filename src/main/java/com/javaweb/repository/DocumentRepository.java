@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.Modifying;
+
 @Repository
 public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> {
 
@@ -32,10 +33,9 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
                      "LEFT JOIN DocumentPermissionsEntity p ON p.permissionsDocumentId = d AND p.revokedAt IS NULL " +
                      "WHERE d.deletedAt IS NULL " +
                      "AND (d.departmentId = :departmentId OR d.departmentId IS NULL " +
-                     "     OR (p IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
-                     "     OR (p IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
-                     "AND (d.approvalStatus = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId))"
-                     +
+                     "     OR (p.id IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
+                     "     OR (p.id IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
+                     "AND (CAST(d.approvalStatus AS string) = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId)) " +
                      "ORDER BY d.createdAt DESC")
        Page<DocumentEntity> findVisibleToDepartmentWithSharing(
                      @Param("departmentId") Integer departmentId,
@@ -44,16 +44,18 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
                      @Param("isManager") boolean isManager,
                      Pageable pageable);
 
-       // Tìm kiếm tài liệu mà 1 user được phép xem + tài liệu do user upload (chỉ lấy tài liệu đã COMPLETED)
+       // Tìm kiếm tài liệu mà 1 user được phép xem + tài liệu do user upload (chỉ lấy
+       // tài liệu đã COMPLETED)
        @Query("SELECT DISTINCT d FROM DocumentEntity d " +
                      "LEFT JOIN DocumentPermissionsEntity p ON p.permissionsDocumentId = d AND p.revokedAt IS NULL " +
                      "WHERE d.deletedAt IS NULL " +
-                     "AND d.status = 'COMPLETED' " +
+                     "AND CAST(d.status AS string) = 'COMPLETED' " +
                      "AND (d.departmentId = :departmentId OR d.departmentId IS NULL " +
-                     "     OR (p IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
-                     "     OR (p IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
-                     "AND (d.approvalStatus = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId)) " +
-                     "AND LOWER(d.fileName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                     "     OR (p.id IS NOT NULL AND p.permissionDepartmentId.id = :departmentIdLong) " +
+                     "     OR (p.id IS NOT NULL AND p.permissionDepartmentId IS NULL)) " +
+                     "AND (CAST(d.approvalStatus AS string) = 'APPROVED' OR d.uploadedBy = :userId OR (:isManager = true AND d.departmentId = :departmentId)) "
+                     +
+                     "AND LOWER(d.fileName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
                      "ORDER BY d.createdAt DESC")
        Page<DocumentEntity> searchVisibleToDepartmentWithPermissions(
                      @Param("departmentId") Integer departmentId,
@@ -65,8 +67,8 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
 
        @Query("SELECT d FROM DocumentEntity d " +
                      "WHERE d.deletedAt IS NULL " +
-                     "AND d.status = 'COMPLETED' " +
-                     "AND LOWER(d.fileName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                     "AND CAST(d.status AS string) = 'COMPLETED' " +
+                     "AND LOWER(d.fileName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) " +
                      "ORDER BY d.createdAt DESC")
        Page<DocumentEntity> searchAll(@Param("search") String search, Pageable pageable);
 
@@ -77,18 +79,38 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
 
        Page<DocumentEntity> findByDeletedAtIsNull(Pageable pageable);
 
-       @Query("SELECT COUNT(d) FROM DocumentEntity d WHERE d.uploadedBy = :userId AND d.approvalStatus = 'APPROVED' AND d.deletedAt IS NULL")
+       @Query("SELECT d FROM DocumentEntity d WHERE d.deletedAt IS NULL " +
+                     "AND (CAST(:search AS string) IS NULL OR CAST(:search AS string) = '' OR LOWER(d.fileName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))) "
+                     +
+                     "AND (CAST(:filter AS string) = 'ALL' " +
+                     "  OR (CAST(:filter AS string) = 'COMPLETED' AND CAST(d.status AS string) = 'COMPLETED') " +
+                     "  OR (CAST(:filter AS string) = 'PENDING' AND (CAST(d.status AS string) = 'PENDING' OR CAST(d.approvalStatus AS string) = 'PENDING')) "
+                     +
+                     "  OR (CAST(:filter AS string) = 'PROCESSING' AND CAST(d.status AS string) = 'PROCESSING') "
+                     +
+                     "  OR ((CAST(:filter AS string) = 'FAILED' OR CAST(:filter AS string) = 'FAILED_OR_REJECTED') AND (CAST(d.status AS string) = 'FAILED' OR CAST(d.approvalStatus AS string) = 'REJECTED')))"
+                     +
+                     "ORDER BY d.createdAt DESC")
+       Page<DocumentEntity> searchAdminDocuments(@Param("search") String search, @Param("filter") String filter,
+                     Pageable pageable);
+
+       @Query("SELECT d FROM DocumentEntity d WHERE d.deletedAt IS NULL AND CAST(d.status AS string) = 'COMPLETED' AND CAST(d.approvalStatus AS string) = 'APPROVED' ORDER BY d.createdAt DESC")
+       List<DocumentEntity> findShareableDocuments();
+
+       @Query("SELECT COUNT(d) FROM DocumentEntity d WHERE d.uploadedBy = :userId AND CAST(d.approvalStatus AS string) = 'APPROVED' AND d.deletedAt IS NULL")
        long countApprovedByUserId(@Param("userId") Long userId);
 
        /**
-        * Tìm danh sách tài liệu thuộc một phòng ban cụ thể, có trạng thái phê duyệt 
-        * nằm trong danh sách cho trước và chưa bị xóa mềm. (Ví dụ: Tìm các tài liệu PENDING/APPROVED)
+        * Tìm danh sách tài liệu thuộc một phòng ban cụ thể, có trạng thái phê duyệt
+        * nằm trong danh sách cho trước và chưa bị xóa mềm. (Ví dụ: Tìm các tài liệu
+        * PENDING/APPROVED)
         */
        List<DocumentEntity> findByDepartmentIdAndApprovalStatusInAndDeletedAtIsNull(Integer departmentId,
                      List<ApprovalStatus> approvalStatuses);
 
        /**
-        * Đếm tổng số tài liệu do một user (nhân viên) cụ thể tải lên (chưa bị xoá mềm).
+        * Đếm tổng số tài liệu do một user (nhân viên) cụ thể tải lên (chưa bị xoá
+        * mềm).
         */
        long countByUploadedByAndDeletedAtIsNull(Long uploadedBy);
 
@@ -98,18 +120,22 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
        long countByDepartmentIdAndDeletedAtIsNull(Integer departmentId);
 
        /**
-        * Đếm số lượng tài liệu của một phòng ban theo trạng thái xử lý AI cụ thể (PENDING, COMPLETED, FAILED...).
+        * Đếm số lượng tài liệu của một phòng ban theo trạng thái xử lý AI cụ thể
+        * (PENDING, COMPLETED, FAILED...).
         */
-       long countByDepartmentIdAndStatusAndDeletedAtIsNull(Integer departmentId, DocumentStatus status);
+       @Query("SELECT COUNT(d) FROM DocumentEntity d WHERE d.departmentId = :departmentId AND CAST(d.status AS string) = :#{#status.name()} AND d.deletedAt IS NULL")
+       long countByDepartmentIdAndStatusAndDeletedAtIsNull(@Param("departmentId") Integer departmentId, @Param("status") DocumentStatus status);
 
        /**
         * Đếm tổng số tài liệu trên toàn hệ thống theo một trạng thái xử lý AI cụ thể.
         * (Được dùng trong Dashboard Admin để lấy số lượng "Tài liệu lỗi" - FAILED).
         */
-       long countByStatusAndDeletedAtIsNull(DocumentStatus status);
+       @Query("SELECT COUNT(d) FROM DocumentEntity d WHERE CAST(d.status AS string) = :#{#status.name()} AND d.deletedAt IS NULL")
+       long countByStatusAndDeletedAtIsNull(@Param("status") DocumentStatus status);
 
        /**
-        * Đếm tổng số tài liệu chưa được gán cho bất kỳ phòng ban nào (department_id IS NULL).
+        * Đếm tổng số tài liệu chưa được gán cho bất kỳ phòng ban nào (department_id IS
+        * NULL).
         * (Được dùng trong Dashboard Admin để đếm "Tài liệu chưa phân quyền").
         */
        long countByDepartmentIdIsNullAndDeletedAtIsNull();
@@ -120,20 +146,25 @@ public interface DocumentRepository extends JpaRepository<DocumentEntity, Long> 
         */
        List<DocumentEntity> findByUploadedByAndDeletedAtIsNullOrderByCreatedAtDesc(Long uploadedBy, Pageable pageable);
 
-       List<DocumentEntity> findByStatus(DocumentStatus status);
-       List<DocumentEntity> findByStatusAndApprovalStatus(DocumentStatus status, ApprovalStatus approvalStatus);
+       @Query("SELECT d FROM DocumentEntity d WHERE CAST(d.status AS string) = :#{#status.name()}")
+       List<DocumentEntity> findByStatus(@Param("status") DocumentStatus status);
 
-       List<DocumentEntity> findByStatusAndUpdatedAtBefore(DocumentStatus status, java.time.LocalDateTime dateTime);
-       List<DocumentEntity> findByStatusAndApprovalStatusAndUpdatedAtBefore(DocumentStatus status, ApprovalStatus approvalStatus, java.time.LocalDateTime dateTime);
+       @Query("SELECT d FROM DocumentEntity d WHERE CAST(d.status AS string) = :#{#status.name()} AND CAST(d.approvalStatus AS string) = :#{#approvalStatus.name()}")
+       List<DocumentEntity> findByStatusAndApprovalStatus(@Param("status") DocumentStatus status, @Param("approvalStatus") ApprovalStatus approvalStatus);
+
+       @Query("SELECT d FROM DocumentEntity d WHERE CAST(d.status AS string) = :#{#status.name()} AND d.updatedAt < :dateTime")
+       List<DocumentEntity> findByStatusAndUpdatedAtBefore(@Param("status") DocumentStatus status, @Param("dateTime") java.time.LocalDateTime dateTime);
+
+       List<DocumentEntity> findByStatusAndApprovalStatusAndUpdatedAtBefore(DocumentStatus status,
+                     ApprovalStatus approvalStatus, java.time.LocalDateTime dateTime);
 
        @Modifying
        @Query("UPDATE DocumentEntity d SET d.status = :newStatus, d.aiPurpose = :aiPurpose, d.aiSummary = :aiSummary, d.aiTags = :aiTags, d.updatedAt = :updatedAt WHERE d.id IN :ids")
        void updateDocumentsStatusAndAiInfo(
-               @Param("ids") List<Long> ids,
-               @Param("newStatus") DocumentStatus newStatus,
-               @Param("aiPurpose") String aiPurpose,
-               @Param("aiSummary") String aiSummary,
-               @Param("aiTags") String aiTags,
-               @Param("updatedAt") java.time.LocalDateTime updatedAt
-       );
+                     @Param("ids") List<Long> ids,
+                     @Param("newStatus") DocumentStatus newStatus,
+                     @Param("aiPurpose") String aiPurpose,
+                     @Param("aiSummary") String aiSummary,
+                     @Param("aiTags") String aiTags,
+                     @Param("updatedAt") java.time.LocalDateTime updatedAt);
 }

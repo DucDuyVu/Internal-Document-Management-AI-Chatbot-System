@@ -379,6 +379,14 @@ async function loadUserDocuments() {
         if (typeof showToast !== 'undefined') {
             showToast('Không thể tải danh sách tài liệu', 'error');
         }
+        const gridView = document.getElementById('docGridView');
+        if (gridView) {
+            gridView.innerHTML = '<div class="empty-state"><span>❌</span><p>Lỗi tải dữ liệu. Vui lòng thử lại sau.</p></div>';
+        }
+        const listBody = document.getElementById('docListBody');
+        if (listBody) {
+            listBody.innerHTML = '<tr><td colspan="6" class="empty-state"><span>❌</span>Lỗi tải dữ liệu</td></tr>';
+        }
     }
 }
 
@@ -498,6 +506,9 @@ function renderUserDocuments() {
                             <button style="background:transparent;border:none;color:#4f46e5;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')">
                                 <i class="fa-solid fa-download"></i> Tải xuống
                             </button>
+                            <button style="background:transparent;border:none;color:${cannotShare ? '#cbd5e1' : '#3b82f6'};font-weight:700;font-size:0.95rem;cursor:${cannotShare ? 'not-allowed' : 'pointer'};display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='${cannotShare ? 'transparent' : '#eff6ff'}'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); ${cannotShare ? 'return false;' : `openPermissionModal(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')`}">
+                                <i class="fa-solid fa-share-nodes"></i> Chia sẻ
+                            </button>
                             <button style="background:transparent;border:none;color:#4f46e5;font-weight:700;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='transparent'" onclick="event.stopPropagation(); openDocumentDetail(${doc.id})">
                                 <i class="fa-regular fa-eye"></i> Xem
                             </button>
@@ -558,6 +569,7 @@ function renderUserDocuments() {
                     </td>
                     <td>
                         <button class="btn-icon" onclick="event.stopPropagation(); viewDocumentInline(${doc.id})" title="Xem chi tiết">👁️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); ${cannotShare ? 'return false;' : `openPermissionModal(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')`}" title="Chia sẻ" style="color:${cannotShare ? '#cbd5e1' : '#3b82f6'}; ${cannotShare ? 'cursor:not-allowed;' : ''}">🔗</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); downloadDocument(${doc.id}, '${(doc.fileName || '').replace(/'/g, "\\'")}')" title="Tải xuống">⬇️</button>
                     </td>
                 </tr>
