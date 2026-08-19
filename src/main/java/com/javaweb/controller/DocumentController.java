@@ -99,6 +99,7 @@ public class DocumentController {
             Page<DocumentResponse> result = documentService.getMyDocuments(userDetails.getUser(), pageable);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            e.printStackTrace();
             String stackTrace = java.util.Arrays.stream(e.getStackTrace())
                 .map(StackTraceElement::toString)
                 .collect(java.util.stream.Collectors.joining("\n"));
